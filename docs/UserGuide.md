@@ -890,6 +890,9 @@ replace-meal d/1 m/2 r/3
 The previous grocery list was cleared. Run 'generate-list' to update it.
 ```
 
+If no grocery list had been generated yet, the second line instead reads
+`Run 'generate-list' to create groceries for the updated plan.`
+
 The next `view-plan d/1` shows the new recipe at that position, and daily totals, excess warnings, and
 `check-shortfall` results use it.
 
@@ -903,9 +906,10 @@ The next `view-plan d/1` shows the new recipe at that position, and daily totals
 - The same recipe may appear several times in a day.
 - A successful change clears any generated grocery list because its quantities are stale. Run
   `generate-list` again before shopping.
-- Choosing the recipe that is already there, at one portion and with its original ingredients, changes nothing,
-  preserves the grocery list, and reports `[NOTE]` instead of `[DONE]`. If that meal has extra portions or
-  customized ingredients, the command resets it.
+- Choosing the unedited recipe that is already there, at one portion and with its original ingredients, changes
+  nothing, preserves the grocery list, and reports `[NOTE]` instead of `[DONE]`. If that meal has extra portions
+  or customized ingredients, or the recipe was changed with `edit-recipe` after the plan was generated, the
+  command replaces the meal with the current recipe at one portion.
 
 **Errors and Recovery:**
 

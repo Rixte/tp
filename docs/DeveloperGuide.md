@@ -751,8 +751,10 @@ duplicates, unknown prefixes, and non-positive or overflowing numbers, and creat
 `ReplaceMealCommand` receives the shared `ActiveMealPlan` and `DietarySettings` and checks, in order: an active
 plan, the day, the meal, and the recipe index (using the displayed one-based position, since recipes can share
 names). Choosing the recipe already in that slot at one portion with no customization returns a `NOTE` and
-changes nothing. Otherwise `DietaryPreferences.isAllowed(recipe)` must pass, so a manual choice cannot bypass the
-profile saved by `set-diet`; unclassified recipes are rejected while restrictions are active.
+changes nothing; the comparison is by reference, so a recipe replaced by `edit-recipe` after generation counts as
+different and refreshes the plan's snapshot. Otherwise `DietaryPreferences.isAllowed(recipe)` must pass, so a
+manual choice cannot bypass the profile saved by `set-diet`; unclassified recipes are rejected while
+restrictions are active.
 
 The update path is copy-on-write like the other plan edits: `MealPlan.withReplacedMeal` replaces only the
 selected `DayPlan`, and `DayPlan.withReplacedMeal` replaces only the selected `PlannedMeal` with
