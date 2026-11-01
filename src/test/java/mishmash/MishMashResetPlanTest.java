@@ -62,7 +62,8 @@ class MishMashResetPlanTest {
         assertEquals(0, countOccurrences(output, "Error: "));
         assertTrue(output.endsWith("Goodbye!" + System.lineSeparator()), output);
         assertInOrder(output, "Meal plan successfully generated for 2 day(s)!", "[ ] Rice: 600g",
-                "Meal plan reset.", "No active meal plan. Use 'generate-plan' first.",
+                "Meal plan reset. Recipes, dietary preferences, saved daily targets, and recorded meals are unchanged.",
+                "No active meal plan. Use 'generate-plan' first.",
                 "No grocery list generated. Use 'generate-list' first.", "Meal 1: A", "vegetarian",
                 "1. A (500 kcal)", "Meal plan successfully generated for 1 day(s)!", "[ ] Rice: 300g", "Goodbye!");
     }
@@ -75,6 +76,7 @@ class MishMashResetPlanTest {
         assertEquals(2, countOccurrences(output, ResetPlanCommand.USAGE));
         assertEquals(2, countOccurrences(output, "No active meal plan to reset."));
         assertEquals(1, countOccurrences(output, "Available commands (names are case-sensitive):"));
+        assertTrue(output.contains("saved daily targets, and recorded meals are kept."), output);
         assertFalse(output.contains("Are you sure"), output);
         assertTrue(output.indexOf("Error: ") < output.indexOf("No active meal plan to reset."), output);
         assertTrue(output.endsWith("Goodbye!" + System.lineSeparator()), output);
@@ -96,6 +98,7 @@ class MishMashResetPlanTest {
         assertTrue(preserved.contains("Daily Totals: 1500 kcal"), preserved);
         assertTrue(preserved.contains("[ ] Rice: 300g"), preserved);
         String cleared = output.substring(reset);
+        assertTrue(output.contains("Saved daily targets will be preserved."), output);
         assertTrue(cleared.contains("No active meal plan."), cleared);
         assertTrue(cleared.contains("No grocery list generated."), cleared);
         assertFalse(cleared.contains("[ ] Rice:"), cleared);

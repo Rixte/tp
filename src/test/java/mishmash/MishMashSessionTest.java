@@ -67,8 +67,11 @@ class MishMashSessionTest {
                 System.setIn(originalInput);
                 System.setOut(originalOutput);
             }
-            assertTrue(logs.getMessages().contains("continuing without file logging"));
-            assertInstanceOf(IOException.class, logs.getRecords().getFirst().getThrown());
+            LogRecord loggingWarning = logs.getRecords().stream()
+                    .filter(record -> record.getMessage().contains("continuing without file logging"))
+                    .findFirst().orElseThrow();
+            assertEquals(Level.WARNING, loggingWarning.getLevel());
+            assertInstanceOf(IOException.class, loggingWarning.getThrown());
             assertEquals(originalLevel, logger.getLevel());
             assertEquals(wereParentHandlersEnabled, logger.getUseParentHandlers());
             assertEquals(originalHandlers, Arrays.asList(logger.getHandlers()));

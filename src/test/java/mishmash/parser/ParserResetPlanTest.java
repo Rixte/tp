@@ -80,7 +80,7 @@ class ParserResetPlanTest {
 
         assertEquals(1, help.lines().filter(ResetPlanCommand.USAGE::equals).count());
         assertEquals(1, Parser.COMMAND_USAGE.lines().filter(ResetPlanCommand.USAGE::equals).count());
-        assertTrue(help.contains("Recipes, dietary preferences, and recorded meals are kept."));
+        assertTrue(help.contains("Recipes, dietary preferences, saved daily targets, and recorded meals are kept."));
     }
 
     /**

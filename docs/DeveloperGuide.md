@@ -580,7 +580,7 @@ The common return represents either guidance or the formatted list.*
 | Arguments supplied | Reject during parsing with view-list usage. |
 | No generated snapshot | Show generate-list-first guidance without creating groceries. |
 | Generated empty list | Display the normal heading and `Total items to purchase: 0`. |
-| Plan replaced or reset | The normal holder removes the old snapshot; later views show missing-list guidance. |
+| Successful `generate-plan` or `reset-plan` | The normal holder removes the old snapshot; later views show missing-list guidance. A successful `set-diet` repair regenerates an existing snapshot instead. |
 | Null supplier result or null item | Throw `IllegalStateException` or `NullPointerException`; `MishMash.run` logs and rethrows the failure, ending the session. |
 
 The viewer preserves item order, quantities, and units. Recipe edits or deletions do not
@@ -595,8 +595,10 @@ also lets users inspect the saved snapshot without silently replacing it.
 `ViewListCommandTest`, `ViewListIntegrationTest`, `ViewListDiagnosticsTest`,
 `GroceryListViewerTest`, and `ParserTest` check missing and empty snapshots,
 execution-time lookup, formatting, invalid arguments, and preservation of recipes.
-Manually generate groceries, view them twice, then replace or reset the plan and verify
-the next view asks for `generate-list`.
+Manually generate groceries and view them twice. Then successfully run `generate-plan` or
+confirm `reset-plan`; verify the next `view-list` asks for `generate-list`. To check the
+different `set-diet` behavior, generate groceries before changing the diet and verify that a
+successful repair updates the existing grocery snapshot rather than showing missing-list guidance.
 
 <!-- @@author -->
 

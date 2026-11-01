@@ -120,7 +120,7 @@ public class Parser {
      */
     public static final String COMMAND_USAGE = String.join(System.lineSeparator(),
             ADD_RECIPE_USAGE, LIST_RECIPE_USAGE, EDIT_RECIPE_USAGE, DELETE_RECIPE_USAGE, GENERATE_PLAN_USAGE,
-            VIEW_PLAN_USAGE, ADJUST_PORTION_USAGE, CUSTOMIZE_MEAL_USAGE, RESET_PLAN_USAGE,
+            VIEW_PLAN_USAGE, ADJUST_PORTION_USAGE, CUSTOMIZE_MEAL_USAGE, ResetPlanCommand.HELP_TEXT,
             CHECK_SHORTFALL_USAGE,
             GENERATE_LIST_USAGE, VIEW_LIST_USAGE,
             DietaryPreferencesParser.USAGE, "Format: view-diet", CLEAR_DIET_USAGE,

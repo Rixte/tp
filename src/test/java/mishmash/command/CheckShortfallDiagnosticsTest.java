@@ -61,7 +61,10 @@ class CheckShortfallDiagnosticsTest {
                     .newInstance(active, new NutritionTargets(100, null, null, null));
 
             assertFalse(commandClass.desiredAssertionStatus());
-            assertTrue(command.execute(new RecipeBook()).contains("Calories: 50/100 kcal (short by 50 kcal)."));
+            String expected = String.join(System.lineSeparator(),
+                    "Daily nutrition shortfalls (compared with the supplied targets):",
+                    "Day 1:", "- Calories: 50/100 kcal (short by 50 kcal).");
+            assertEquals(expected, command.execute(new RecipeBook()));
             assertEquals(plan, active.get().orElseThrow());
         }
     }
