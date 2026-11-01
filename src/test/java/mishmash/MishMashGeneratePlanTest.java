@@ -135,7 +135,7 @@ class MishMashGeneratePlanTest {
         try (PrintStream capturedOutput = new PrintStream(output, true, StandardCharsets.UTF_8)) {
             System.setIn(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
             System.setOut(capturedOutput);
-            MishMash.main(new String[0]);
+            MishMash.main(new String[0], "mishmash.%g.log");
         } finally {
             System.setIn(originalInput);
             System.setOut(originalOutput);

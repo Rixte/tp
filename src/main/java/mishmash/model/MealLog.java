@@ -7,11 +7,11 @@ import java.util.Objects;
 
 //@@author GauthamNandi
 /**
- * Holds the meals the user has recorded as eaten during the current session, in the order they were recorded.
+ * Holds retained meals the user has recorded as eaten, in the order they were recorded.
  *
  * <p>This is separate from the active meal plan, which holds meals the user intends to eat. A recorded meal
  * keeps the recipe's nutrition as it was when it was recorded, because {@link Recipe} cannot be changed.
- * The log is kept in memory only and is not saved to disk.</p>
+ * The storage layer retains the log as part of a complete application snapshot.</p>
  */
 public class MealLog {
     private final List<MealEntry> entries = new ArrayList<>();

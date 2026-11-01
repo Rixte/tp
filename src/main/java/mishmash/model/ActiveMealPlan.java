@@ -8,7 +8,7 @@ import java.util.Optional;
  * Holds the active meal plan and its generated grocery snapshot in memory.
  *
  * <p>Only one plan is active at a time; generating a new plan replaces the old one.
- * The plan is not saved to disk (persistence is out of scope for V1).</p>
+ * The storage layer retains the plan as part of a complete application snapshot.</p>
  *
  * <p>This is a plain object rather than a static singleton so that the app can
  * create one instance and share it, and tests can create a fresh one each time.</p>

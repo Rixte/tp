@@ -23,3 +23,4 @@ text-ui-test/EXPECTED-UNIX.TXT
 
 # Application logs and their lock files
 /mishmash.*.log*
+/data/

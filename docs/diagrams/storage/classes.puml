@@ -1,0 +1,27 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+hide empty members
+class MishMash
+class ApplicationState
+class Parser
+class SessionPersistence
+interface SessionStorage <<interface>> {
+  + load(): LoadResult
+  + save(state: ApplicationState): void
+  + close(): void
+}
+class JsonSessionStorage
+class SessionData <<record>>
+MishMash --> SessionPersistence : persistence
+SessionPersistence --> ApplicationState : state
+SessionPersistence --> SessionStorage : storage
+JsonSessionStorage ..|> SessionStorage
+JsonSessionStorage ..> SessionData : reads and writes
+SessionData ..> ApplicationState : snapshots and restores
+Parser ..> ApplicationState : constructor reads shared roots
+legend bottom
+  Solid lines: stored references. Dashed arrows: temporary dependencies.
+  Only persistence-relevant relationships are shown.
+endlegend
+@enduml

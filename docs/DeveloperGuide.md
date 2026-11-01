@@ -160,9 +160,9 @@ Only one meal plan is active at a time. Successfully generating a replacement pl
 
 ### Storage Component
 
-Persistent application-data storage is not implemented. Recipes, saved daily targets, meal plans, grocery lists, and recorded meals are held in memory and are cleared when the application closes. There is no save or load command, save-file format, or application-data recovery process.
+`ApplicationState` owns all five shared model roots. The production launcher restores them through `SessionStorage`, builds `Parser(ApplicationState)`, and uses `SessionPersistence` to autosave completed changes. See [Persistence and recovery](#persistence-and-recovery).
 
-Diagnostic logs are written to disk, but they do not save or restore the recipe book or generated data.
+Diagnostic logs remain separate from the versioned JSON user-data snapshot.
 ## Implementation
 
 This section explains the implemented MVP features, followed by v2.0b plan-management features and generation diagnostics.
@@ -181,7 +181,7 @@ add-recipe n/DISHNAME cal/CALORIES p/PROTEIN c/CARBS f/FATS i/INGREDIENT:QUANTIT
 ```
 
 All five recipe fields and at least one ingredient are required. Fields may appear in
-any order; only `i/` may repeat. Recipes remain in memory for the current session.
+any order; only `i/` may repeat. Recipes are autosaved for later sessions.
 Adding a recipe leaves existing recipes, meal plans, groceries, and recorded meals unchanged.
 
 #### Responsibilities
@@ -292,7 +292,7 @@ the `Recipe` constructor enforce a strictly positive ingredient quantity.
 | Reuse `RecipeViewer` | Format separately in each command | Keep addition, listing, and editing output consistent. |
 
 Names identify display text rather than unique keys, and repeated names are accepted.
-Food categories depend on user declarations. No unit conversion or disk persistence is
+Food categories depend on user declarations. No unit conversion is
 provided by addition. To use a newly added recipe in generated data, generate a new plan,
 then generate its grocery list.
 
@@ -504,7 +504,7 @@ keeping incompatible units separate.
 
 `ActiveMealPlan.setGroceryList` copies the completed result into a read-only snapshot. `getGroceryList` returns an optional: absence means no list has been generated for the current plan, whereas a present empty list is valid. `ViewListCommand` reads this snapshot during execution and delegates formatting to `GroceryListViewer`; viewing never regenerates data.
 
-Successfully storing a replacement plan clears its old groceries. Failed plan generation or invalid command syntax leaves the previous state intact. All state is kept in memory for one session.
+Successfully storing a replacement plan clears its old groceries. Failed plan generation or invalid command syntax leaves the previous state intact. The complete state is autosaved for later sessions.
 
 The parse step rejects arguments with `generate-list does not accept arguments.` and
 `Format: generate-list`; it does not inspect the active plan. The command reads the latest plan
@@ -772,7 +772,7 @@ set-diet [diet/DIET] [avoid/TAG[,TAG...]] [exclude/INGREDIENT[,INGREDIENT...]]
 
 Omitted fields return to unrestricted defaults. For example, `set-diet avoid/peanut`
 clears a previously selected vegan diet. Profiles and recipe classifications are held
-in memory for the current session.
+in shared holders and retained across sessions.
 
 #### Responsibilities
 
@@ -909,7 +909,7 @@ length, dietary compatibility, nutrition targets, and exact use of replacement d
 | Clear generated data after failed repair | Keep the incompatible plan | Keep generated data consistent with the saved profile. |
 
 Classification depends on the user's declarations. The application does not detect
-undeclared allergens, cross-contact, or certification, and does not persist preferences.
+undeclared allergens, cross-contact, or certification.
 
 #### Automated verification
 
@@ -977,9 +977,9 @@ argument rejection. Run the existing Java 25 test suite when changing this behav
 
 This feature implements two stories: **As a user, I want to set a daily calorie target so that my meal plan can meet my desired calorie intake**, and **As a user, I want to set my daily protein, carbohydrate, and fat targets so that my meal plan can meet my desired macronutrient intake.** One command covers both, because calories and macronutrients are the four fields of `NutritionTargets` and are used together.
 
-`set-targets [cal/CALORIES|none] [p/PROTEIN|none] [c/CARBS|none] [f/FATS|none]` saves daily targets for the current session. At least one field is required. A field with a positive whole number replaces that target, `none` removes it, and a field that is not mentioned keeps its saved value. `view-targets` shows the saved targets. For example, `set-targets cal/2000 p/150` followed by `set-targets p/none` leaves only the 2000 kcal target.
+`set-targets [cal/CALORIES|none] [p/PROTEIN|none] [c/CARBS|none] [f/FATS|none]` saves daily targets across application sessions. At least one field is required. A field with a positive whole number replaces that target, `none` removes it, and a field that is not mentioned keeps its saved value. `view-targets` shows the saved targets. For example, `set-targets cal/2000 p/150` followed by `set-targets p/none` leaves only the 2000 kcal target.
 
-The saved targets are used by `generate-plan`. For every nutrient that the `generate-plan` command leaves out, the saved target is used; a target typed in `generate-plan` replaces the saved one for that plan only. Neither command changes an existing meal plan, and `check-shortfall` still requires explicit targets. Targets are held in memory and are lost when the application closes.
+The saved targets are used by `generate-plan`. For every nutrient that the `generate-plan` command leaves out, the saved target is used; a target typed in `generate-plan` replaces the saved one for that plan only. Neither command changes an existing meal plan, and `check-shortfall` still requires explicit targets. Targets are included in the autosaved application snapshot.
 
 #### Class responsibilities and relationships
 
@@ -1060,7 +1060,7 @@ In every case the session continues, and an error leaves the saved targets uncha
 | No per-command way to ignore saved targets | Accept `cal/none` in `generate-plan` | Ignoring one needs `GeneratePlanParser` and `GeneratePlanRequest` to represent "explicitly no target", which changes shared code and its tests. `set-targets cal/none` already gives the same result. It could be added if users needed it. |
 | Changing targets leaves the current plan alone | Regenerate or clear the plan | Plans are snapshots, as after `edit-recipe` and `delete-recipe`, and regenerating would change meals the user may be relying on. |
 | `check-shortfall` is unchanged | Fall back on saved targets when none are typed | Its contract is to check the explicit targets given, and existing behaviour and tests stay valid. It would be a small change to add later. |
-| Targets are not persisted | Save them to a file | The application has no storage component, and every other piece of session data is also lost when it closes. |
+| Persist targets with other user data | Separate target file | A complete snapshot avoids restoring targets and plans from different sessions. |
 
 #### Verification and maintenance
 
@@ -1098,7 +1098,7 @@ whole log, as shown by `view-meals`.
 `delete-recipe`. `view-meals` lists every recorded meal with its calories (kcal), protein, carbs and
 fats (g), followed by the totals for all recorded meals. Unlike `check-shortfall`, which examines the
 *planned* meals of the active plan, this feature records meals the user *has eaten*.
-The recorded meals are kept in memory for the session only, matching the product's current data boundary.
+Recorded meals are retained as independent recipe snapshots across sessions.
 
 A meal is a whole number of servings of a recipe, and a recipe stores the nutrition the user entered with
 `add-recipe`; nutrition is not derived from ingredients. The nutritional content of one meal is therefore
@@ -1140,7 +1140,7 @@ reuses it; its values are `long` so that adding many recipes cannot overflow.*
   tested without comparing layout text.
 * `Parser` owns the `MealLog` and passes it to the commands it builds, because `Command.execute` only
   receives the `RecipeBook`. Every `Parser` constructor that is not given a log creates a fresh one, so
-  each session starts with no recorded meals. `Parser(MealLog)` and
+  isolated test sessions start with no recorded meals; production restores the saved log. `Parser(MealLog)` and
   `Parser(MealLog, MealPlanGenerator, ActiveMealPlan)` accept one, which lets tests supply and inspect
   the log. The command classes receive the log through their own constructors.
 
@@ -1241,7 +1241,7 @@ Figure 20 shows where `record-meal` can be rejected; every rejection happens bef
 
 #### Limitations and possible extensions
 
-* The log lives in memory for one session and is lost when the application exits.
+* The log is autosaved and restored across application sessions, including dates and servings.
 * A later version could compare a date's totals with the targets given to `check-shortfall`.
 * `edit-meal` cannot change which recipe was eaten; deleting the entry and recording the right recipe
   does the same job.
@@ -1819,7 +1819,7 @@ The Gradle build packages the application as `build/libs/MishMash.jar`. Release 
 
 **Value proposition:** MishMash connects recipe management, meal selection, and grocery preparation in one workflow. It generates plans from user-entered recipes and combines ingredient quantities for the selected meals.
 
-**Current boundaries:** Data lasts for one session. Nutrition is entered by the user rather than calculated from an ingredient database, including after occurrence-specific ingredient customization. Plans support positive whole-recipe portion counts, not fractional servings. Ingredient names and units are matched exactly; automatic unit conversion and grocery-item ticking are not supported.
+**Current boundaries:** Data is retained locally across sessions. Nutrition is entered by the user rather than calculated from an ingredient database, including after occurrence-specific ingredient customization. Plans support positive whole-recipe portion counts, not fractional servings. Ingredient names and units are matched exactly; automatic unit conversion and grocery-item ticking are not supported.
 
 ## Appendix B: User Stories
 
@@ -1865,7 +1865,7 @@ This is a source-checkout audit against the [v2.0b milestone](https://github.com
 | `**` | User tracking intake | Review recorded meals by date | Understand my intake for a selected day | [#62](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/62) | Coming soon (v2.0b); records have no dates. |
 | `**` | User tracking intake | Correct or remove a recorded meal | Keep my intake records accurate | [#63](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/63) | Coming soon (v2.0b); no correction or removal command. |
 
-**Needs clarification:** [#51](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/51) is titled “Retain data between sessions”, but its body repeats the reset-plan story. Persistence is not implemented. Confirm the intended requirement before treating this issue as satisfied. [#77](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/77) tracks team PPP deliverables, rather than a product user story.
+**Retention:** Issue #51's data-retention capability is implemented by local autosave and recovery. Issue #77 tracks team PPP deliverables rather than a product user story.
 
 ### User Stories for Future Consideration
 
@@ -1980,7 +1980,7 @@ Viewing does not regenerate groceries. The displayed `[ ]` markers cannot be tic
 #### UC08 View help or exit
 
 - Entering `help` displays command purposes and formats. Additional arguments produce an error.
-- Entering `bye` displays the goodbye message and ends the session. Session data is discarded.
+- Entering `bye` displays the goodbye message and ends the session. The latest successfully saved user data is retained.
 
 <!-- @@author Rixte -->
 #### UC09 Check planned nutrition shortfalls
@@ -2060,7 +2060,7 @@ No confirmation is requested. Recording changes only the recorded meals; recipes
 - 2a. No meal has been recorded: MishMash displays `No meals recorded yet.` The use case ends.
 - 2b. No meal was recorded on the given date: MishMash displays `No meals recorded on DATE.` The use case ends.
 
-Viewing leaves the recorded meals unchanged. Without a date, the totals cover every meal recorded in the session.
+Viewing leaves the recorded meals unchanged. Without a date, the totals cover every retained recorded meal.
 
 <!-- @@author -->
 <!-- @@author neil0618 -->
@@ -2077,7 +2077,7 @@ Viewing leaves the recorded meals unchanged. Without a date, the totals cover ev
 
 - 2a. No argument is given, a prefix is unknown or repeated, a value is missing, or a value is neither `none` nor a positive whole number up to 2147483647: MishMash displays an error and the `set-targets` format. The use case ends and the saved targets are unchanged.
 
-The command does not change the recipe book or an existing meal plan. The saved targets are used by later `generate-plan` commands (UC04) and last until the application closes.
+The command does not change the recipe book or an existing meal plan. The saved targets are used by later `generate-plan` commands (UC04) and remain available after restarting from the same working directory.
 
 #### UC14 View daily targets
 
@@ -2210,9 +2210,58 @@ Viewing never changes the profile or generated data.
 | Grocery list | The combined ingredient quantities generated from the active plan. |
 | Session | One running instance of the application; application data is not retained after it ends. |
 
+### Persistence and recovery
+
+`ApplicationState` shares recipes, `ActiveMealPlan`, dietary settings, target settings, and `MealLog` between
+the parser and storage. Existing parser/session constructors still create isolated in-memory sessions;
+the public production entry point restores state before opening the command loop. This keeps tests from
+reading or overwriting a developer's real data. `StorageJarTest` covers the actual production launcher.
+
+![Persistence ownership and dependencies](images/storage/classes.svg)
+
+`SessionData` is a storage-only record hierarchy with schema version 2. Recipe values are embedded independently
+in the recipe book, planned occurrences, and recorded meals. Orders and duplicates are preserved; sets are sorted
+for deterministic output. Recorded entries retain their ISO calendar date and whole-serving count. Decimal
+quantities are plain strings and nullable targets use JSON null. Null groceries
+mean not generated; an empty array means a generated empty snapshot. Restoration uses domain constructors,
+including exact ordered ingredient equality from the defensive PR fixes.
+
+Jackson rejects duplicate/unknown/missing fields, scalar coercion, fractional integer values, trailing JSON,
+and null primitives. Parsing limits document size to 10 MiB, depth to 100, strings to 1,000,000 characters,
+and numeric tokens to 1,000 characters. No polymorphic typing or native Java serialization is enabled.
+Only validated snapshots are published; malformed data cannot partially update application state.
+
+![Autosave sequence](images/storage/autosave.svg)
+
+`SessionPersistence` marks `DONE` and `WARNING` outcomes dirty and saves before presenting feedback. Notes,
+read-only output, cancelled commands, and parse/execution errors do not trigger autosave. A failed save retains
+the live state, produces warning feedback, and retries after the next mutation and on normal exit. Future
+state-changing commands must report a mutation outcome; presentation status currently supplies that contract.
+Unexpected application failures are still logged and rethrown; they do not trigger an unsafe final save.
+
+`JsonSessionStorage` holds an exclusive `FileChannel` lock for the process lifetime. Writes validate the JSON,
+flush a same-directory temporary file, preserve the previous valid backup, and replace the primary with an
+atomic move where supported. Filesystems without atomic replacement fall back to replacement plus backup
+recovery. Temporary-file cleanup is best effort. An unreferenced `.tmp` is never loaded automatically.
+Operating-system locks and file flushing do not provide a guarantee against every power or hardware failure.
+
+Startup distinguishes invalid JSON from filesystem access failure. Only invalid files are quarantined;
+an inaccessible file or a failed backup restoration stops startup. Recovery never quarantines a valid backup
+merely because writing the primary failed. Unsupported versions are preserved like malformed snapshots;
+version 1 snapshots are upgraded automatically to version 2. Legacy undated records receive the local upgrade
+date and one serving, with warning feedback. The original file is retained as the backup. The upgrade is saved
+immediately so repeated restarts do not change those assigned dates. Failed upgrades stop startup and preserve
+the original primary; they never classify a valid legacy file as corrupt.
+
+Run Java 25 `./gradlew check shadowJar`. Storage tests use temporary directories and cover round trips,
+validation, locks, backups, quarantine, write failures, and retry behavior. The check task also builds and runs
+the shadow JAR through multiple processes to verify retention from a working directory outside the repository.
+JAR tests also cover forced termination after autosave, lock release, corrupt-primary recovery, unsaved-change
+warnings and shutdown retries, failed dietary repair, and unchanged save files after no-ops or cancellation.
+
 ## Appendix E: Instructions for Manual Testing
 
-These checks cover current behaviour. Testers may explore additional inputs. Each subsection is independent: start a fresh session and load the sample recipes where needed so earlier tests do not change later preconditions.
+These checks cover current behaviour. Testers may explore additional inputs. Each subsection is independent: start from an empty temporary working directory and load the sample recipes where needed so earlier tests do not change later preconditions.
 
 ### Launch
 
@@ -2439,7 +2488,7 @@ existing logging configuration; absence of a `FINE` record at a higher log level
 5. Enter `set-diet exclude/Beans,Tofu` and answer `yes` to the confirmation. This replaces the previous profile and leaves only Rice
    and Lentils eligible. Expect saved preferences and a cleared plan and grocery list.
    Confirm with `view-diet`, `view-plan`, and `view-list`.
-6. Restart in a fresh session and enter `view-diet`. Expect `none` for all three lines.
+6. Restart from the same working directory and enter `view-diet`. Expect the previously saved profile.
    Return to the restricted-plan example before continuing.
 7. Enter `set-diet avoid/milk,dairy`, `set-diet exclude/Beans, beans`, and `view-diet extra`
    separately. Expect errors and no profile change.
@@ -2474,7 +2523,7 @@ Use a fresh session containing exactly the three [sample recipes](#sample-recipe
    and confirm that there is no `Daily targets used:` line.
 8. Try `set-targets`, `set-targets cal/0`, `set-targets cal/-5`, `set-targets cal/abc`, `set-targets cal/1.5`, `set-targets cal/`, `set-targets x/5`, `set-targets 2000`, `set-targets cal/1 cal/2`, `set-targets p/5 f/oops`, and `view-targets now`. Each should produce a recoverable error that ends with the matching format line. After `set-targets p/5 f/oops`, enter `view-targets` and confirm that protein was not saved.
 9. Enter `set-targets cal/NONE`. Expect it to be accepted. Enter `set-targets CAL/5` and `Set-Targets cal/5`. Expect `Unrecognized parameter: CAL/5` and `Unknown command: Set-Targets`.
-10. Enter `set-targets cal/2000`, then `bye`, restart, and enter a name. `view-targets` should report that no targets are saved.
+10. Enter `set-targets cal/2000`, then `bye`, restart, and enter a name. `view-targets` should still report 2000 kcal.
 <!-- @@author -->
 
 ### Help and Recovery
@@ -2485,9 +2534,9 @@ Use a fresh session containing exactly the three [sample recipes](#sample-recipe
 
 ### Session Data
 
-Add recipes, generate a plan and groceries, then enter `bye`. Restart and enter a name. Verify that the recipe book is empty and no plan or grocery list is available. Recipes from the earlier session should not reappear.
+Create recipes, a plan with adjusted portions and custom ingredients, groceries, recorded meals, preferences, and targets. Enter `bye`, restart from the same directory, and verify that all views restore the earlier values. Repeat with end-of-input instead of `bye`.
 
-There is no application-data save file to delete or corrupt for a storage-recovery test.
+In a disposable test directory, damage the primary JSON file after closing MishMash. Verify that startup warns, recovers a valid backup, and preserves the damaged primary under a unique quarantine name. Damage both snapshots to test empty-state recovery. Use an empty working directory for each independent manual-test subsection.
 
 <!-- @@author Rixte -->
 ### Confirmation answers in manual workflows
