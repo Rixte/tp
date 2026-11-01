@@ -1,11 +1,12 @@
 package mishmash.storage;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import mishmash.model.ActiveMealPlan;
 import mishmash.model.ApplicationState;
@@ -90,12 +91,17 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores one grocery or ingredient item without losing decimal scale or precision. */
     record GroceryData(String name, String quantity, String unit) {
+        /** Converts one ingredient to its JSON value. */
         static GroceryData fromItem(GroceryItem item) {
             return new GroceryData(item.getName(), item.getQuantity().toPlainString(), item.getUnit());
         }
 
+        /** Restores an ingredient through model validation. */
         GroceryItem toItem() {
             try {
+                if (!required(quantity, "grocery quantity").matches("[0-9]+(?:\\.[0-9]+)?")) {
+                    throw new IllegalArgumentException("Saved quantities must be nonnegative plain decimals.");
+                }
                 return new GroceryItem(required(name, "grocery name"),
                         new BigDecimal(required(quantity, "grocery quantity")),
                         required(unit, "grocery unit"));
@@ -108,6 +114,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
     /** Stores the complete immutable value of a recipe snapshot. */
     record RecipeData(String name, int calories, int protein, int carbs, int fats,
                       List<GroceryData> ingredients, boolean foodClassified, List<String> foodTags) {
+        /** Copies a recipe snapshot into JSON values. */
         static RecipeData fromRecipe(Recipe recipe) {
             FoodInfo foodInfo = recipe.getFoodInfo();
             return new RecipeData(recipe.getName(), recipe.getCalories(), recipe.getProtein(), recipe.getCarbs(),
@@ -116,11 +123,15 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
                     foodInfo.tags().stream().map(FoodTag::getLabel).sorted().toList());
         }
 
+        /** Restores a complete validated recipe snapshot. */
         Recipe toRecipe() {
             List<GroceryItem> restoredIngredients = requiredList(ingredients, "recipe ingredients").stream()
                     .map(GroceryData::toItem).toList();
             Set<FoodTag> restoredTags = requiredList(foodTags, "foodTags").stream()
-                    .map(FoodTag::parse).collect(java.util.stream.Collectors.toUnmodifiableSet());
+                    .map(FoodTag::parse).collect(Collectors.toUnmodifiableSet());
+            if (restoredTags.size() != foodTags.size()) {
+                throw new IllegalArgumentException("Repeated food tags are not allowed.");
+            }
             return new Recipe(required(name, "recipe name"), calories, protein, carbs, fats,
                     restoredIngredients, new FoodInfo(foodClassified, restoredTags));
         }
@@ -128,15 +139,22 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores normalized dietary settings using stable public labels. */
     record DietaryData(String diet, List<String> avoidedTags, List<String> excludedIngredients) {
+        /** Copies the normalized dietary profile. */
         static DietaryData fromPreferences(DietaryPreferences preferences) {
             return new DietaryData(preferences.diet().getLabel(),
                     preferences.avoidedTags().stream().map(FoodTag::getLabel).sorted().toList(),
                     preferences.excludedIngredients().stream().sorted().toList());
         }
 
+        /** Restores restrictions and rejects duplicate entries. */
         DietaryPreferences toPreferences() {
             Set<FoodTag> restoredTags = requiredList(avoidedTags, "avoidedTags").stream()
-                    .map(FoodTag::parse).collect(java.util.stream.Collectors.toUnmodifiableSet());
+                    .map(FoodTag::parse).collect(Collectors.toUnmodifiableSet());
+            if (restoredTags.size() != avoidedTags.size()
+                    || new HashSet<>(requiredList(excludedIngredients, "excludedIngredients")).size()
+                    != excludedIngredients.size()) {
+                throw new IllegalArgumentException("Repeated dietary exclusions are not allowed.");
+            }
             Set<String> restoredIngredients = Set.copyOf(requiredList(excludedIngredients,
                     "excludedIngredients"));
             return new DietaryPreferences(Diet.parse(required(diet, "diet")), restoredTags, restoredIngredients);
@@ -145,10 +163,12 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores nullable nutrition targets without sentinel values. */
     record TargetsData(Integer calories, Integer protein, Integer carbs, Integer fats) {
+        /** Copies optional daily targets. */
         static TargetsData fromTargets(NutritionTargets targets) {
             return new TargetsData(targets.getCalories(), targets.getProtein(), targets.getCarbs(), targets.getFats());
         }
 
+        /** Restores targets through model validation. */
         NutritionTargets toTargets() {
             return new NutritionTargets(calories, protein, carbs, fats);
         }
@@ -156,6 +176,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores one planned occurrence and its optional ingredient override. */
     record PlannedMealData(RecipeData recipe, int portionCount, List<GroceryData> customizedIngredients) {
+        /** Copies the source snapshot and occurrence-specific values. */
         static PlannedMealData fromMeal(PlannedMeal meal) {
             List<GroceryData> customization = meal.hasCustomizedIngredients()
                     ? meal.getIngredients().stream().map(GroceryData::fromItem).toList()
@@ -164,6 +185,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
                     customization);
         }
 
+        /** Restores portions and the optional ingredient override. */
         PlannedMeal toMeal() {
             PlannedMeal restored = new PlannedMeal(required(recipe, "planned recipe").toRecipe(), portionCount);
             if (customizedIngredients == null) {
@@ -181,10 +203,12 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores one day's ordered planned occurrences. */
     record DayData(List<PlannedMealData> meals) {
+        /** Copies the ordered meals for one day. */
         static DayData fromDay(DayPlan day) {
             return new DayData(day.getPlannedMeals().stream().map(PlannedMealData::fromMeal).toList());
         }
 
+        /** Restores the day and validates nutrition totals. */
         DayPlan toDay() {
             return DayPlan.fromPlannedMeals(requiredList(meals, "planned meals").stream()
                     .map(PlannedMealData::toMeal).toList());
@@ -193,6 +217,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores the generated plan together with the request and optional grocery snapshot it belongs to. */
     record ActivePlanData(GenerateRequestData request, List<DayData> days, List<GroceryData> groceries) {
+        /** Copies the active plan and its associated metadata. */
         static ActivePlanData fromActivePlan(ActiveMealPlan activePlan) {
             Optional<MealPlan> plan = activePlan.get();
             if (plan.isEmpty()) {
@@ -209,6 +234,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
                     plan.get().getDays().stream().map(DayData::fromDay).toList(), groceries);
         }
 
+        /** Publishes a fully validated plan and metadata together. */
         void restoreInto(ActiveMealPlan destination) {
             GeneratePlanRequest restoredRequest = required(request, "generation request").toRequest();
             MealPlan restoredPlan = new MealPlan(requiredList(days, "plan days").stream()
@@ -222,10 +248,12 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
 
     /** Stores the request needed for dietary repair and target warnings. */
     record GenerateRequestData(int days, TargetsData targets) {
+        /** Copies the original generation request. */
         static GenerateRequestData fromRequest(GeneratePlanRequest request) {
             return new GenerateRequestData(request.days(), TargetsData.fromTargets(request.targets()));
         }
 
+        /** Restores validated generation settings. */
         GeneratePlanRequest toRequest() {
             return new GeneratePlanRequest(days, required(targets, "generation targets").toTargets());
         }

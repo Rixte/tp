@@ -19,10 +19,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import mishmash.model.ApplicationState;
-import tools.jackson.core.JsonFactory;
+
 import tools.jackson.core.StreamReadConstraints;
 import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.json.JsonFactory;
 import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -41,12 +43,21 @@ public final class JsonSessionStorage implements SessionStorage {
 
     private final Path dataFile;
     private final Path backupFile;
-    private final Path lockFile;
     private final Clock clock;
     private final JsonMapper mapper;
     private final FileChannel lockChannel;
     private final FileLock lock;
     private boolean isClosed;
+
+    /** Creates storage after its caller has acquired the process lock. */
+    private JsonSessionStorage(Path dataFile, Clock clock, FileChannel lockChannel, FileLock lock) {
+        this.dataFile = dataFile;
+        this.backupFile = siblingWithSuffix(dataFile, ".backup.json");
+        this.clock = Objects.requireNonNull(clock, "clock");
+        this.lockChannel = Objects.requireNonNull(lockChannel, "lockChannel");
+        this.lock = Objects.requireNonNull(lock, "lock");
+        this.mapper = createMapper();
+    }
 
     /**
      * Opens storage and acquires an exclusive lock for the data file's directory.
@@ -91,16 +102,6 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    private JsonSessionStorage(Path dataFile, Clock clock, FileChannel lockChannel, FileLock lock) {
-        this.dataFile = dataFile;
-        this.backupFile = siblingWithSuffix(dataFile, ".backup.json");
-        this.lockFile = siblingWithSuffix(dataFile, ".lock");
-        this.clock = Objects.requireNonNull(clock, "clock");
-        this.lockChannel = Objects.requireNonNull(lockChannel, "lockChannel");
-        this.lock = Objects.requireNonNull(lock, "lock");
-        this.mapper = createMapper();
-    }
-
     @Override
     public LoadResult load() throws StorageException {
         requireOpen();
@@ -113,18 +114,21 @@ public final class JsonSessionStorage implements SessionStorage {
 
         try {
             return LoadResult.normal(readState(dataFile));
-        } catch (StorageException primaryFailure) {
+        } catch (InvalidSnapshotException primaryFailure) {
             if (Files.exists(backupFile)) {
+                ApplicationState backupState = null;
                 try {
-                    ApplicationState backupState = readState(backupFile);
+                    backupState = readState(backupFile);
+                } catch (InvalidSnapshotException backupFailure) {
+                    primaryFailure.addSuppressed(backupFailure);
+                }
+                if (backupState != null) {
                     Path quarantined = quarantine(dataFile, "corrupt");
-                    writeAtomically(dataFile, Files.readAllBytes(backupFile));
+                    writeAtomically(dataFile, readBytes(backupFile));
                     return LoadResult.recovered(backupState,
                             "Saved data was damaged, so MishMash recovered the last valid backup."
                                     + System.lineSeparator() + "The damaged file was preserved as "
                                     + quarantined.getFileName() + ".");
-                } catch (StorageException | IOException backupFailure) {
-                    primaryFailure.addSuppressed(backupFailure);
                 }
             }
             return quarantineAndStartEmpty(primaryFailure);
@@ -139,12 +143,15 @@ public final class JsonSessionStorage implements SessionStorage {
         try {
             newData = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(SessionData.fromState(state));
             validateBytes(newData);
-        } catch (IOException | IllegalArgumentException | IllegalStateException e) {
+        } catch (IOException | RuntimeException e) {
             throw new StorageException("Could not create a valid application snapshot.", e);
         }
 
-        byte[] previousGoodData = readValidBytes(dataFile).orElseGet(() -> readValidBytes(backupFile)
-                .orElse(newData));
+        Optional<byte[]> previous = readValidBytes(dataFile);
+        if (previous.isEmpty()) {
+            previous = readValidBytes(backupFile);
+        }
+        byte[] previousGoodData = previous.orElse(newData);
         quarantineIfInvalid(dataFile);
         quarantineIfInvalid(backupFile);
         writeAtomically(backupFile, previousGoodData);
@@ -195,6 +202,10 @@ public final class JsonSessionStorage implements SessionStorage {
                 .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
                 .build();
         return JsonMapper.builder(factory)
+                .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
+                .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+                .enable(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES)
+                .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
                 .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
                 .build();
@@ -202,13 +213,14 @@ public final class JsonSessionStorage implements SessionStorage {
 
     /** Recovers a missing primary from a validated backup. */
     private LoadResult recoverFromBackup(String reason) throws StorageException {
+        ApplicationState state;
         try {
-            ApplicationState state = readState(backupFile);
-            writeAtomically(dataFile, Files.readAllBytes(backupFile));
-            return LoadResult.recovered(state, reason + " MishMash restored its last valid backup.");
-        } catch (IOException | StorageException e) {
+            state = readState(backupFile);
+        } catch (InvalidSnapshotException e) {
             return quarantineAndStartEmpty(e);
         }
+        writeAtomically(dataFile, readBytes(backupFile));
+        return LoadResult.recovered(state, reason + " MishMash restored its last valid backup.");
     }
 
     /** Preserves all unreadable candidates before starting with a new empty state. */
@@ -232,16 +244,31 @@ public final class JsonSessionStorage implements SessionStorage {
 
     /** Reads, bounds, parses, and reconstructs one complete snapshot. */
     private ApplicationState readState(Path path) throws StorageException {
+        byte[] bytes = readBytes(path);
         try {
-            long size = Files.size(path);
-            if (size > MAX_FILE_SIZE_BYTES) {
-                throw new StorageException("Saved data exceeds the 10 MiB safety limit.");
+            return validateBytes(bytes);
+        } catch (IOException | RuntimeException e) {
+            throw new InvalidSnapshotException("Saved data is invalid: " + path.getFileName() + ".", e);
+        }
+    }
+
+    /** Bounds reads and distinguishes filesystem failures from data that can be quarantined. */
+    private byte[] readBytes(Path path) throws StorageException {
+        try (java.io.InputStream input = Files.newInputStream(path)) {
+            byte[] bytes = input.readNBytes((int) MAX_FILE_SIZE_BYTES + 1);
+            if (bytes.length > MAX_FILE_SIZE_BYTES) {
+                throw new InvalidSnapshotException("Saved data exceeds the 10 MiB safety limit.", null);
             }
-            return validateBytes(Files.readAllBytes(path));
-        } catch (StorageException e) {
-            throw e;
-        } catch (IOException | IllegalArgumentException | ArithmeticException e) {
-            throw new StorageException("Saved data is invalid: " + path.getFileName() + ".", e);
+            return bytes;
+        } catch (IOException e) {
+            throw new StorageException("Could not read " + path.getFileName() + ".", e);
+        }
+    }
+
+    /** Distinguishes malformed snapshots from inaccessible files that must not be moved automatically. */
+    private static final class InvalidSnapshotException extends StorageException {
+        private InvalidSnapshotException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 
@@ -258,15 +285,15 @@ public final class JsonSessionStorage implements SessionStorage {
     }
 
     /** Returns file bytes only when the candidate is present and fully valid. */
-    private Optional<byte[]> readValidBytes(Path path) {
+    private Optional<byte[]> readValidBytes(Path path) throws StorageException {
         if (Files.notExists(path)) {
             return Optional.empty();
         }
         try {
-            byte[] bytes = Files.readAllBytes(path);
-            validateBytes(bytes);
+            readState(path);
+            byte[] bytes = readBytes(path);
             return Optional.of(bytes);
-        } catch (IOException | IllegalArgumentException | ArithmeticException e) {
+        } catch (InvalidSnapshotException e) {
             return Optional.empty();
         }
     }
@@ -304,6 +331,8 @@ public final class JsonSessionStorage implements SessionStorage {
                 }
                 channel.force(true);
             }
+            // Read back the flushed file before publishing it, rather than trusting only the input bytes.
+            readState(temporary);
             try {
                 Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
@@ -311,7 +340,7 @@ public final class JsonSessionStorage implements SessionStorage {
                 Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
             }
             temporary = null;
-        } catch (IOException | IllegalArgumentException | ArithmeticException e) {
+        } catch (IOException | RuntimeException e) {
             throw new StorageException("Could not replace " + target.getFileName() + " safely.", e);
         } finally {
             if (temporary != null) {
