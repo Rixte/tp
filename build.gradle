@@ -19,6 +19,7 @@ dependencies {
     String jUnitVersion = '5.14.4'
 
     implementation 'org.jline:jline-reader:4.4.8'
+    implementation 'tools.jackson.core:jackson-databind:3.1.8'
     runtimeOnly 'org.jline:jline-terminal-jni:4.4.8'
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${jUnitVersion}"
