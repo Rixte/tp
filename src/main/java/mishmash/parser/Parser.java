@@ -76,7 +76,9 @@ public class Parser {
      */
     public static final String DELETE_RECIPE_USAGE = "Format: delete-recipe INDEX";
 
-    /** Describes partial recipe edits and complete ingredient-list replacement. */
+    /**
+     * Describes partial recipe edits and complete ingredient-list replacement.
+     */
     public static final String EDIT_RECIPE_USAGE =
             "Format: edit-recipe INDEX [n/DISHNAME] [cal/CALORIES] [p/PROTEIN] [c/CARBS] [f/FATS]"
                     + " [i/INGREDIENT:QUANTITYUNIT ...] [food/TAG[,TAG...]]"
@@ -574,7 +576,9 @@ public class Parser {
     //@@author
 
     //@@author Rixte
-    /** Returns validated nutrition when supplied, or null to preserve the current recipe value. */
+    /**
+     * Returns validated nutrition when supplied, or null to preserve the current recipe value.
+     */
     private Integer parseOptionalNutrition(Map<String, String> fields, String prefix, String fieldName) {
         return fields.containsKey(prefix) ? parseNutrition(fields.get(prefix), fieldName) : null;
     }

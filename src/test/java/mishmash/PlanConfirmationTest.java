@@ -38,7 +38,9 @@ class PlanConfirmationTest {
     private final RecipeBook book = TestRecipes.recipeBook(500, 20, 50, 10);
     private final Parser parser = new Parser(new MealPlanGenerator(new Random(1)), active);
 
-    /** Runs a session with supplied commands and confirmation answers. */
+    /**
+     * Runs a session with supplied commands and confirmation answers.
+     */
     private String run(String... lines) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (Scanner input = new Scanner("Tester\n" + String.join("\n", lines));
@@ -48,7 +50,9 @@ class PlanConfirmationTest {
         return bytes.toString(StandardCharsets.UTF_8);
     }
 
-    /** Installs a generated plan and groceries without consuming console input. */
+    /**
+     * Installs a generated plan and groceries without consuming console input.
+     */
     private void populate() throws MishMashException {
         parser.parseCommand("generate-plan d/2 cal/1500").execute(book);
         parser.parseCommand("generate-list").execute(book);

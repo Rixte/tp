@@ -6,7 +6,9 @@ import java.util.Optional;
  * Reports an input error that can be displayed to the user.
  */
 public class MishMashException extends Exception {
-    /** Optional command syntax, stored independently of the explanation and original cause. */
+    /**
+     * Optional command syntax, stored independently of the explanation and original cause.
+     */
     private final String usage;
 
     /**

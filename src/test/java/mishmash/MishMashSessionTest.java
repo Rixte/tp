@@ -3,14 +3,18 @@ package mishmash;
 import static mishmash.testutil.CliAssertions.assertInOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +30,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.io.TempDir;
 
 import mishmash.command.Command;
 import mishmash.exception.MishMashException;
@@ -43,6 +48,48 @@ import mishmash.testutil.LogCapture;
  * Checks isolated application execution, borrowed resource ownership, structured help, and failure diagnostics.
  */
 class MishMashSessionTest {
+    //@@author Rixte
+    @Test
+    void main_missingLogDirectory_warnsAndKeepsSessionUsable(@TempDir Path directory) {
+        Logger logger = Logger.getLogger("mishmash");
+        Level originalLevel = logger.getLevel();
+        boolean wereParentHandlersEnabled = logger.getUseParentHandlers();
+        List<Handler> originalHandlers = Arrays.asList(logger.getHandlers());
+        InputStream originalInput = System.in;
+        PrintStream originalOutput = System.out;
+        try (LogCapture logs = new LogCapture(MishMash.class)) {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            try (PrintStream output = new PrintStream(bytes)) {
+                System.setIn(new ByteArrayInputStream("Tester\nbye\n".getBytes(StandardCharsets.UTF_8)));
+                System.setOut(output);
+                MishMash.main(new String[0], directory.resolve("missing/app.%g.log").toString());
+            } finally {
+                System.setIn(originalInput);
+                System.setOut(originalOutput);
+            }
+            assertTrue(logs.getMessages().contains("continuing without file logging"));
+            assertInstanceOf(IOException.class, logs.getRecords().getFirst().getThrown());
+            assertEquals(originalLevel, logger.getLevel());
+            assertEquals(wereParentHandlersEnabled, logger.getUseParentHandlers());
+            assertEquals(originalHandlers, Arrays.asList(logger.getHandlers()));
+
+            assertTrue(bytes.toString(StandardCharsets.UTF_8).contains("Goodbye!"));
+        }
+    }
+
+    @Test
+    void run_emptyInput_finishesWithoutInventingAName() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (Scanner scanner = new Scanner(""); PrintStream output = new PrintStream(bytes)) {
+            new MishMash(scanner, output, new Parser(), new RecipeBook()).run();
+        }
+        String display = bytes.toString(StandardCharsets.UTF_8);
+        assertTrue(display.contains("Who's cooking today?"));
+        assertTrue(display.contains("Welcome to MishMash!"));
+        assertFalse(display.contains("Hello "));
+    }
+    //@@author
+
     @TestFactory
     Stream<DynamicTest> constructor_missingDependency_rejectsBeforeWritingOutput() {
         return Stream.of("scanner", "output", "parser", "recipeBook")
@@ -268,7 +315,9 @@ class MishMashSessionTest {
         return runSession(input, parser, new RecipeBook());
     }
 
-    /** Runs a session with a recipe book that the caller can inspect after recovery. */
+    /**
+     * Runs a session with a recipe book that the caller can inspect after recovery.
+     */
     private String runSession(String input, Parser parser, RecipeBook recipeBook) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (Scanner scanner = new Scanner(input);

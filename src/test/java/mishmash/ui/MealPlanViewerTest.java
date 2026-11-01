@@ -1,9 +1,13 @@
 package mishmash.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -11,6 +15,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import mishmash.model.NutritionTargets;
+import mishmash.testutil.AssertionDisabledClassLoader;
 import mishmash.ui.MealPlanViewer.MealSummary;
 
 /**
@@ -37,6 +42,37 @@ class MealPlanViewerTest {
             "================ Day 2 ================" + System.lineSeparator() + DAY_TWO_BODY;
 
     private final MealPlanViewer viewer = new MealPlanViewer();
+
+    //@@author Rixte
+    @Test
+    void view_assertionsDisabled_preservesMealsAndDailyTotals() throws Exception {
+        List<List<MealSummary>> mealsByDay = List.of(createMealsByDay().getFirst());
+        try (AssertionDisabledClassLoader loader = new AssertionDisabledClassLoader(MealPlanViewer.class)) {
+            Class<?> viewerClass = loader.loadClass(MealPlanViewer.class.getName());
+            Object isolatedViewer = viewerClass.getConstructor().newInstance();
+
+            assertFalse(viewerClass.desiredAssertionStatus());
+            assertEquals(DAY_ONE_DISPLAY, viewerClass.getMethod("view", List.class)
+                    .invoke(isolatedViewer, mealsByDay));
+            assertEquals(DAY_ONE_DISPLAY, viewer.view(mealsByDay));
+        }
+    }
+    //@@author
+
+    //@@author Rixte
+    @Test
+    void formatDay_invalidInternalDay_detectsBrokenInvariant() throws ReflectiveOperationException {
+        // Public entry points reject invalid days first; invoke the formatter to check its internal safeguard.
+        Method formatter = MealPlanViewer.class.getDeclaredMethod(
+                "formatDay", List.class, int.class, NutritionTargets.class);
+        formatter.setAccessible(true);
+        InvocationTargetException failure = assertThrows(InvocationTargetException.class,
+                () -> formatter.invoke(viewer, List.of(), 0, NutritionTargets.none()));
+
+        assertInstanceOf(AssertionError.class, failure.getCause());
+        assertEquals("A displayed day must have a positive number: 0", failure.getCause().getMessage());
+    }
+    //@@author
 
     @Test
     void view_exceededTargets_placesWarningsAfterTotalsInNutrientOrder() {

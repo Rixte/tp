@@ -18,7 +18,9 @@ public class ResetPlanCommand implements Command {
 
     private static final String RESET_FAILURE_MESSAGE = "The meal plan could not be reset. Please try again.";
 
-    /** Records state transitions without including recipe or meal contents. */
+    /**
+     * Records state transitions without including recipe or meal contents.
+     */
     private static final Logger LOGGER = Logger.getLogger(ResetPlanCommand.class.getName());
 
     private final ActiveMealPlan activePlan;

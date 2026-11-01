@@ -23,11 +23,15 @@ import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 
 //@@author Rixte
-/** Checks edit syntax, shared recipe validation, and preservation of omitted fields. */
+/**
+ * Checks edit syntax, shared recipe validation, and preservation of omitted fields.
+ */
 class ParserEditRecipeTest {
     private final Parser parser = new Parser();
 
-    /** Creates a classified recipe so omitted food information can be checked too. */
+    /**
+     * Creates a classified recipe so omitted food information can be checked too.
+     */
     private RecipeBook createBook() throws MishMashException {
         RecipeBook book = new RecipeBook();
         parser.parseCommand("add-recipe n/Rice cal/200 p/4 c/45 f/1 i/Rice:150g food/none").execute(book);
@@ -113,7 +117,9 @@ class ParserEditRecipeTest {
         assertEquals(0, edited.getFats());
     }
 
-    /** Checks every nutrition prefix independently, including zero, leading zeros, and integer limits. */
+    /**
+     * Checks every nutrition prefix independently, including zero, leading zeros, and integer limits.
+     */
     @TestFactory
     Stream<DynamicTest> parse_singleNutritionField_preservesAllOtherValues() {
         return Stream.of("cal", "p", "c", "f").flatMap(prefix ->
@@ -135,7 +141,9 @@ class ParserEditRecipeTest {
                         })));
     }
 
-    /** Guards consistent numeric validation across all four optional nutrition fields. */
+    /**
+     * Guards consistent numeric validation across all four optional nutrition fields.
+     */
     @TestFactory
     Stream<DynamicTest> parse_invalidNutritionForEachPrefix_keepsRecipeUnchanged() {
         return Stream.of("cal", "p", "c", "f").flatMap(prefix ->
@@ -207,7 +215,9 @@ class ParserEditRecipeTest {
                 .map(Object::toString).toList());
     }
 
-    /** Rejects late errors after otherwise valid changes, including invalid food declarations. */
+    /**
+     * Rejects late errors after otherwise valid changes, including invalid food declarations.
+     */
     @TestFactory
     Stream<DynamicTest> parse_lateInvalidFields_doesNotApplyEarlierFields() {
         return Stream.of("food/none,milk", "food/milk,", "food/,milk", "food/milk,dairy",
@@ -226,7 +236,9 @@ class ParserEditRecipeTest {
                 }));
     }
 
-    /** Exercises malformed edits that must never publish a partially changed recipe. */
+    /**
+     * Exercises malformed edits that must never publish a partially changed recipe.
+     */
     @TestFactory
     Stream<DynamicTest> parse_invalidEdits_reportsEditUsageAndPreservesRecipe() {
         return Stream.of("", "1", "0 p/5", "-1 p/5", "+1 p/5", "1.0 p/5", "2147483648 p/5",
