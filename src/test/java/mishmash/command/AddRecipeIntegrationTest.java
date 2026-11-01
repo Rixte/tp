@@ -92,7 +92,7 @@ class AddRecipeIntegrationTest {
     }
 
     @TestFactory
-    Stream<DynamicTest> parseAndExecute_lateValidationFailures_preserveBookAndAllowRetry() {
+    Stream<DynamicTest> parseCommand_invalidRecipe_preservesBookAndAllowsRetry() {
         return Stream.of(" food/milk,dairy", " food/milk,", " food/none food/soy", " i/Water:0ml")
                 .map(suffix -> DynamicTest.dynamicTest(suffix, () -> {
                     Parser parser = new Parser();
@@ -102,8 +102,7 @@ class AddRecipeIntegrationTest {
                     List<Recipe> original = book.getRecipes();
 
                     MishMashException error = assertThrows(MishMashException.class, () -> parser
-                            .parseCommand(AddRecipeTestData.VALID_COMMAND.replace("n/Rice", "n/Rejected") + suffix)
-                            .execute(book));
+                            .parseCommand(AddRecipeTestData.VALID_COMMAND.replace("n/Rice", "n/Rejected") + suffix));
 
                     assertEquals(Parser.ADD_RECIPE_USAGE, error.getUsage().orElseThrow());
                     assertEquals(original, book.getRecipes());

@@ -74,6 +74,7 @@ class CommandCompleterTest {
         assertEquals(List.of("cal/"), candidates.stream().map(Candidate::value).toList());
     }
 
+    //@@author peilingggg
     @Test
     void complete_addRecipe_suggestsExactCommandAndAllPrefixes() {
         assertEquals(List.of("add-recipe"), values("add-r"));
@@ -90,6 +91,7 @@ class CommandCompleterTest {
         assertFalse(candidates(line).getFirst().complete());
     }
 
+    //@@author Rixte
     /**
      * Returns candidate text for a cursor positioned at the end of the supplied line.
      */
