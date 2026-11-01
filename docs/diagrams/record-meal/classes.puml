@@ -3,33 +3,43 @@
 !include style.iuml
 title Meal recording commands and collaborators
 top to bottom direction
-skinparam nodesep 35
-skinparam ranksep 55
+skinparam nodesep 60
+skinparam ranksep 80
 hide empty members
 
+class Parser {
+  + parseCommand(input: String): Command
+}
 interface Command <<interface>> {
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
 }
-class RecordMealCommand {
-  + execute(recipeBook: RecipeBook): String
+class CommandResult <<record>>
+class RecordMealCommand
+class ViewMealsCommand
+class MealLog {
+  + record(recipe: Recipe): void
+  + getMeals(): List<Recipe>
+  + getTotals(): NutritionTotals
 }
-class ViewMealsCommand {
-  + execute(recipeBook: RecipeBook): String
-}
-class MealLog
 class MealLogViewer {
   + view(meals: List<Recipe>, totals: NutritionTotals): String
   + viewRecorded(meal: Recipe, totals: NutritionTotals): String
 }
 class RecipeBook
 
-RecordMealCommand ..|> Command
-ViewMealsCommand ..|> Command
-RecordMealCommand --> "1" MealLog : -mealLog
-ViewMealsCommand --> "1" MealLog : -mealLog
+Parser ..> RecordMealCommand : creates
+Parser ..> ViewMealsCommand : creates
+Parser -right-> "1" MealLog : -mealLog
+RecordMealCommand .up.|> Command
+ViewMealsCommand .up.|> Command
+Command ..> CommandResult : returns
+RecordMealCommand -down-> "1" MealLog : -mealLog
+ViewMealsCommand -right-> "1" MealLog : -mealLog
 RecordMealCommand ..> RecipeBook : reads
 RecordMealCommand ..> MealLogViewer : creates and calls
 ViewMealsCommand ..> MealLogViewer : creates and calls
+RecipeBook -[hidden]right-> MealLogViewer
 
 legend bottom
   Only feature-relevant members are shown.

@@ -7,8 +7,7 @@ These sources document the implemented `delete-recipe` command in
 | --- | --- |
 | `classes.puml` | Selected classes, including the confirmation hook on `Command` |
 | `execution.puml` | A valid index, confirmed question, and successful deletion |
-| `invalid-index.puml` | `confirmationPrompt` ending when an invalid index throws |
-| `flow.puml` | Activity diagram showing where each outcome is decided |
+| `flow.puml` | Activity diagram showing where each outcome is decided, including invalid indexes |
 
 All diagrams use the shared style in `../rixte/shortfall/style.iuml`; `flow.puml` adds a few
 activity-diagram settings of its own. SVGs live under `docs/images/delete-recipe` so the guide

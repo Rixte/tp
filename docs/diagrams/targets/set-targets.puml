@@ -1,29 +1,55 @@
 @startuml
 !include ../rixte/shortfall/style.iuml
-title set-targets: parse valid changes
-autonumber
+title Executing set-targets cal/2000 p/none
 
-participant "mishMash:MishMash" as App
-participant "parser:Parser" as Parser
-participant "targetParser:SetTargetsParser" as TargetParser
-participant "command:SetTargetsCommand" as Command
+participant ":MishMash" as App
+participant "cmd:SetTargetsCommand" as Cmd
+participant "settings:TargetSettings" as Settings
+participant "changes:TargetChanges" as Changes
+participant "updated:NutritionTargets" as Updated
 
-App -> Parser : parseCommand("set-targets cal/2000 p/none")
-activate Parser
-create TargetParser
-Parser -> TargetParser : new SetTargetsParser()
-activate TargetParser
-TargetParser --> Parser : targetParser
-deactivate TargetParser
-Parser -> TargetParser : parse("cal/2000 p/none")
-activate TargetParser
-TargetParser --> Parser : changes
-deactivate TargetParser
-create Command
-Parser -> Command : new SetTargetsCommand(changes, settings)
-activate Command
-Command --> Parser : command
-deactivate Command
-Parser --> App : command
-deactivate Parser
+ref over App, Cmd : Parse "set-targets cal/2000 p/none"
+
+App -> Cmd : executeWithResult(recipeBook)
+activate Cmd
+
+Cmd -> Cmd : execute(recipeBook)
+activate Cmd
+
+Cmd -> Settings : get()
+activate Settings
+Settings --> Cmd : current
+deactivate Settings
+
+Cmd -> Changes : applyTo(current)
+activate Changes
+create Updated
+Changes -> Updated : NutritionTargets(...)
+activate Updated
+Updated --> Changes
+deactivate Updated
+Changes --> Cmd : updated
+deactivate Changes
+
+Cmd -> Settings : set(updated)
+activate Settings
+Settings --> Cmd
+deactivate Settings
+
+Cmd -> Cmd : build the confirmation text
+
+Cmd --> Cmd : confirmation
+deactivate Cmd
+
+Cmd --> App : result
+deactivate Cmd
+Cmd -[hidden]-> App
+destroy Cmd
+
+note over Cmd, Updated
+  The recipe book and the active meal plan are not used,
+  so an existing plan keeps the targets it was generated with.
+  executeWithResult wraps the confirmation in a CommandResult
+  with status done.
+end note
 @enduml

@@ -1,11 +1,10 @@
 @startuml
 !include style.iuml
-title record-meal 2: parse a valid recipe index
-autonumber
+title Parsing record-meal 2
 
-participant "mishMash:MishMash" as App
-participant "parser:Parser" as Parser
-participant "command:RecordMealCommand" as Command
+participant ":MishMash" as App
+participant ":Parser" as Parser
+participant "cmd:RecordMealCommand" as Command
 
 App -> Parser : parseCommand("record-meal 2")
 activate Parser
@@ -16,12 +15,15 @@ activate Parser
 Parser --> Parser : 2
 deactivate Parser
 create Command
-Parser -> Command : new RecordMealCommand(2, mealLog)
+Parser -> Command : RecordMealCommand(2, ...)
 activate Command
-Command --> Parser : command
 deactivate Command
-Parser --> Parser : command
+Parser --> Parser : cmd
 deactivate Parser
-Parser --> App : command
+Parser --> App : cmd
 deactivate Parser
+
+note over Parser
+  parseCommand first dispatches on the command word. That step is omitted.
+end note
 @enduml

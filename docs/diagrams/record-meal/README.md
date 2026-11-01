@@ -10,6 +10,7 @@ These sources document the `record-meal` and `view-meals` enhancement in
 | `record-meal-parsing.puml` | Successful parsing of `record-meal` |
 | `record-meal.puml` | Successful execution of `record-meal` |
 | `view-meals.puml` | Execution of `view-meals` for a non-empty log |
+| `flow.puml` | Activity diagram of `record-meal`, including every rejection |
 
 `style.iuml` contains shared visual settings. Generated SVGs are stored under
 `docs/images/record-meal` and embedded directly in the guide, as for the other features.

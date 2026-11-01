@@ -326,7 +326,7 @@ The command changes only the `RecipeBook`. It does not use `ActiveMealPlan`, so 
 
 ![Selected classes and relationships for recipe deletion.](images/delete-recipe/classes.svg)
 
-*Only feature-relevant members are shown. Dashed arrows show dependencies or interface realization; the solid arrow shows the book's stored, ordered list. `RecipeBook.remove` takes a zero-based index, while `DeleteRecipeCommand` stores the one-based number the user typed.*
+*Only feature-relevant members are shown. Dashed arrows with an open head are dependencies; the dashed arrow with a hollow triangle is interface realization; solid arrows are associations with a role name and multiplicity. `RecipeBook.remove` takes a zero-based index, while `DeleteRecipeCommand` stores the one-based number the user typed.*
 
 This keeps all console input and output in `MishMash`. `DeleteRecipeCommand` only builds the question and performs the deletion, so tests can call both methods directly without a `Scanner`. The question contains the index as well as the name, so recipes with the same name can still be told apart.
 
@@ -336,12 +336,7 @@ The first sequence starts after parsing and follows a confirmed `delete-recipe 2
 
 ![Execution of recipe deletion, with confirmation.](images/delete-recipe/execution.svg)
 
-*The command validates the index once while building the prompt and again immediately before removal.*
-
-An invalid index is a separate scenario. The `confirmationPrompt` activation ends at the exception,
-so the diagram does not imply that the method continues after throwing.
-
-![Invalid recipe deletion ends before confirmation.](images/delete-recipe/invalid-index.svg)
+*The command validates the index once while building the prompt and again immediately before removal. The `X` marks the command object, which is no longer used once it has returned. An invalid index is not drawn here because it is covered by the activity diagram below.*
 
 `confirmationPrompt` finds the target through `findTarget`, which throws if the book is empty or the index is too large. An impossible request therefore fails before any question is asked. `execute` calls `findTarget` again instead of trusting an earlier prompt, so it is also safe when called on its own. It then calls `RecipeBook.remove(index - 1)` and returns `Recipe deleted!`, the recipe's name, and `Recipes remaining: N`. `RecipeBook.remove` checks the index itself with `Objects.checkIndex`.
 
@@ -351,7 +346,7 @@ The activity diagram shows which step decides each outcome.
 
 ![Where each outcome of delete-recipe is decided.](images/delete-recipe/flow.svg)
 
-*Both error paths end before the question is asked. Only the confirmed path changes the recipe book.*
+*Diamonds are decisions, with their guards in square brackets. Both error paths end before the question is asked. Only the confirmed path changes the recipe book.*
 
 | Input or state | Where it is decided | Result |
 | --- | --- | --- |
@@ -392,11 +387,11 @@ This feature implements the story: **As a user managing recipes, I want to list 
 
 #### Class responsibilities and relationships
 
-`Parser` validates the optional index and creates a `ListRecipeCommand`. The command keeps only a nullable `Integer index`, where `null` means "list every recipe". The recipe book is supplied only when `execute` runs, so the command reads the recipes as they are at that moment rather than a copy taken during parsing. Recipe details are formatted by `RecipeViewer`, the class that also formats the `add-recipe` and `edit-recipe` confirmations, so a recipe looks the same wherever it is shown.
+`Parser` validates the optional index and creates a `ListRecipeCommand`. The command keeps only a nullable `Integer index`, where `null` means "list every recipe". The recipe book is supplied only when `executeWithResult` runs, so the command reads the recipes as they are at that moment rather than a copy taken during parsing. Recipe details are formatted by `RecipeViewer`, the class that also formats the `add-recipe` and `edit-recipe` confirmations, so a recipe looks the same wherever it is shown.
 
 ![Selected classes and relationships for recipe listing.](images/list-recipes/classes.svg)
 
-*Only feature-relevant members are shown. Dashed arrows show dependencies or interface realization; the solid arrow shows the book's stored, ordered list. `RecipeBook.getRecipes` returns a read-only copy, so listing cannot change the book.*
+*Only feature-relevant members are shown. Dashed arrows with an open head are dependencies; the dashed arrow with a hollow triangle is interface realization; the solid arrow is an association with a role name and multiplicity. `RecipeBook.getRecipes` returns a read-only copy, so listing cannot change the book.*
 
 #### Parsing and execution
 
@@ -407,11 +402,11 @@ no-index outcomes are described afterwards so both interactions remain readable 
 
 ![Executing list-recipes 2.](images/list-recipes/execution.svg)
 
-*The no-index form skips index parsing and the viewer.*
+*The execution diagram refers to the parsing diagram with a `ref` frame. The no-index form skips index parsing and the viewer. The `X` marks objects that are no longer used after the command returns.*
 
 `Parser.parseListRecipe` treats blank arguments as the list-all form. Otherwise it calls `parseRecipeIndex`, the helper that `delete-recipe` also uses. The helper accepts digits only and rejects zero and values above `Integer.MAX_VALUE`. Leading zeros and surrounding spaces are accepted, so `list-recipes 01` selects recipe 1.
 
-The parser does not receive the recipe book, so whether the index exists is decided at execution. `execute` reads the book, then either returns the details of `recipes.get(index - 1)` or throws a `MishMashException`. The list-all form returns `Recipes:` followed by one `N. name (calories kcal)` line per recipe, or `No recipes yet. Use 'add-recipe' to add one.` for an empty book. An empty book is therefore an error only when an index was requested.
+The parser does not receive the recipe book, so whether the index exists is decided at execution. `MishMash` calls `executeWithResult`, which reads the book, then either returns a `CommandResult` holding the details of `recipes.get(index - 1)` or throws a `MishMashException`. `execute` is kept for callers that only need the text and returns the `feedback` of that `CommandResult`. The list-all form returns `Recipes:` followed by one `N. name (calories kcal)` line per recipe, or `No recipes yet. Use 'add-recipe' to add one.` for an empty book. An empty book is therefore an error only when an index was requested.
 
 #### Invalid input and recovery
 
@@ -988,34 +983,34 @@ The saved targets are used by `generate-plan`. For every nutrient that the `gene
 
 `Parser` owns one `TargetSettings` object and passes it to `SetTargetsCommand`, `ViewTargetsCommand`, and `GeneratePlanCommand`, in the same way that it shares `DietarySettings`. `TargetSettings` holds one immutable `NutritionTargets`, which is empty at the start. `SetTargetsParser` turns the arguments into a `TargetChanges`, and `Nutrient` names the four nutrients with their prefix, label, and unit, so the parser, the merge, and the display loop over one list instead of repeating four near-identical branches.
 
-![Selected classes and relationships for daily targets.](images/targets/classes.svg)
+![Selected classes and relationships for setting and viewing daily targets.](images/targets/classes.svg)
 
-![Classes that parse saved-target changes.](images/targets/target-parsing-classes.svg)
-
-![Stored daily target values and changes.](images/targets/target-values.svg)
-
-*Only feature-relevant members are shown. Dashed arrows show dependencies or interface realization; solid arrows show stored references.*
+*Only feature-relevant members are shown. Dashed arrows with an open head are dependencies; dashed arrows with a hollow triangle are interface realization; solid arrows are associations with role names and multiplicities. `Parser` creates the one `TargetSettings` and shares it with the commands.*
 
 `TargetChanges` records, for each nutrient the user mentioned, either a new value or `Optional.empty()` for "remove". Nutrients that were not mentioned are absent from its map. This three-way distinction (keep, replace, remove) cannot be expressed with `NutritionTargets` alone, where `null` already means "no target".
 
 #### Setting targets
 
-The sequence below shows `set-targets cal/2000 p/none`.
+The activity diagram shows how `set-targets` treats each token, including every way it can be rejected.
 
-![Parsing and execution of set-targets.](images/targets/set-targets.svg)
+![Activity diagram of the set-targets workflow.](images/targets/flow.svg)
 
-*All parsing succeeds before the command updates the shared target settings.*
+*Diamonds are decisions, with their guards in square brackets. A rejected command leaves the saved targets unchanged.*
 
-Invalid parsing is shown separately so both parser activations end at their exception returns.
+The next two sequence diagrams follow `set-targets cal/2000 p/none`, first parsing and then execution.
 
-![Invalid set-targets input is rejected before a command is created.](images/targets/set-targets-invalid.svg)
+![Sequence for parsing set-targets.](images/targets/parsing.svg)
+
+*Parsing succeeds completely before any command exists, so a bad token never changes the saved targets. The `X` marks `SetTargetsParser`, which is no longer used once it has returned the changes.*
 
 `SetTargetsParser` reads each whitespace-separated token as `PREFIX/VALUE`. Prefixes are case-sensitive, like every other prefix, and `none` is accepted in any letter case, as for `food/none`. A value must consist of digits only and fit in an `int`; zero is rejected. The parser validates all tokens before creating a `TargetChanges`, and `Parser.parseSetTargets` wraps any `IllegalArgumentException` in a `MishMashException` that ends with the set-targets format. A command object is created only if every token is valid, so a bad command can never partly change the saved targets.
 
 Once parsing succeeds, execution reads the saved targets, applies the validated changes, and stores
 the replacement value.
 
-![Applying validated target changes.](images/targets/set-targets-update.svg)
+![Sequence for executing set-targets.](images/targets/set-targets.svg)
+
+*The execution diagram refers to the parsing diagram with a `ref` frame.*
 
 `SetTargetsCommand.execute` reads the saved targets, asks `TargetChanges.applyTo` for the updated targets, and stores them. `applyTo` builds a new `NutritionTargets` and does not modify the old one. The reply lists every target now saved, or says `All daily targets cleared.` when none remain, and reminds the user that an existing plan is unchanged.
 
@@ -1023,18 +1018,11 @@ the replacement value.
 
 ![Classes that apply saved targets during plan generation.](images/targets/generate-classes.svg)
 
+*Each association is drawn once, as a line with its role name and multiplicity, not also as an attribute.*
+
 ![How generate-plan combines typed and saved targets.](images/targets/generate-plan.svg)
 
-*This scenario shows successful generation with saved targets contributing to the effective request.*
-
-The plan-generation and publication part is shown separately from target merging.
-
-![Generating and publishing the effective request.](images/targets/generate-plan-publish.svg)
-
-Generation failure is a separate interaction. The planner activation ends when it throws, and
-`ActiveMealPlan.setGenerated` is never called.
-
-![Failed plan generation leaves the active plan unchanged.](images/targets/generate-plan-failure.svg)
+*The `opt` frame runs only when something is saved. The command creates a `DietaryPlanner` for each execution and does not use it afterwards. If no acceptable plan exists, `generate` throws and `ActiveMealPlan.setGenerated` is never called, so the previous plan stays active.*
 
 `GeneratePlanCommand` reads `TargetSettings` when it executes, not when it is created, so a `set-targets` entered after parsing but before execution is respected, exactly as for dietary preferences. If nothing is saved, the request is used unchanged, so behaviour without `set-targets` is identical to before. Otherwise `NutritionTargets.overriddenBy` merges the typed targets over the saved ones and the command builds an effective `GeneratePlanRequest`.
 
@@ -1125,7 +1113,8 @@ Figure 17 separates command collaborators from the stored model relationships.
 ![Figure 17b. Meal-recording model relationships.](images/record-meal/model-classes.svg)
 
 *Figure 17: Only members relevant to this enhancement are shown. Solid arrows are navigable
-associations with private role names; dashed arrows show dependencies or interface realization.
+associations with private role names and multiplicities; dashed arrows with an open head show
+dependencies, and dashed arrows with a hollow triangle show interface realization.
 `NutritionTotals` is the existing value record that `DayPlan` also uses for daily totals, and `MealLog`
 reuses it; its values are `long` so that adding many recipes cannot overflow.*
 
@@ -1154,9 +1143,10 @@ Figure 18b starts with the command returned by parsing and follows its successfu
 
 ![Figure 18b. Recording and displaying the selected meal.](images/record-meal/record-meal.svg)
 
-*Figure 18: Parsing returns a command without reading application data. The inherited confirmation
-step is omitted because the command returns an empty `Optional`. Invalid indexes are described below
-rather than combined with either successful interaction.*
+*Figure 18: Parsing returns a command without reading application data, and Figure 18b refers to it
+with a `ref` frame. The inherited confirmation step is omitted because the command returns an empty
+`Optional`. Invalid indexes are described below rather than combined with either successful
+interaction. The `X` marks objects that are no longer used once the command has returned.*
 
 `Parser` checks that the argument is a single positive whole number. A missing, non-numeric, signed,
 zero or extra argument is rejected with the usage line `Format: record-meal INDEX`; nothing is read or
@@ -1165,8 +1155,10 @@ changed. The command is created only after validation succeeds.
 During execution the command converts the index to a zero-based position, as `DeleteRecipeCommand`
 does, and looks the recipe up in the `RecipeBook` passed to `execute`. If the book is empty or the index
 exceeds the number of recipes, it throws a `MishMashException` and nothing is recorded. Otherwise it calls
-`MealLog.record(recipe)` and `MealLog.getTotals()`, then asks `MealLogViewer.viewRecorded` to format the
-recorded meal's calories and macros with the running totals, so the user sees the effect immediately.
+`MealLog.record(recipe)`, creates a `MealLogViewer`, reads `MealLog.getTotals()`, and asks
+`MealLogViewer.viewRecorded` to format the recorded meal's calories and macros with the running totals,
+so the user sees the effect immediately. The viewer is created before the totals are read because Java
+evaluates the object a method is called on before that method's arguments.
 Recording a meal needs no confirmation: it is quick to repeat, and it changes only the log.
 
 #### Viewing recorded meals and totals
@@ -1178,14 +1170,20 @@ empty-log result is described below.*
 
 `view-meals` takes no arguments; any argument is rejected with its usage line. `ViewMealsCommand` reads
 the meals from the `MealLog`. An empty log is a valid state, not an error, so the command returns
-`No meals recorded yet.` Otherwise it asks the log for the totals and delegates formatting to
-`MealLogViewer`. Each meal appears with its own calories and macros, followed by one totals line. Viewing
+`No meals recorded yet.` Otherwise it creates a `MealLogViewer`, asks the log for the totals and delegates
+formatting to the viewer. Each meal appears with its own calories and macros, followed by one totals line. Viewing
 never changes the log.
 
 #### Invalid input and recovery
 
 The recoverable errors reuse the existing path: `Parser` or the command throws `MishMashException`,
 `MishMash.executeCommand` catches it, displays the message, and prompts for another command.
+Figure 20 shows where `record-meal` can be rejected; every rejection happens before the log changes.
+
+![Figure 20. Activity diagram of the record-meal workflow.](images/record-meal/flow.svg)
+
+*Figure 20: Diamonds are decisions, with their guards in square brackets. The first decision is made by
+`Parser`, the other two by `RecordMealCommand`.*
 
 | Boundary or invalid condition | Behavior |
 | --- | --- |
@@ -1229,7 +1227,7 @@ UC11 and UC12.
 
 #### Diagram maintenance
 
-The five editable diagram sources are under
+The six editable diagram sources are under
 [`docs/diagrams/record-meal`](diagrams/record-meal/README.md). Rendered SVGs are checked in under
 `docs/images/record-meal` so the diagrams display without a plugin. The source README gives the
 regeneration commands. Check every depicted call, branch and message against the code after any change, and

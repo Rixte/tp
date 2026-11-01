@@ -1,0 +1,35 @@
+@startuml
+!include style.iuml
+skinparam ConditionStyle InsideDiamond
+skinparam activityBackgroundColor #F5F8FC
+skinparam activityBorderColor #475569
+skinparam activityDiamondBackgroundColor #FFF9E8
+skinparam activityDiamondBorderColor #C4AC70
+title Workflow of record-meal INDEX
+
+start
+:User enters\nrecord-meal INDEX;
+if (Valid\nINDEX?) then ([no])
+  :Reject with the usage line\nFormat: record-meal INDEX;
+  stop
+else ([yes])
+endif
+if (Any\nrecipes?) then ([no])
+  :Reject: no recipes\nto record;
+  stop
+else ([yes])
+endif
+if (INDEX in\nrange?) then ([no])
+  :Reject: index must be\nbetween 1 and N;
+  stop
+else ([yes])
+endif
+:Add the recipe at INDEX\nto the meal log;
+:Show the recorded meal\nand the totals so far;
+stop
+
+legend bottom
+  Valid INDEX: one positive whole number. In range: INDEX does not exceed the recipe count.
+  A rejected command leaves the meal log unchanged.
+endlegend
+@enduml
