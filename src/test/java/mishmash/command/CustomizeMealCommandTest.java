@@ -1,6 +1,7 @@
 package mishmash.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -109,7 +110,8 @@ class CustomizeMealCommandTest {
     }
 
     @Test
-    void execute_reorderedAndRecasedIngredients_isNoOpAndPreservesGroceries() throws MishMashException {
+    void execute_reorderedAndRecasedIngredients_changesGroceriesBecauseAggregationIsExact()
+            throws MishMashException {
         GroceryItem tofu = new GroceryItem("Tofu", new BigDecimal("50"), "g");
         Recipe bowl = new Recipe("Bowl", 500, 20, 80, 10,
                 List.of(rice, tofu), FoodInfo.parseField("none"));
@@ -117,16 +119,20 @@ class CustomizeMealCommandTest {
         List<GroceryItem> groceries = List.of(rice, tofu);
         activePlan.setGenerated(plan, new GeneratePlanRequest(1, NutritionTargets.none()),
                 Optional.of(groceries));
-        List<GroceryItem> storedGroceries = activePlan.getGroceryList().orElseThrow();
-
         CommandResult result = command(1, 1,
                 new GroceryItem("tofu", new BigDecimal("50.0"), "G"),
                 new GroceryItem("RICE", new BigDecimal("100.00"), "g"))
                 .executeWithResult(recipeBook);
 
-        assertEquals(CommandResult.Status.NOTE, result.status());
-        assertSame(plan, activePlan.get().orElseThrow());
-        assertSame(storedGroceries, activePlan.getGroceryList().orElseThrow());
+        assertEquals(CommandResult.Status.DONE, result.status());
+        assertTrue(activePlan.get().orElseThrow().getDays().get(0).getPlannedMeals().get(0)
+                .hasCustomizedIngredients());
+        assertTrue(activePlan.getGroceryList().isEmpty());
+
+        new GenerateListCommand(activePlan).execute(recipeBook);
+        List<GroceryItem> regenerated = activePlan.getGroceryList().orElseThrow();
+        assertEquals(List.of("tofu", "RICE"), regenerated.stream().map(GroceryItem::getName).toList());
+        assertEquals(List.of("G", "g"), regenerated.stream().map(GroceryItem::getUnit).toList());
     }
 
     @Test
@@ -151,9 +157,14 @@ class CustomizeMealCommandTest {
         command(1, 1, tofu).execute(recipeBook);
         activePlan.setGroceryList(List.of(tofu));
 
-        String result = command(1, 1, rice).execute(recipeBook);
+        dietarySettings.set(new DietaryPreferences(Diet.VEGETARIAN, Set.of(), Set.of()));
 
-        assertTrue(result.startsWith("Meal 1 on Day 1 ingredients restored from its source recipe."));
+        CommandResult result = command(1, 1, rice).executeWithResult(recipeBook);
+
+        assertEquals(CommandResult.Status.DONE, result.status());
+        assertTrue(result.feedback().startsWith(
+                "Meal 1 on Day 1 ingredients restored from its source recipe."));
+        assertFalse(result.feedback().contains("not classified"));
         assertTrue(activePlan.get().orElseThrow().getDays().get(0).getPlannedMeals().stream()
                 .noneMatch(meal -> meal.hasCustomizedIngredients()));
         assertTrue(activePlan.getGroceryList().isEmpty());

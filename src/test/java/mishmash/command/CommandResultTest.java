@@ -19,10 +19,9 @@ class CommandResultTest {
     }
 
     @Test
-    void constructor_missingOrBlankValues_rejectsImmediately() {
+    void constructor_missingValuesRejectsAndBlankFeedbackRemainsRecoverableAtApplicationBoundary() {
         assertThrows(NullPointerException.class, () -> new CommandResult(null, CommandResult.Status.INFO));
         assertThrows(NullPointerException.class, () -> new CommandResult("feedback", null));
-        assertThrows(IllegalArgumentException.class,
-                () -> new CommandResult("  \t", CommandResult.Status.INFO));
+        assertEquals("  \t", new CommandResult("  \t", CommandResult.Status.INFO).feedback());
     }
 }

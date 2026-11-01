@@ -246,6 +246,9 @@ public class MishMash {
         if (result == null) {
             throw new MishMashException("The command did not return a result.");
         }
+        if (result.feedback().isBlank()) {
+            throw new MishMashException("The command did not return any feedback.");
+        }
         output.println(CliFormatter.feedback(result));
         LOGGER.fine(() -> "Completed " + command.getClass().getSimpleName());
     }

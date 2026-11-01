@@ -102,7 +102,7 @@ public final class CustomizeMealCommand implements Command {
         } else {
             result += System.lineSeparator() + "Run 'generate-list' to create groceries for the updated plan.";
         }
-        if (preferences.hasCategoryRestrictions()) {
+        if (updatedMeal.hasCustomizedIngredients() && preferences.hasCategoryRestrictions()) {
             return CommandResult.warning(result + System.lineSeparator()
                     + "Customized ingredient names are not classified for named-diet or avoided-category rules."
                     + System.lineSeparator()

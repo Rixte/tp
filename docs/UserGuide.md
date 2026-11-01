@@ -810,8 +810,8 @@ The previous grocery list was cleared. Run 'generate-list' to update it.
 The next `view-plan` marks the occurrence as `[custom ingredients]`. `generate-list` uses the replacement;
 `list-recipes` still shows the unchanged source recipe.
 
-With a named diet or avoided category active, the same successful change starts with `[WARN]` rather than
-`[DONE]` and adds:
+With a named diet or avoided category active, a successful change that leaves custom ingredients starts with
+`[WARN]` rather than `[DONE]` and adds:
 
 ```text
 Customized ingredient names are not classified for named-diet or avoided-category rules.
@@ -826,12 +826,14 @@ This meal keeps its source recipe's food categories; verify the replacement your
 - Nutrition remains the source recipe's entered nutrition. MishMash does not recalculate nutrition from
   ingredient names or quantities.
 - Named diets and avoided categories still use the source recipe's declared food tags because MishMash cannot
-  infer categories from ingredient names. When either rule is active, an accepted customization uses `[WARN]`
-  and asks you to verify the replacement. Current complete-name ingredient exclusions are checked against the
-  customized list before it is accepted.
-- Supplying ingredients equal to the source recipe restores that occurrence to the source list. Reordering or
-  recasing the current effective ingredients changes nothing, preserves an existing grocery snapshot, and
-  reports `[NOTE]`.
+  infer categories from ingredient names. When either rule is active, an accepted custom ingredient list uses
+  `[WARN]` and asks you to verify the replacement. Restoring the exact source list uses `[DONE]` because no
+  unclassified customization remains. Current complete-name ingredient exclusions are checked before a change
+  is accepted.
+- Supplying ingredients exactly equal to the source recipe restores that occurrence to the source list.
+  Ingredient order, name capitalization, and unit capitalization are significant because grocery aggregation
+  also treats those values as distinct. Reordering or recasing therefore creates a customization and clears
+  stale groceries. Decimal quantities that differ only in scale, such as `100` and `100.0`, remain equal.
 - A successful change clears generated groceries because their quantities are stale. Run `generate-list` again.
 
 **Errors and Recovery:**

@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Carries command feedback together with its explicit presentation status.
  *
- * @param feedback The nonblank user-facing message.
+ * @param feedback The user-facing message, validated by the application before display.
  * @param status The semantic outcome used by the console formatter.
  */
 public record CommandResult(String feedback, Status status) {
@@ -27,14 +27,10 @@ public record CommandResult(String feedback, Status status) {
      * Validates a command result at its construction boundary.
      *
      * @throws NullPointerException If feedback or status is null.
-     * @throws IllegalArgumentException If feedback is blank.
      */
     public CommandResult {
         Objects.requireNonNull(feedback, "feedback");
         Objects.requireNonNull(status, "status");
-        if (feedback.isBlank()) {
-            throw new IllegalArgumentException("Command feedback must not be blank.");
-        }
     }
 
     /** Returns a successful state-changing result. */

@@ -187,7 +187,7 @@ class MishMashSessionTest {
 
     @TestFactory
     Stream<DynamicTest> run_brokenCommandContract_displaysErrorAndKeepsRecipesForNextCommand() {
-        return Stream.of("command", "confirmationPrompt", "command feedback")
+        return Stream.of("command", "confirmationPrompt", "command feedback", "blank command feedback")
                 .map(contract -> DynamicTest.dynamicTest(contract, () -> {
                     Command command = brokenCommand(contract);
                     Parser parser = new Parser() {
@@ -202,6 +202,9 @@ class MishMashSessionTest {
                                 + "\nbad\nlist-recipes\nbye\n", parser, book);
 
                         assertInOrder(output, "New recipe added!", "Error: ", "1. Rice (200 kcal)", "Goodbye!");
+                        if (contract.equals("blank command feedback")) {
+                            assertTrue(output.contains("Error: The command did not return any feedback."));
+                        }
                         assertEquals(1, book.size());
                         assertEquals(1, logs.getRecords().stream()
                                 .filter(record -> record.getMessage().equals("Command rejected")
@@ -229,7 +232,7 @@ class MishMashSessionTest {
 
             @Override
             public String execute(RecipeBook recipeBook) {
-                return null;
+                return contract.equals("blank command feedback") ? "  \t" : null;
             }
         };
     }

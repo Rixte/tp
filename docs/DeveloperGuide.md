@@ -725,12 +725,14 @@ recipe values because the application has no ingredient-to-nutrition database.
 Dietary category checks continue to use the source recipe's declared `FoodInfo`; MishMash cannot infer whether
 an arbitrary replacement name belongs to a named-diet or avoided category. Ingredient-name exclusions use the
 effective planned-meal ingredients and are rejected before state changes. When category restrictions are active,
-an accepted customization returns `WARNING` and tells the user to verify the replacement. Later `set-diet`
-compatibility checks still inspect the source declaration together with effective ingredient exclusions.
+an accepted meal that still has custom ingredients returns `WARNING` and asks the user to verify the replacement.
+Restoring the source ingredients returns `DONE` because the resulting meal has no unclassified override. Later
+`set-diet` compatibility checks still inspect the source declaration together with effective ingredient
+exclusions.
 
-Ingredient equality is multiset-based: order, name case, unit case, and insignificant decimal scale do not create
-a change, while duplicate counts, quantities, and units remain significant. A semantic no-op preserves the plan
-and grocery snapshot and returns `NOTE`.
+Ingredient equality follows grocery aggregation: order, exact names, and exact units are significant, while
+numerically equal `BigDecimal` values may use different scales. Only an exact ordered match is a no-op that
+preserves the plan and grocery snapshot and returns `NOTE`; recasing or reordering creates an override.
 
 `CustomizeMealParserTest`, `IngredientCustomizationTest`, `CustomizeMealCommandTest`, and
 `CustomizeMealIntegrationTest` cover syntax, defensive copying, atomic failure, dietary conflicts, source
