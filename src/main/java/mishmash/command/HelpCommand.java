@@ -50,7 +50,7 @@ public class HelpCommand implements Command {
                 //@@author Rixte
                 ResetPlanCommand.COMMAND_WORD + " - Clear the current meal plan and its grocery list.",
                 ResetPlanCommand.USAGE,
-                "Recipes, dietary preferences, and recorded meals are kept.",
+                "Recipes, dietary preferences, saved daily targets, and recorded meals are kept.",
                 "",
                 //@@author
                 CheckShortfallCommand.COMMAND_WORD
