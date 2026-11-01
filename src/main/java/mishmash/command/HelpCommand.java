@@ -47,6 +47,14 @@ public class HelpCommand implements Command {
                 Parser.CUSTOMIZE_MEAL_USAGE,
                 "Quantities describe one portion. Source recipes and nutrition values are unchanged.",
                 "",
+                //@@author neil0618
+                ReplaceMealCommand.COMMAND_WORD
+                        + " - Replace one planned meal with a recipe from your recipe book.",
+                Parser.REPLACE_MEAL_USAGE,
+                "Day and meal numbers come from view-plan; recipe numbers come from list-recipes.",
+                "The new meal starts at 1 portion. It must fit your dietary preferences. Groceries are cleared.",
+                "",
+                //@@author
                 //@@author Rixte
                 ResetPlanCommand.COMMAND_WORD + " - Clear the current meal plan and its grocery list.",
                 ResetPlanCommand.USAGE,

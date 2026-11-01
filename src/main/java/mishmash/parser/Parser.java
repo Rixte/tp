@@ -28,6 +28,7 @@ import mishmash.command.GeneratePlanCommand;
 import mishmash.command.HelpCommand;
 import mishmash.command.ListRecipeCommand;
 import mishmash.command.RecordMealCommand;
+import mishmash.command.ReplaceMealCommand;
 import mishmash.command.ResetPlanCommand;
 import mishmash.command.SetDietCommand;
 import mishmash.command.SetTargetsCommand;
@@ -48,6 +49,7 @@ import mishmash.model.IngredientCustomization;
 import mishmash.model.MealEntryChanges;
 import mishmash.model.MealLog;
 import mishmash.model.MealPlan;
+import mishmash.model.MealReplacement;
 import mishmash.model.NutritionTargets;
 import mishmash.model.PortionAdjustment;
 import mishmash.model.Recipe;
@@ -101,6 +103,9 @@ public class Parser {
     public static final String VIEW_PLAN_USAGE = ViewPlanCommand.USAGE;
     public static final String ADJUST_PORTION_USAGE = AdjustPortionParser.USAGE;
     public static final String CUSTOMIZE_MEAL_USAGE = CustomizeMealParser.USAGE;
+    //@@author neil0618
+    public static final String REPLACE_MEAL_USAGE = ReplaceMealParser.USAGE;
+    //@@author
     //@@author Rixte
     public static final String RESET_PLAN_USAGE = ResetPlanCommand.USAGE;
     //@@author
@@ -127,7 +132,7 @@ public class Parser {
      */
     public static final String COMMAND_USAGE = String.join(System.lineSeparator(),
             ADD_RECIPE_USAGE, LIST_RECIPE_USAGE, EDIT_RECIPE_USAGE, DELETE_RECIPE_USAGE, GENERATE_PLAN_USAGE,
-            VIEW_PLAN_USAGE, ADJUST_PORTION_USAGE, CUSTOMIZE_MEAL_USAGE, ResetPlanCommand.HELP_TEXT,
+            VIEW_PLAN_USAGE, ADJUST_PORTION_USAGE, CUSTOMIZE_MEAL_USAGE, REPLACE_MEAL_USAGE, ResetPlanCommand.HELP_TEXT,
             CHECK_SHORTFALL_USAGE,
             GENERATE_LIST_USAGE, VIEW_LIST_USAGE,
             DietaryPreferencesParser.USAGE, "Format: view-diet", CLEAR_DIET_USAGE,
@@ -377,6 +382,11 @@ public class Parser {
         if (commandWord.equals(CustomizeMealCommand.COMMAND_WORD)) {
             return parseCustomizeMeal(arguments);
         }
+        //@@author neil0618
+        if (commandWord.equals(ReplaceMealCommand.COMMAND_WORD)) {
+            return parseReplaceMeal(arguments);
+        }
+        //@@author
         //@@author Rixte
         if (commandWord.equals(ResetPlanCommand.COMMAND_WORD)) {
             return parseResetPlan(arguments);
@@ -466,6 +476,25 @@ public class Parser {
             throw new MishMashException(e.getMessage(), CUSTOMIZE_MEAL_USAGE, e);
         }
     }
+
+    //@@author neil0618
+    /**
+     * Parses one meal replacement while deferring plan and recipe-book position checks until execution.
+     *
+     * @param arguments The day, meal, and recipe index fields.
+     * @return A command connected to the latest plan and dietary settings.
+     * @throws MishMashException If the syntax or a numeric value is invalid.
+     */
+    private Command parseReplaceMeal(String arguments) throws MishMashException {
+        try {
+            MealReplacement replacement = new ReplaceMealParser().parse(arguments);
+            return new ReplaceMealCommand(replacement, activeMealPlan, dietarySettings);
+        } catch (IllegalArgumentException e) {
+            LOGGER.fine("replace-meal rejected: invalid arguments");
+            throw new MishMashException(e.getMessage(), REPLACE_MEAL_USAGE, e);
+        }
+    }
+    //@@author
 
     /**
      * Parses a proposed dietary update and attaches command-specific usage to validation errors.

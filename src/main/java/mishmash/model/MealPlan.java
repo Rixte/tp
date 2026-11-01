@@ -61,6 +61,31 @@ public class MealPlan {
         return new MealPlan(updatedDays);
     }
 
+    //@@author neil0618
+    /**
+     * Returns a new plan with one selected meal swapped for another planned meal.
+     *
+     * @param dayIndex The zero-based day position to update.
+     * @param mealIndex The zero-based meal position within that day.
+     * @param replacement The planned meal to put in that position.
+     * @return A new plan, or this plan when the same planned meal is already there.
+     * @throws IndexOutOfBoundsException If either position does not exist.
+     * @throws NullPointerException If the replacement is null.
+     * @throws ArithmeticException If the changed daily nutrition cannot be represented as long values.
+     */
+    public MealPlan withReplacedMeal(int dayIndex, int mealIndex, PlannedMeal replacement) {
+        DayPlan currentDay = days.get(dayIndex);
+        DayPlan updatedDay = currentDay.withReplacedMeal(mealIndex, replacement);
+        if (updatedDay == currentDay) {
+            return this;
+        }
+
+        List<DayPlan> updatedDays = new ArrayList<>(days);
+        updatedDays.set(dayIndex, updatedDay);
+        return new MealPlan(updatedDays);
+    }
+    //@@author
+
     /**
      * Returns a new plan with one selected planned meal's complete ingredient replacement.
      *
