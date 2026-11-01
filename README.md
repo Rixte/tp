@@ -20,6 +20,13 @@ Prerequisites: JDK 25 (use the exact version), update Intellij to the most recen
 
 ## Testing
 
+The development build automatically retains user data in `data/mishmash.json` under the terminal's working
+directory. Restart the JAR from the same directory to restore recipes, preferences, targets, plans, groceries,
+and recorded meals. Keep the whole `data` folder when moving or backing up your data. See the
+[User Guide](docs/UserGuide.md#data-retention) for recovery and unsaved-change warnings.
+
+`./gradlew check` also builds the shadow JAR and tests retention by launching it twice in a temporary directory.
+
 ### JUnit tests
 
 * Tests live under `src/test/java/mishmash` and mirror the production packages. Run them with `./gradlew test` (`.\gradlew.bat test` on Windows).

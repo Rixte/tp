@@ -13,8 +13,13 @@ import java.util.logging.SimpleFormatter;
 import mishmash.command.Command;
 import mishmash.command.CommandResult;
 import mishmash.exception.MishMashException;
+import mishmash.model.ApplicationState;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
+import mishmash.storage.JsonSessionStorage;
+import mishmash.storage.LoadResult;
+import mishmash.storage.SessionPersistence;
+import mishmash.storage.StorageException;
 import mishmash.ui.CliFormatter;
 import mishmash.ui.ConsoleInput;
 import mishmash.ui.ConsoleInputs;
@@ -54,6 +59,7 @@ public class MishMash {
     private final PrintStream output;
     private final Parser parser;
     private final RecipeBook recipeBook;
+    private SessionPersistence persistence;
 
     /**
      * Creates an application session without changing global console streams or logging configuration.
@@ -91,7 +97,17 @@ public class MishMash {
      * @param args Command-line arguments, which are not used.
      */
     public static void main(String[] args) {
-        main(args, "mishmash.%g.log");
+        try (JsonSessionStorage storage = JsonSessionStorage.open(JsonSessionStorage.DEFAULT_DATA_FILE)) {
+            LoadResult loaded = storage.load();
+            loaded.warning().ifPresent(message -> System.out.println(
+                    CliFormatter.feedback(CommandResult.warning(message))));
+            ApplicationState state = loaded.state();
+            runMain("mishmash.%g.log", new Parser(state), state.getRecipeBook(),
+                    new SessionPersistence(state, storage));
+        } catch (StorageException e) {
+            LOGGER.log(Level.FINE, "Storage startup or cleanup failed", e);
+            System.out.println(CliFormatter.error(e.getMessage()));
+        }
     }
 
     /**
@@ -101,12 +117,19 @@ public class MishMash {
      * @param logPattern The rotating log destination.
      */
     static void main(String[] args, String logPattern) {
+        runMain(logPattern, new Parser(), new RecipeBook(), null);
+    }
+
+    /** Runs the launcher with explicit state; legacy test launchers remain isolated from disk. */
+    private static void runMain(String logPattern, Parser parser, RecipeBook recipes,
+            SessionPersistence persistence) {
         Level originalLogLevel = APP_LOGGER.getLevel();
         boolean wasUsingParentHandlers = APP_LOGGER.getUseParentHandlers();
         FileHandler logFile = configureLogging(logPattern);
         boolean hasStarted = false;
         try (ConsoleInput input = ConsoleInputs.open()) {
-            MishMash session = new MishMash(input, System.out, new Parser(), new RecipeBook());
+            MishMash session = new MishMash(input, System.out, parser, recipes);
+            session.persistence = persistence;
             hasStarted = true;
             session.run();
         } catch (RuntimeException | AssertionError e) {
@@ -178,11 +201,13 @@ public class MishMash {
             Optional<String> nextLine = input.readCommand(CliFormatter.commandPrompt());
             if (nextLine.isEmpty()) {
                 LOGGER.fine("Console input ended");
+                flushPendingChanges();
                 return;
             }
             String commandLine = nextLine.get().trim();
             if (commandLine.equals("bye")) {
                 LOGGER.fine("Exit requested with bye");
+                flushPendingChanges();
                 output.println(CliFormatter.goodbye());
                 return;
             }
@@ -209,6 +234,14 @@ public class MishMash {
         } catch (MishMashException e) {
             LOGGER.log(Level.FINE, "Command rejected", e);
             displayError(e);
+        }
+    }
+
+    /** Retries unsaved changes before either normal exit route completes. */
+    private void flushPendingChanges() {
+        if (persistence != null) {
+            persistence.flush().ifPresent(message -> output.println(CliFormatter.feedback(
+                    CommandResult.warning("Exiting with unsaved changes. " + message))));
         }
     }
 
@@ -248,6 +281,9 @@ public class MishMash {
         }
         if (result.feedback().isBlank()) {
             throw new MishMashException("The command did not return any feedback.");
+        }
+        if (persistence != null) {
+            result = persistence.afterCommand(result);
         }
         output.println(CliFormatter.feedback(result));
         LOGGER.fine(() -> "Completed " + command.getClass().getSimpleName());

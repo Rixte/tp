@@ -511,7 +511,8 @@ class MishMashTest {
             System.setIn(new ByteArrayInputStream(new byte[0]));
             // A missing output stream makes session construction fail before run() can log anything.
             System.setOut(null);
-            NullPointerException error = assertThrows(NullPointerException.class, () -> MishMash.main(new String[0]));
+            NullPointerException error = assertThrows(NullPointerException.class,
+                    () -> MishMash.main(new String[0], "mishmash.%g.log"));
 
             assertEquals("output", error.getMessage());
             List<LogRecord> failures = recordingHandler.records.stream()
@@ -578,7 +579,7 @@ class MishMashTest {
         try (PrintStream capturedOutput = new PrintStream(output, true, StandardCharsets.UTF_8)) {
             System.setIn(input);
             System.setOut(capturedOutput);
-            MishMash.main(new String[0]);
+            MishMash.main(new String[0], "mishmash.%g.log");
         } finally {
             System.setIn(originalInput);
             System.setOut(originalOutput);

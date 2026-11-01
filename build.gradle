@@ -29,6 +29,8 @@ dependencies {
 }
 
 test {
+    dependsOn shadowJar
+    systemProperty 'mishmash.test.jar', layout.buildDirectory.file('libs/MishMash.jar').get().asFile.absolutePath
     useJUnitPlatform()
     // Exercise internal invariants during every test run as well as application runs.
     enableAssertions = true
@@ -92,6 +94,9 @@ jar {
 }
 
 shadowJar {
+    filesMatching('META-INF/services/**') {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
     archiveFileName = 'MishMash.jar'
     // Preserve terminal-provider service metadata when packaging dependencies.
     mergeServiceFiles()

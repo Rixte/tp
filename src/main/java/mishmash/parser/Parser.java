@@ -38,6 +38,7 @@ import mishmash.command.ViewTargetsCommand;
 import mishmash.exception.MishMashException;
 import mishmash.logic.MealPlanGenerator;
 import mishmash.model.ActiveMealPlan;
+import mishmash.model.ApplicationState;
 import mishmash.model.DietaryPreferences;
 import mishmash.model.DietarySettings;
 import mishmash.model.FoodInfo;
@@ -181,11 +182,11 @@ public class Parser {
      */
     private final ActiveMealPlan activeMealPlan;
     /** Shares session preferences without changing them during command parsing. */
-    private final DietarySettings dietarySettings = new DietarySettings();
+    private DietarySettings dietarySettings = new DietarySettings();
 
     //@@author neil0618
     /** Shares the saved daily targets between set-targets, view-targets and generate-plan. */
-    private final TargetSettings targetSettings = new TargetSettings();
+    private TargetSettings targetSettings = new TargetSettings();
     //@@author
 
     /**
@@ -200,6 +201,14 @@ public class Parser {
      */
     public Parser() {
         this(new MealPlanGenerator(new Random()), new ActiveMealPlan());
+    }
+
+    /** Connects all commands to one restored application state. */
+    public Parser(ApplicationState state) {
+        this(Objects.requireNonNull(state, "state").getMealLog(),
+                new MealPlanGenerator(new Random()), state.getActiveMealPlan());
+        dietarySettings = state.getDietarySettings();
+        targetSettings = state.getTargetSettings();
     }
 
     /**

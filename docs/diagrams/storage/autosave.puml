@@ -1,0 +1,28 @@
+@startuml
+participant "app:MishMash" as App
+participant "command:Command" as Command
+participant "persistence:SessionPersistence" as Persistence
+participant "storage:JsonSessionStorage" as Storage
+App -> Command : executeWithResult(recipeBook)
+activate Command
+Command --> App : result
+deactivate Command
+App -> Persistence : afterCommand(result)
+activate Persistence
+opt result is DONE or WARNING
+  Persistence -> Storage : save(state)
+  activate Storage
+  alt save succeeds
+    Storage --> Persistence : void
+  else save fails
+    Storage --> Persistence : throws StorageException
+  end
+  deactivate Storage
+end
+Persistence --> App : original result or unsaved-change warning
+deactivate Persistence
+note over App
+  Display feedback after the save attempt.
+  Retry dirty state before bye or end-of-input exit.
+end note
+@enduml

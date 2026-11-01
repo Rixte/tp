@@ -8,7 +8,7 @@ import java.util.Objects;
  *
  * <p>This follows {@link DietarySettings}: one instance is shared by the commands that need it, and the
  * targets are read when a command runs, so a later {@code set-targets} is always respected. The
- * targets live in memory only and are lost when the application exits.</p>
+ * storage layer retains these targets across application sessions.</p>
  */
 public final class TargetSettings {
     /** Immutable targets shared by commands in this session; nothing is set at the start. */

@@ -4,7 +4,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 
 **Start Here:** [Set up and launch](#quick-start) · [Find a command](#command-summary) · [View meals](#viewing-a-meal-plan) · [Check nutrition](#checking-nutrition-shortfalls) · [View groceries](#viewing-a-grocery-list) · [Record meals](#recording-a-meal) · [Fix a problem](#troubleshooting)
 
-**Release version:** The JAR currently published on the [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) is **v2.0**. The team has verified that this JAR matches the current source code described in this guide. Planned v2.0b features are labelled **Coming soon** below. Data lasts for one running session.
+**Release version:** The JAR currently published on the [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) is **v2.0**. The team has verified that this JAR matches the current source code described in this guide. Planned v2.0b features are labelled **Coming soon** below. The development build adds automatic data retention across sessions; build a new JAR to use it.
 
 
 ## Contents
@@ -31,7 +31,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
      cd "smoke-test/ip1"
      ```
 
-     Any relative data-file paths are resolved from the terminal's current folder. The current MishMash application keeps its data in memory and does not save it to disk.
+     Any relative data-file paths are resolved from the terminal's current folder. MishMash automatically stores user data in `data/mishmash.json` under that folder.
 
    - In the **same terminal**, confirm that Java 25 is selected:
 
@@ -92,7 +92,7 @@ MishMash confirms the addition and shows the recipe's nutrition and ingredients.
 bye
 ```
 
-> **Session Data:** Closing or restarting the current application clears the recipes, saved daily targets, meal plan, grocery list, and recorded meals. There is no save or load command.
+> **Retained Data:** User data is restored automatically when you restart from the same working directory. See [Data Retention](#data-retention).
 
 The opening screen includes a quick-command card for `help`, `list-recipes`, `generate-plan d/3`, and
 `view-plan`. These are examples you can enter directly after the `mishmash >` prompt.
@@ -212,7 +212,7 @@ Use `list-recipes` to find the new recipe's number.
 - Duplicate recipe names and identical recipes are accepted as separate recipes. Adding never replaces an existing recipe; use `edit-recipe INDEX` to change one.
 - Optional `food/` declares all applicable supported food categories, separated by commas, for example `food/poultry,soy,legume`. Enter `help` for the supported tags. Tags are not inferred from ingredient names. Use `food/none` only when none of the supported categories apply; do not combine `none` with other tags. Omitting `food/` displays `Food tags: Unclassified`, and unclassified recipes are excluded when dietary restrictions are active. `food/none` displays `Food tags: None declared`.
 - Adding a recipe does not change existing meal plans, grocery lists, or recorded meals. To use it in a plan, run `generate-plan` again, then `generate-list` for updated groceries.
-- Recipes are kept only for the current session and are lost when the application closes.
+- Recipes are saved automatically and restored on restart.
 
 **Errors and Recovery:**
 
@@ -1089,7 +1089,7 @@ followed by `Format: view-diet`. Retry with the command alone; session data is u
 <!-- @@author neil0618 -->
 ### Setting Daily Targets
 
-Saves your daily calorie, protein, carbohydrate, and fat targets for the rest of the session, so you do not have to type them every time you generate a meal plan. Each later [`generate-plan`](#generating-a-meal-plan) uses the saved targets for any nutrient you leave out of that command. Setting a target never changes a meal plan you have already generated.
+Saves your daily calorie, protein, carbohydrate, and fat targets across sessions, so you do not have to type them every time you generate a meal plan. Each later [`generate-plan`](#generating-a-meal-plan) uses the saved targets for any nutrient you leave out of that command. Setting a target never changes a meal plan you have already generated.
 
 **Before You Start:** None. You can set targets before or after adding recipes.
 
@@ -1551,7 +1551,7 @@ For a smaller correction, `edit-recipe 1 p/60` changes only the protein value.
 - Names can contain spaces and must not be blank. `/` is reserved for prefixes.
 - `food/` replaces the complete food-category declaration. Use the supported tags listed by `help`, such as `poultry`, `milk`, `egg`, or `soy`, separated by commas. Use `food/none` when none apply. Omitted `food/` preserves the old declaration, including an unclassified declaration. When changing ingredients, supply updated tags if the applicable categories change; tags are not inferred from ingredient names.
 - Editing preserves recipe indexes and the number of recipes. Existing plans, nutrition shortfall results, and groceries continue to use the recipes chosen when the plan was generated. To use edited recipes, run `generate-plan` again, followed by `generate-list`. Running only `generate-list` still uses the existing plan.
-- Edits are held for the current session and are lost when the app closes.
+- Edits are saved automatically for later sessions.
 
 **Errors and recovery:** Invalid edits leave the recipe unchanged; correct the command and try again.
 
@@ -1599,7 +1599,7 @@ mishmash > view-plan
 ```
 
 The original plan remains available. There is no undo after an agreed change. Closing the application
-still ends the session and discards its in-memory data.
+ends the session after retrying any unsaved changes.
 <!-- @@author -->
 
 
@@ -1663,7 +1663,38 @@ These features are planned under the v2.0b milestone and are **not implemented i
 
 Other v2.0b stories already have support in this checkout, including resetting a plan, confirming plan changes,
 viewing dietary preferences, and clearing dietary restrictions. Their existing instructions describe that support.
-Persistence is not labelled Coming soon here because issue #51's intended scope still needs clarification.
+Automatic local persistence is implemented in the development build; see [Data Retention](#data-retention).
+
+### Data Retention
+
+The development build saves recipes, dietary preferences and exclusions, daily targets, the active plan and
+its original targets, portion counts, custom ingredients, generated groceries, and recorded meal snapshots.
+The greeting name and interactive command history are not retained. Build the updated JAR before using this
+feature; an older downloaded release may still use session-only data.
+
+Data is saved automatically after a completed change. Start `java -jar "MishMash.jar"` from the same terminal
+working directory next time. The file is `data/mishmash.json` under that directory, even if the JAR itself is
+elsewhere. Launching from another directory starts a separate data set. No manual save/load command is needed.
+
+The data folder also contains `mishmash.backup.json` (the previous valid snapshot) and `mishmash.lock`. Only one
+MishMash instance can use a data folder at a time. Close the first instance before launching another. A leftover
+lock file is harmless: the operating system releases the actual lock when the process ends.
+
+If the primary file is damaged or unsupported, MishMash tries the backup and displays `[WARN]`. Invalid files
+are preserved under unique names containing `corrupt`, a timestamp, and a random identifier. If neither file
+is valid, MishMash preserves both and starts empty with a warning. If files cannot be read or preserved safely,
+startup stops with `[ERROR]`. Keep the entire data folder when reporting a recovery problem.
+
+If a save fails, `[WARN]` explicitly says that changes remain in memory and are unsaved. Check available disk
+space and folder permissions. MishMash retries after the next successful change and on `bye` or end-of-input.
+An exit warning means the latest changes may be lost; the last successfully saved snapshot remains available.
+Autosave reduces crash-related loss but cannot guarantee survival of hardware failure or forced termination
+during a write. The fallback on filesystems without atomic replacement uses the backup for recovery.
+
+To back up or move your data, close MishMash and copy the whole data folder. To start completely empty, close
+all instances and move the data folder to a safe backup location, then relaunch. Moving only the primary file
+will cause the remaining backup to be restored. Saved files are local plain text, so protect the folder like
+other personal files and avoid editing JSON by hand. Files larger than 10 MiB are rejected for safety.
 
 ### Exiting MishMash
 
@@ -1673,7 +1704,7 @@ Enter:
 bye
 ```
 
-MishMash displays `Goodbye!` and closes. In the current application, all session data is cleared when the application exits.
+MishMash retries unsaved changes, displays `Goodbye!`, and closes. Check any `[WARN]` messages before leaving.
 
 
 ## Frequently Asked Questions
@@ -1684,7 +1715,7 @@ No. Follow [Quick Start](#quick-start), then use [Command Summary](#command-summ
 
 **Will my recipes still be here next time?**
 
-No. The current application keeps data only for the running session. Restarting starts a fresh session.
+Yes. Restart from the same working directory to restore your recipes and other saved data automatically.
 
 **Does viewing generate new meals or ingredients?**
 
@@ -1700,7 +1731,7 @@ The meal plan, created by `generate-plan`, is what you intend to eat. Recorded m
 
 **Can I remove a meal I recorded by mistake?**
 
-Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or servings, and [`delete-meal`](#deleting-a-recorded-meal) to remove it. Restarting MishMash clears all recorded meals.
+Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or servings, and [`delete-meal`](#deleting-a-recorded-meal) to remove it. Corrections and deletions are saved automatically across restarts.
 
 <!-- TEAM: Confirm the release download link, actual JAR filename, feature availability, sample workflow, and storage behavior before publishing. Remove unfinished fields and owner comments from the release guide. -->
 
@@ -1708,7 +1739,7 @@ Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or 
 
 ## Known Issues
 
-- **Session-only data:** Recipes, dietary settings, daily targets, plans, groceries, and recorded meals are cleared on exit. There is no save, load, or data-transfer command.
+- **Local data:** Autosave uses the current working directory. Cloud synchronization and import/export commands are unavailable.
 - **Meal-log limitations ([Coming soon in v2.0b](#upcoming-v20b-features-coming-soon)):** Recorded meals have no dates or editable serving quantities. Individual entries cannot be corrected or removed.
 - **Planning limitations ([Coming soon in v2.0b](#upcoming-v20b-features-coming-soon)):** There is no command to replace one planned meal. Use `adjust-portion` for whole-recipe portion counts and `customize-meal` for occurrence-specific ingredients. Edit the source recipe and regenerate the plan and groceries for other changes; existing snapshots keep their earlier values.
 - **Grocery limitations:** Units are not converted and `[ ]` markers cannot be ticked off.
@@ -1793,4 +1824,4 @@ Click a task to jump directly to its instructions. The commands below are suppor
 | [Correct a recorded meal](#correcting-a-recorded-meal) | `edit-meal MEAL_NUMBER [date/YYYY-MM-DD] [s/SERVINGS]` | Supply at least one field. |
 | [Delete a recorded meal](#deleting-a-recorded-meal) | `delete-meal MEAL_NUMBER` | Asks for confirmation. |
 | [Show command help](#viewing-available-commands-help) | `help` | No prerequisites. |
-| [Exit](#exiting-mishmash) | `bye` | Session data will be cleared. |
+| [Exit](#exiting-mishmash) | `bye` | Unsaved data is retried before exit. |
