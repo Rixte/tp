@@ -110,6 +110,7 @@ The logic covers command parsing, application actions, and generation. It suppor
 | `view-plan` | Display the active meal plan or one selected day. |
 | `adjust-portion` | Change one planned meal's positive whole-recipe portion count. |
 | `customize-meal` | Replace one planned meal occurrence's ingredients without editing its recipe. |
+| `replace-meal` | Replace one planned meal with a recipe chosen by its displayed index, subject to dietary preferences. |
 | `check-shortfall` | Compare each planned day's nutrition with explicit daily targets and report deficits. |
 | `generate-list` | Generate groceries for the active meal plan. |
 | `view-list` | Display the generated grocery list. |
@@ -735,6 +736,35 @@ preserves the plan and grocery snapshot and returns `NOTE`; recasing or reorderi
 `CustomizeMealIntegrationTest` cover syntax, defensive copying, atomic failure, dietary conflicts, source
 recipe isolation, portion composition, display markers, and grocery quantities. Existing recipe parsing tests
 protect the shared `IngredientParser` behavior.
+
+<!-- @@author -->
+
+<!-- @@author neil0618 -->
+### Replacing a planned meal
+
+`replace-meal d/DAY m/MEAL r/RECIPE_INDEX` swaps one planned meal for a recipe chosen from the recipe book.
+`ReplaceMealParser` mirrors `AdjustPortionParser`: it accepts the three required prefixes in any order, rejects
+duplicates, unknown prefixes, and non-positive or overflowing numbers, and creates an immutable
+`MealReplacement`. Bounds against the current plan and recipe book are deferred until
+`ReplaceMealCommand.execute`, so parsing does not read or mutate session state.
+
+`ReplaceMealCommand` receives the shared `ActiveMealPlan` and `DietarySettings` and checks, in order: an active
+plan, the day, the meal, and the recipe index (using the displayed one-based position, since recipes can share
+names). Choosing the recipe already in that slot at one portion with no customization returns a `NOTE` and
+changes nothing. Otherwise `DietaryPreferences.isAllowed(recipe)` must pass, so a manual choice cannot bypass the
+profile saved by `set-diet`; unclassified recipes are rejected while restrictions are active.
+
+The update path is copy-on-write like the other plan edits: `MealPlan.withReplacedMeal` replaces only the
+selected `DayPlan`, and `DayPlan.withReplacedMeal` replaces only the selected `PlannedMeal` with
+`PlannedMeal.onePortionOf(recipe)`. This deliberately drops the old meal's portion count and ingredient
+customization, which belonged to the old recipe. Exact addition in `DayPlan` rejects nutrition overflow before
+publication and the command reports it as a `MishMashException`. `ActiveMealPlan.update` then keeps the original
+`GeneratePlanRequest` and clears the grocery snapshot, so a failed replacement preserves the plan, request, and
+groceries.
+
+`ReplaceMealParserTest`, `ReplaceMealModelTest`, `ReplaceMealCommandTest`, and `ReplaceMealIntegrationTest` cover
+syntax, position validation, dietary conflicts, the no-op case, atomic failure, overflow, viewing, and grocery
+generation.
 
 <!-- @@author -->
 
@@ -1859,7 +1889,7 @@ This is a source-checkout audit against the [v2.0b milestone](https://github.com
 | `**` | User with dietary requirements | View my dietary settings | Check which restrictions apply to generation | [#71](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/71) | Implemented: `view-diet`. |
 | `**` | User with dietary requirements | Clear my dietary restrictions | Generate meals without restrictions | [#72](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/72) | Implemented: `clear-diet`. |
 | `**` | Meal prep user | Understand unsuccessful generation | Know which recipes or settings to change | [#59](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/59) | Existing diagnostics and dietary-repair recovery; check issue acceptance before closing. |
-| `**` | Meal prep user | Replace an individual planned meal | Adapt a plan to what I want to eat | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) | Coming soon (v2.0b); no individual replacement command. |
+| `**` | Meal prep user | Replace an individual planned meal | Adapt a plan to what I want to eat | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) | Implemented: `replace-meal`; the replacement starts at one portion and must satisfy current dietary preferences. |
 | `**` | Meal prep user | Adjust a planned meal's portion | Match nutrition and grocery quantities to my serving | [#58](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/58) | Implemented: `adjust-portion`; whole-recipe portions only. |
 | `**` | Meal prep user | Customise one planned meal's ingredients | Adapt that meal without editing the original recipe | [#60](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/60) | Implemented: `customize-meal`; source recipes remain unchanged. |
 | `**` | User tracking intake | Review recorded meals by date | Understand my intake for a selected day | [#62](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/62) | Coming soon (v2.0b); records have no dates. |

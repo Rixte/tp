@@ -139,8 +139,9 @@ To track what you actually eat, use this separate sequence at any time after add
 | Prefix or Abbreviation | Meaning |
 | --- | --- |
 | `n/` | Recipe name. |
-| `d/` | Number of days for `generate-plan`; a day number for `view-plan` or `adjust-portion`. |
-| `m/` | Meal number within a selected day for `adjust-portion`. |
+| `d/` | Number of days for `generate-plan`; a day number for `view-plan`, `adjust-portion`, `customize-meal`, or `replace-meal`. |
+| `m/` | Meal number within a selected day for `adjust-portion`, `customize-meal`, or `replace-meal`. |
+| `r/` | Recipe number from `list-recipes` for `replace-meal`. |
 | `portions/` | Positive whole-recipe portion count for `adjust-portion`. |
 | `cal/`, `kcal` | Calories, measured in kilocalories. |
 | `p/`, `P` | Protein, measured in grams. |
@@ -157,7 +158,7 @@ To track what you actually eat, use this separate sequence at any time after add
 
 Type `help` to see every supported command, its purpose, and its syntax. This includes
 `add-recipe`, `list-recipes`, `edit-recipe`, `delete-recipe`, `generate-plan`, `view-plan`, `adjust-portion`,
-`customize-meal`, `reset-plan`,
+`customize-meal`, `replace-meal`, `reset-plan`,
 `check-shortfall`, `generate-list`, `view-list`, `set-diet`, `view-diet`, `clear-diet`, `set-targets`,
 `view-targets`, `record-meal`, `view-meals`, `edit-meal`, `delete-meal`, `help`, and `bye`.
 The `help` command takes no arguments.
@@ -859,6 +860,67 @@ This meal keeps its source recipe's food categories; verify the replacement your
 | Replacement contains an excluded ingredient | `Those ingredients conflict with your current dietary preferences.` | Choose permitted ingredients or update your dietary settings. |
 
 Every rejected customization preserves the plan, generation settings, and grocery snapshot.
+
+<!-- @@author neil0618 -->
+### Replacing a Planned Meal
+
+Swaps one meal in the active plan for a recipe from your recipe book. The new meal starts at one portion with
+the recipe's own ingredients, so any portion count or ingredient customization on the old meal is discarded.
+Other meals and days are untouched, and the recipe book is unchanged.
+
+**Before You Start:** Generate a plan and use `view-plan` to find its day and meal numbers. Use `list-recipes`
+to find the number of the recipe you want.
+
+**Format:**
+
+```text
+replace-meal d/DAY m/MEAL r/RECIPE_INDEX
+```
+
+**Example:**
+
+```text
+replace-meal d/1 m/2 r/3
+```
+
+**Example Output:**
+
+```text
+[DONE] Meal 2 on Day 1 replaced with Beans (300 kcal | P: 20g, C: 40g, F: 5g).
+The previous grocery list was cleared. Run 'generate-list' to update it.
+```
+
+The next `view-plan d/1` shows the new recipe at that position, and daily totals, excess warnings, and
+`check-shortfall` results use it.
+
+**Rules:**
+
+- Day, meal, and recipe values are positive whole numbers. Numbering starts at 1, and the recipe number is the
+  one shown by `list-recipes`.
+- Prefixes may appear in any order but each of `d/`, `m/`, and `r/` is required exactly once.
+- The recipe must satisfy your current dietary preferences. While any restriction is active, recipes without a
+  food-category declaration are rejected, as in `generate-plan`.
+- The same recipe may appear several times in a day.
+- A successful change clears any generated grocery list because its quantities are stale. Run
+  `generate-list` again before shopping.
+- Choosing the recipe that is already there, at one portion and with its original ingredients, changes nothing,
+  preserves the grocery list, and reports `[NOTE]` instead of `[DONE]`. If that meal has extra portions or
+  customized ingredients, the command resets it.
+
+**Errors and Recovery:**
+
+| Situation | Response | What to Do |
+| --- | --- | --- |
+| No active plan | `[NOTE] No active meal plan. Use 'generate-plan' first.` | Generate a plan, then retry. |
+| Day, meal, or recipe does not exist | An error states the valid one-based range. | Run `view-plan` or `list-recipes` and choose a displayed position. |
+| No recipes saved | `There are no recipes to choose from. Use 'add-recipe' to add one.` | Add a recipe, then retry. |
+| Recipe conflicts with dietary preferences | `Recipe N (NAME) conflicts with your current dietary preferences.` | Choose another recipe or update your dietary settings. |
+| Missing, repeated, unknown, zero, negative, decimal, or overflowing value | A specific error followed by the command format. | Supply each required prefix once with a positive whole number. |
+| Nutrition would exceed the supported numeric range | The replacement is rejected and existing plan data is preserved. | Choose a recipe with smaller nutrition values. |
+
+Every rejected replacement preserves the plan, its original generation settings, and any grocery snapshot.
+
+<!-- @@author -->
 
 <!-- @@author peilingggg -->
 ### Setting Dietary Preferences
@@ -1653,11 +1715,11 @@ Repeating the reset is safe. The command accepts no arguments: `reset-plan d/1` 
 
 ### Upcoming v2.0b Features: Coming soon
 
-These features are planned under the v2.0b milestone and are **not implemented in this checkout**. No command syntax is available yet.
+These features are planned under the v2.0b milestone. A feature marked **Implemented** is available in this checkout; any other feature is **not implemented** and has no command syntax yet.
 
 | Feature | Status | Tracking issue |
 | --- | --- | --- |
-| Replace one planned meal with another recipe | **Coming soon (v2.0b)** | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) |
+| Replace one planned meal with another recipe | **Implemented** as `replace-meal`; see [Replacing a Planned Meal](#replacing-a-planned-meal) | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) |
 
 Other v2.0b stories already have support in this checkout, including resetting a plan, confirming plan changes,
 viewing dietary preferences, and clearing dietary restrictions. Their existing instructions describe that support.
@@ -1744,7 +1806,7 @@ Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or 
 
 - **Local data:** Autosave uses the current working directory. Cloud synchronization and import/export commands are unavailable.
 - **Meal-log limitations ([Coming soon in v2.0b](#upcoming-v20b-features-coming-soon)):** Recorded meals have no dates or editable serving quantities. Individual entries cannot be corrected or removed.
-- **Planning limitations ([Coming soon in v2.0b](#upcoming-v20b-features-coming-soon)):** There is no command to replace one planned meal. Use `adjust-portion` for whole-recipe portion counts and `customize-meal` for occurrence-specific ingredients. Edit the source recipe and regenerate the plan and groceries for other changes; existing snapshots keep their earlier values.
+- **Planning limitations:** Use `replace-meal` to swap a whole planned meal, `adjust-portion` for whole-recipe portion counts, and `customize-meal` for occurrence-specific ingredients. Edit the source recipe and regenerate the plan and groceries for other changes; existing snapshots keep their earlier values.
 - **Grocery limitations:** Units are not converted and `[ ]` markers cannot be ticked off.
 
 See [Troubleshooting](#troubleshooting) for recovery steps.
@@ -1819,6 +1881,7 @@ Click a task to jump directly to its instructions. The commands below are suppor
 | [View one day](#viewing-a-meal-plan) | `view-plan d/1` | Choose a day in the active plan. |
 | [Adjust planned portions](#adjusting-a-planned-meals-portions) | `adjust-portion d/1 m/2 portions/2` | Use day and meal numbers from `view-plan`. |
 | [Customize planned ingredients](#customizing-a-planned-meals-ingredients) | `customize-meal d/1 m/2 i/Tofu:200g` | Supply the complete replacement list for that occurrence. |
+| [Replace a planned meal](#replacing-a-planned-meal) | `replace-meal d/1 m/2 r/3` | Use day and meal numbers from `view-plan` and a recipe number from `list-recipes`. |
 | [Check nutrition shortfalls](#checking-nutrition-shortfalls) | `check-shortfall cal/2000 p/100` | Generate a plan first; supply at least one daily target. |
 | [Generate groceries](#generating-a-grocery-list) | `generate-list` | Generate a meal plan first. |
 | [View groceries](#viewing-a-grocery-list) | `view-list` | Generate a grocery list first. |
