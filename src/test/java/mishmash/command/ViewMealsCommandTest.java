@@ -4,12 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import mishmash.exception.MishMashException;
+import mishmash.model.MealEntry;
 import mishmash.model.MealLog;
 import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
@@ -23,6 +25,8 @@ class ViewMealsCommandTest {
     private static final String HEADER = "================ Recorded Meals ================";
     private static final String DIVIDER = "------------------------------------------------";
     private static final String FOOTER = "================================================";
+
+    private static final LocalDate MONDAY = LocalDate.of(2026, 3, 2);
 
     private final Recipe chickenRice = TestRecipes.recipe("Chicken and Rice", 650, 50, 70, 15);
     private final Recipe oatmeal = TestRecipes.recipe("Protein Oatmeal", 450, 35, 60, 8);
@@ -41,14 +45,14 @@ class ViewMealsCommandTest {
 
     @Test
     void execute_recordedMeals_listsEachMealAndTotals() {
-        log.record(chickenRice);
-        log.record(oatmeal);
+        log.record(new MealEntry(chickenRice, MONDAY, 1));
+        log.record(new MealEntry(oatmeal, MONDAY, 2));
         String expected = String.join(System.lineSeparator(),
                 HEADER,
-                "Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)",
-                "Meal 2: Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)",
+                "Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g) | 1 serving | 2026-03-02",
+                "Meal 2: Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-02",
                 DIVIDER,
-                "Total: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g",
+                "Total: 1550 kcal | Protein: 120g | Carbs: 190g | Fats: 31g",
                 FOOTER);
 
         assertEquals(expected, new ViewMealsCommand(log).execute(recipeBook));
@@ -91,8 +95,8 @@ class ViewMealsCommandTest {
     }
 
     @Test
-    void usage_namesTheCommandWithoutArguments() {
-        assertEquals("Format: view-meals", ViewMealsCommand.USAGE);
+    void usage_namesTheCommandAndItsOptionalDate() {
+        assertEquals("Format: view-meals [date/YYYY-MM-DD]", ViewMealsCommand.USAGE);
         assertEquals("view-meals", ViewMealsCommand.COMMAND_WORD);
     }
 }

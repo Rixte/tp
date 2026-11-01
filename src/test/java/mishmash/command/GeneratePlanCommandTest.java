@@ -133,7 +133,7 @@ class GeneratePlanCommandTest {
 
         assertTrue(e.getMessage().contains("recipe book is empty"));
         assertInstanceOf(IllegalArgumentException.class, e.getCause());
-        assertEquals(e.getMessage(), e.getCause().getMessage());
+        assertTrue(e.getExplanation().startsWith(e.getCause().getMessage()), e.getExplanation());
     }
 
     @Test

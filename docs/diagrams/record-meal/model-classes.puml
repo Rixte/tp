@@ -8,9 +8,23 @@ skinparam ranksep 55
 hide empty members
 
 class MealLog {
-  + record(recipe: Recipe): void
-  + getMeals(): List<Recipe>
+  + record(entry: MealEntry): void
+  + replace(index: int, entry: MealEntry): void
+  + remove(index: int): MealEntry
+  + getEntries(): List<MealEntry>
   + getTotals(): NutritionTotals
+  + getTotalsOn(date: LocalDate): NutritionTotals
+}
+class MealEntry <<record>> {
+  - recipe: Recipe
+  - date: LocalDate
+  - servings: int
+  + nutrition(): NutritionTotals
+  + with(changes: MealEntryChanges): MealEntry
+}
+class MealEntryChanges <<record>> {
+  - date: LocalDate
+  - servings: Integer
 }
 class NutritionTotals <<record>> {
   - calories: long
@@ -23,7 +37,10 @@ class RecipeBook {
 }
 class Recipe
 
-MealLog --> "0..*" Recipe : -meals
+MealLog --> "0..*" MealEntry : -entries
+MealEntry --> "1" Recipe : -recipe
+MealEntry ..> MealEntryChanges : reads
+MealEntry ..> NutritionTotals : creates
 RecipeBook --> "0..*" Recipe : -recipes
 MealLog ..> NutritionTotals : creates
 

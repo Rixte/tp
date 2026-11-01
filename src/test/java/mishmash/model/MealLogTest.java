@@ -54,7 +54,7 @@ class MealLogTest {
         MealLog log = new MealLog();
         log.record(oatmeal);
 
-        assertThrows(NullPointerException.class, () -> log.record(null));
+        assertThrows(NullPointerException.class, () -> log.record((Recipe) null));
         assertEquals(List.of(oatmeal), log.getMeals());
     }
 

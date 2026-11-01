@@ -5,12 +5,12 @@ skinparam activityBackgroundColor #F5F8FC
 skinparam activityBorderColor #475569
 skinparam activityDiamondBackgroundColor #FFF9E8
 skinparam activityDiamondBorderColor #C4AC70
-title Workflow of record-meal INDEX
+title Workflow of record-meal INDEX [date/YYYY-MM-DD] [s/SERVINGS]
 
 start
-:User enters\nrecord-meal INDEX;
-if (Valid\nINDEX?) then ([no])
-  :Reject with the usage line\nFormat: record-meal INDEX;
+:User enters\nrecord-meal INDEX [date/...] [s/...];
+if (Valid\nINDEX and\nfields?) then ([no])
+  :Reject with the\nrecord-meal usage line;
   stop
 else ([yes])
 endif
@@ -24,12 +24,12 @@ if (INDEX in\nrange?) then ([no])
   stop
 else ([yes])
 endif
-:Add the recipe at INDEX\nto the meal log;
+:Add an entry for the recipe\nat INDEX to the meal log;
 :Show the recorded meal\nand the totals so far;
 stop
 
 legend bottom
-  Valid INDEX: one positive whole number. In range: INDEX does not exceed the recipe count.
+  Valid: INDEX is one positive whole number, the date is real and not in the future, and servings are 1 to 100. In range: INDEX does not exceed the recipe count.
   A rejected command leaves the meal log unchanged.
 endlegend
 @enduml

@@ -168,13 +168,23 @@ public class MealPlanGenerator {
     private List<DayPlan> buildCandidates(List<Recipe> recipes) {
         assert recipes.size() >= MEALS_PER_DAY
                 : "Recipe count should have been validated before building candidates";
-        int recipeCount = recipes.size();
-        long combinationCount = (long) recipeCount * (recipeCount - 1) * (recipeCount - 2)
-                / TRIPLE_PERMUTATION_COUNT;
-        if (combinationCount <= MAX_CANDIDATES) {
+        if (checksEveryCombination(recipes.size())) {
             return enumerateCandidates(recipes);
         }
         return sampleCandidates(recipes);
+    }
+
+    /**
+     * Returns whether target-based generation checks every combination of this many recipes,
+     * rather than a random sample, so that a failure proves no valid combination exists.
+     *
+     * @param recipeCount The number of recipes available.
+     * @return True if the number of 3-recipe combinations is at most {@link #MAX_CANDIDATES}.
+     */
+    public static boolean checksEveryCombination(int recipeCount) {
+        long combinationCount = (long) recipeCount * (recipeCount - 1) * (recipeCount - 2)
+                / TRIPLE_PERMUTATION_COUNT;
+        return combinationCount <= MAX_CANDIDATES;
     }
 
     //@@author GauthamNandi

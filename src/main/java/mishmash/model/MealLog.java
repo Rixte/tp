@@ -1,5 +1,6 @@
 package mishmash.model;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -13,24 +14,66 @@ import java.util.Objects;
  * The log is kept in memory only and is not saved to disk.</p>
  */
 public class MealLog {
-    private final List<Recipe> meals = new ArrayList<>();
+    private final List<MealEntry> entries = new ArrayList<>();
 
     /**
-     * Adds a meal to the end of the log. Recording the same recipe twice keeps two entries.
+     * Adds one serving of a recipe, eaten today, to the end of the log.
+     * Recording the same recipe twice keeps two entries.
      *
      * @param recipe The recipe that was eaten.
      * @throws NullPointerException If the recipe is null.
      */
     public void record(Recipe recipe) {
-        meals.add(Objects.requireNonNull(recipe, "recipe"));
+        record(new MealEntry(recipe, LocalDate.now(), 1));
     }
 
     /**
-     * Returns a read-only snapshot of the recorded meals, oldest first.
+     * Adds an entry to the end of the log.
+     *
+     * @param entry The meal that was eaten.
+     * @throws NullPointerException If the entry is null.
+     */
+    public void record(MealEntry entry) {
+        entries.add(Objects.requireNonNull(entry, "entry"));
+    }
+
+    /**
+     * Replaces the entry at a position, keeping its place in the log so other meal numbers do not change.
+     *
+     * @param index The zero-based position.
+     * @param entry The corrected entry.
+     * @throws NullPointerException If the entry is null.
+     * @throws IndexOutOfBoundsException If the position does not exist.
+     */
+    public void replace(int index, MealEntry entry) {
+        entries.set(index, Objects.requireNonNull(entry, "entry"));
+    }
+
+    /**
+     * Removes the entry at a position; later entries move up by one.
+     *
+     * @param index The zero-based position.
+     * @return The removed entry.
+     * @throws IndexOutOfBoundsException If the position does not exist.
+     */
+    public MealEntry remove(int index) {
+        return entries.remove(index);
+    }
+
+    /**
+     * Returns a read-only snapshot of the recorded entries, oldest recording first.
+     * Later changes do not appear in a snapshot that has already been returned.
+     */
+    public List<MealEntry> getEntries() {
+        return List.copyOf(entries);
+    }
+
+    /**
+     * Returns a read-only snapshot of the recorded recipes, oldest recording first.
      * Later recordings do not appear in a snapshot that has already been returned.
      */
     public List<Recipe> getMeals() {
-        return List.copyOf(meals);
+        return entries.stream().map(MealEntry::recipe).toList();
     }
 
     /**
@@ -40,12 +83,31 @@ public class MealLog {
      * @return The totals, which are all zero if no meal has been recorded.
      */
     public NutritionTotals getTotals() {
-        // Sum as long values so several valid integer values cannot overflow an int.
-        long calories = meals.stream().mapToLong(Recipe::getCalories).sum();
-        long protein = meals.stream().mapToLong(Recipe::getProtein).sum();
-        long carbs = meals.stream().mapToLong(Recipe::getCarbs).sum();
-        long fats = meals.stream().mapToLong(Recipe::getFats).sum();
-        return new NutritionTotals(calories, protein, carbs, fats);
+        return sum(entries);
+    }
+
+    /**
+     * Adds up the nutrition of the meals recorded for one date.
+     *
+     * @param date The date to total.
+     * @return The totals, which are all zero if no meal was recorded for that date.
+     * @throws NullPointerException If the date is null.
+     */
+    public NutritionTotals getTotalsOn(LocalDate date) {
+        Objects.requireNonNull(date, "date");
+        return sum(entries.stream().filter(entry -> entry.date().equals(date)).toList());
+    }
+
+    /**
+     * Sums entries as long values, so several valid integer values cannot overflow an int.
+     */
+    private static NutritionTotals sum(List<MealEntry> selected) {
+        List<NutritionTotals> nutrition = selected.stream().map(MealEntry::nutrition).toList();
+        return new NutritionTotals(
+                nutrition.stream().mapToLong(NutritionTotals::calories).sum(),
+                nutrition.stream().mapToLong(NutritionTotals::protein).sum(),
+                nutrition.stream().mapToLong(NutritionTotals::carbs).sum(),
+                nutrition.stream().mapToLong(NutritionTotals::fats).sum());
     }
 }
 //@@author

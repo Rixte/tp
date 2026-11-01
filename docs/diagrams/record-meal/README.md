@@ -1,6 +1,6 @@
 # Meal recording UML diagrams
 
-These sources document the `record-meal` and `view-meals` enhancement in
+These sources document the `record-meal`, `view-meals`, `edit-meal` and `delete-meal` enhancement in
 [the Developer Guide](../../DeveloperGuide.md#recording-meals-and-tracking-nutrition).
 
 | Source | View |

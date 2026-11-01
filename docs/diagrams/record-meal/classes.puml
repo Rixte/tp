@@ -17,28 +17,49 @@ interface Command <<interface>> {
 class CommandResult <<record>>
 class RecordMealCommand
 class ViewMealsCommand
+class EditMealCommand
+class DeleteMealCommand
+class MealLookup {
+  + {static} find(mealLog: MealLog, mealNumber: int, usage: String): MealEntry
+}
 class MealLog {
-  + record(recipe: Recipe): void
-  + getMeals(): List<Recipe>
+  + record(entry: MealEntry): void
+  + replace(index: int, entry: MealEntry): void
+  + remove(index: int): MealEntry
+  + getEntries(): List<MealEntry>
   + getTotals(): NutritionTotals
+  + getTotalsOn(date: LocalDate): NutritionTotals
 }
 class MealLogViewer {
-  + view(meals: List<Recipe>, totals: NutritionTotals): String
-  + viewRecorded(meal: Recipe, totals: NutritionTotals): String
+  + view(entries: List<MealEntry>, totals: NutritionTotals): String
+  + viewDate(entries: List<MealEntry>, date: LocalDate, totals: NutritionTotals): String
+  + viewRecorded(entry: MealEntry, totals: NutritionTotals): String
+  + viewEdited(entry: MealEntry, dayTotals: NutritionTotals): String
+  + viewDeleted(entry: MealEntry, dayTotals: NutritionTotals): String
 }
 class RecipeBook
 
 Parser ..> RecordMealCommand : creates
 Parser ..> ViewMealsCommand : creates
+Parser ..> EditMealCommand : creates
+Parser ..> DeleteMealCommand : creates
 Parser -right-> "1" MealLog : -mealLog
 RecordMealCommand .up.|> Command
 ViewMealsCommand .up.|> Command
+EditMealCommand .up.|> Command
+DeleteMealCommand .up.|> Command
 Command ..> CommandResult : returns
 RecordMealCommand -down-> "1" MealLog : -mealLog
 ViewMealsCommand -right-> "1" MealLog : -mealLog
+EditMealCommand -down-> "1" MealLog : -mealLog
+DeleteMealCommand -down-> "1" MealLog : -mealLog
+EditMealCommand ..> MealLookup : calls
+DeleteMealCommand ..> MealLookup : calls
 RecordMealCommand ..> RecipeBook : reads
 RecordMealCommand ..> MealLogViewer : creates and calls
 ViewMealsCommand ..> MealLogViewer : creates and calls
+EditMealCommand ..> MealLogViewer : creates and calls
+DeleteMealCommand ..> MealLogViewer : creates and calls
 RecipeBook -[hidden]right-> MealLogViewer
 
 legend bottom
