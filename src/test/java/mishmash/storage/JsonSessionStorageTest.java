@@ -134,6 +134,13 @@ class JsonSessionStorageTest {
                 template.replace("\"days\" : 1", "\"days\" : 2"),
                 template.replace("\"vegetarian\"", "\"unknown-diet\""),
                 template.replace("\"soy\"", "\"soy\", \"soya\""),
+                template.replace("\"oil\"", "\"oil\", \"oil\""),
+                template.replace("\"oil\"", "\"oil\", \" OIL \""),
+                template.replace("\"foodTags\" : [ ]", "\"foodTags\" : [ \"soy\", \"soya\" ]"),
+                template.replace("\"foodClassified\" : true", "\"foodClassified\" : \"true\""),
+                template.replace("\"quantity\" : \"100.00100\"", "\"quantity\" : \"0\""),
+                template.replace("\"calories\" : 100", "\"calories\" : 2147483648"),
+                template.replace("\"name\" : \"Bowl\"", "\"name\" : \"  \""),
                 template.replace("100.00100", "1E+2147483647"),
                 template.replace("\"schemaVersion\"", "\"unexpected\""))
                 .map(json -> DynamicTest.dynamicTest("reject malformed field", () -> {
@@ -155,6 +162,56 @@ class JsonSessionStorageTest {
         try (JsonSessionStorage storage = JsonSessionStorage.open(file)) {
             assertTrue(storage.load().warning().isPresent());
             assertFalse(Files.exists(file));
+        }
+    }
+
+    @TestFactory
+    Stream<DynamicTest> load_excessiveJsonTokens_rejectsWithinSizeLimit() {
+        return Stream.of("[".repeat(101) + "0" + "]".repeat(101),
+                "{\"schemaVersion\":" + "9".repeat(1001) + "}",
+                "{\"value\":\"" + "x".repeat(1_000_001) + "\"}")
+                .map(json -> DynamicTest.dynamicTest("reject parser limit", () -> {
+                    Path file = Files.createTempDirectory(directory, "limit-").resolve("state.json");
+                    Files.writeString(file, json);
+                    try (JsonSessionStorage storage = JsonSessionStorage.open(file)) {
+                        assertTrue(storage.load().warning().isPresent());
+                        assertFalse(Files.exists(file));
+                    }
+                }));
+    }
+
+    @Test
+    void save_invalidLiveState_preservesExistingFiles() throws Exception {
+        Path file = directory.resolve("state.json");
+        try (JsonSessionStorage storage = JsonSessionStorage.open(file)) {
+            storage.save(populatedState());
+            String primary = Files.readString(file);
+            String backup = Files.readString(directory.resolve("state.backup.json"));
+            ApplicationState inconsistent = new ApplicationState();
+            inconsistent.getActiveMealPlan().setGroceryList(List.of());
+            assertThrows(StorageException.class, () -> storage.save(inconsistent));
+            inconsistent.getActiveMealPlan().set(new MealPlan(List.of(new DayPlan(List.of()))));
+            assertThrows(StorageException.class, () -> storage.save(inconsistent));
+            assertEquals(primary, Files.readString(file));
+            assertEquals(backup, Files.readString(directory.resolve("state.backup.json")));
+        }
+    }
+
+    @Test
+    void save_externallyDamagedPrimary_preservesItAndKeepsValidBackup() throws Exception {
+        Path file = directory.resolve("state.json");
+        try (JsonSessionStorage storage = JsonSessionStorage.open(file)) {
+            storage.save(populatedState());
+            Files.writeString(file, "external damage");
+            storage.save(new ApplicationState());
+            assertEquals(0, storage.load().state().getRecipeBook().size());
+            Files.delete(file);
+            assertEquals(2, storage.load().state().getRecipeBook().size());
+            try (Stream<Path> paths = Files.list(directory)) {
+                Path damaged = paths.filter(path -> path.toString().contains("corrupt-during-save"))
+                        .findFirst().orElseThrow();
+                assertEquals("external damage", Files.readString(damaged));
+            }
         }
     }
 

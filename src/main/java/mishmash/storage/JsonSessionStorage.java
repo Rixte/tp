@@ -115,7 +115,7 @@ public final class JsonSessionStorage implements SessionStorage {
         try {
             return LoadResult.normal(readState(dataFile));
         } catch (InvalidSnapshotException primaryFailure) {
-            if (Files.exists(backupFile)) {
+            if (!Files.notExists(backupFile)) {
                 ApplicationState backupState = null;
                 try {
                     backupState = readState(backupFile);
@@ -290,8 +290,13 @@ public final class JsonSessionStorage implements SessionStorage {
             return Optional.empty();
         }
         try {
-            readState(path);
             byte[] bytes = readBytes(path);
+            // Back up the exact bytes that passed validation; a second read could observe an external edit.
+            try {
+                validateBytes(bytes);
+            } catch (IOException | RuntimeException e) {
+                throw new InvalidSnapshotException("Saved data is invalid: " + path.getFileName() + ".", e);
+            }
             return Optional.of(bytes);
         } catch (InvalidSnapshotException e) {
             return Optional.empty();
@@ -300,7 +305,7 @@ public final class JsonSessionStorage implements SessionStorage {
 
     /** Preserves an invalid existing file instead of replacing it silently. */
     private void quarantineIfInvalid(Path path) throws StorageException {
-        if (Files.exists(path) && readValidBytes(path).isEmpty()) {
+        if (!Files.notExists(path) && readValidBytes(path).isEmpty()) {
             quarantine(path, "corrupt-during-save");
         }
     }

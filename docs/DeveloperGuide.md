@@ -2251,7 +2251,9 @@ there is no older application-data format to migrate in this release.
 
 Run Java 25 `./gradlew check shadowJar`. Storage tests use temporary directories and cover round trips,
 validation, locks, backups, quarantine, write failures, and retry behavior. The check task also builds and runs
-the shadow JAR through two processes to verify retention from a working directory outside the repository.
+the shadow JAR through multiple processes to verify retention from a working directory outside the repository.
+JAR tests also cover forced termination after autosave, lock release, corrupt-primary recovery, unsaved-change
+warnings and shutdown retries, failed dietary repair, and unchanged save files after no-ops or cancellation.
 
 ## Appendix E: Instructions for Manual Testing
 
