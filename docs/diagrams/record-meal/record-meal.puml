@@ -5,6 +5,7 @@ title Executing record-meal 2
 participant ":MishMash" as App
 participant "cmd:RecordMealCommand" as Command
 participant "recipeBook:RecipeBook" as Book
+participant "entry:MealEntry" as Entry
 participant "mealLog:MealLog" as Log
 participant "viewer:MealLogViewer" as Viewer
 
@@ -18,7 +19,11 @@ Command -> Book : getRecipes()
 activate Book
 Book --> Command : recipes
 deactivate Book
-Command -> Log : record(recipe)
+create Entry
+Command -> Entry : MealEntry(recipe, date, servings)
+activate Entry
+deactivate Entry
+Command -> Log : record(entry)
 activate Log
 deactivate Log
 create Viewer
@@ -29,7 +34,7 @@ Command -> Log : getTotals()
 activate Log
 Log --> Command : totals
 deactivate Log
-Command -> Viewer : viewRecorded(recipe, totals)
+Command -> Viewer : viewRecorded(entry, totals)
 activate Viewer
 Viewer --> Command : text
 deactivate Viewer

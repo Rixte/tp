@@ -114,7 +114,9 @@ The logic covers command parsing, application actions, and generation. It suppor
 | `generate-list` | Generate groceries for the active meal plan. |
 | `view-list` | Display the generated grocery list. |
 | `record-meal` | Record the recipe at a displayed index as a meal eaten. |
-| `view-meals` | Display the recorded meals with their nutrition and totals. |
+| `view-meals` | Display the recorded meals, or one date's meals, with their nutrition and totals. |
+| `edit-meal` | Correct the date or servings of a recorded meal. |
+| `delete-meal` | Remove a recorded meal after confirmation. |
 | `help` | Display the supported commands and their formats. |
 | `bye` | End the session. |
 
@@ -143,14 +145,14 @@ Commands validate their arguments and relevant application state. Requests that 
 | `DietaryPreferences` | An immutable named diet, avoided tags, and normalized excluded ingredient names. |
 | `Diet`, `FoodTag`, `FoodInfo` | Named-diet rules, supported categories, and declared recipe classification. |
 | `ActiveMealPlan` | The current meal plan and its generated grocery list, if available. |
-| `MealLog` | The recipes the user has recorded as eaten, in the order recorded. |
+| `MealLog` | The `MealEntry` values (recipe, date, servings) the user has recorded as eaten, in the order recorded. |
 | `NutritionTotals` | Summed calories, protein, carbohydrates, and fats, held as `long` values. |
 
 There are no separate `Ingredient` or `GroceryList` classes in the current model. Recipe ingredients and generated grocery entries use `GroceryItem`.
 
 Recipes remain in insertion order. Their displayed indexes start at 1 and can change after deletion. Duplicate names are permitted. Editing replaces the recipe at its position without changing indexes. Existing meal plans retain their recipe snapshots when recipes are added, edited, or removed from the recipe book.
 
-Recorded meals are kept in one `MealLog` for the session. The log stores the `Recipe` objects themselves, so each recorded meal keeps the nutrition the recipe had when it was recorded, whatever happens to the recipe book afterwards. The log is separate from the active plan: the plan holds meals the user intends to eat, and the log holds meals the user has eaten.
+Recorded meals are kept in one `MealLog` for the session. Each `MealEntry` stores the `Recipe` object itself, so each recorded meal keeps the nutrition the recipe had when it was recorded, whatever happens to the recipe book afterwards. The log is separate from the active plan: the plan holds meals the user intends to eat, and the log holds meals the user has eaten.
 
 Saved daily targets are kept in one `TargetSettings` for the session and are read when `generate-plan` runs. A generated plan stores the targets that were applied to it, so later changes to the saved targets do not alter it.
 
@@ -1080,12 +1082,17 @@ This V2.0 enhancement supports two user stories:
 * **As a user tracking nutrition, I want to calculate the total calories and macronutrients for each
   meal so that I know the nutritional content of what I am eating.**
 
-It adds two commands:
+It adds these commands:
 
 ```text
-record-meal INDEX
-view-meals
+record-meal INDEX [date/YYYY-MM-DD] [s/SERVINGS]
+view-meals [date/YYYY-MM-DD]
+edit-meal MEAL_NUMBER [date/YYYY-MM-DD] [s/SERVINGS]
+delete-meal MEAL_NUMBER
 ```
+
+The date defaults to today and the servings default to 1. `MEAL_NUMBER` is a meal's position in the
+whole log, as shown by `view-meals`.
 
 `INDEX` is the position of a recipe in the `list-recipes` output, counting from 1, as for
 `delete-recipe`. `view-meals` lists every recorded meal with its calories (kcal), protein, carbs and
@@ -1093,9 +1100,9 @@ fats (g), followed by the totals for all recorded meals. Unlike `check-shortfall
 *planned* meals of the active plan, this feature records meals the user *has eaten*.
 The recorded meals are kept in memory for the session only, matching the product's current data boundary.
 
-A meal is one whole recipe, and a recipe stores the nutrition the user entered with `add-recipe`;
-nutrition is not derived from ingredients. The nutritional content of one meal is therefore read from
-its recipe. The feature calculates the totals across all recorded meals and shows them together with
+A meal is a whole number of servings of a recipe, and a recipe stores the nutrition the user entered with
+`add-recipe`; nutrition is not derived from ingredients. The nutritional content of one meal is therefore
+its recipe's values multiplied by its servings. The feature calculates the totals across all recorded meals and shows them together with
 each meal's stored nutrition values.
 
 #### Architecture-level view
@@ -1118,10 +1125,16 @@ dependencies, and dashed arrows with a hollow triangle show interface realizatio
 `NutritionTotals` is the existing value record that `DayPlan` also uses for daily totals, and `MealLog`
 reuses it; its values are `long` so that adding many recipes cannot overflow.*
 
-* `MealLog` stores the recorded meals in the order they were recorded. It offers `record(Recipe)`,
-  a read-only `getMeals()`, and `getTotals()`, which sums calories, protein, carbs and fats into a
+* `MealEntry` is an immutable record of a recipe, a date and a serving count, and its `nutrition()`
+  multiplies the recipe's values by the servings. `MealEntryChanges` holds the optional typed date and
+  servings, and `MealEntryParser` parses them for `record-meal` and `edit-meal`. It receives today's
+  date as an argument, so tests can check future dates without depending on the system clock.
+* `MealLog` stores the entries in the order they were recorded. It offers `record(...)`, `replace(...)`,
+  `remove(...)`, read-only `getEntries()` and `getMeals()`, `getTotalsOn(date)` for one date, and
+  `getTotals()`, which sums calories, protein, carbs and fats into a
   `NutritionTotals`, the same record `DayPlan` returns for a day's meals. The commands never add up nutrition values themselves.
-* `RecordMealCommand` and `ViewMealsCommand` implement `Command`. Each retains the shared `MealLog`.
+* `RecordMealCommand`, `ViewMealsCommand`, `EditMealCommand` and `DeleteMealCommand` implement `Command`.
+  Each retains the shared `MealLog`. `MealLookup` gives the last two the same checks on a meal number.
 * `MealLogViewer` (ui) turns the meals and totals into text, in the same way
   `MealPlanViewer` formats a meal plan. Keeping formatting out of the model and commands lets them be
   tested without comparing layout text.
@@ -1148,14 +1161,15 @@ with a `ref` frame. The inherited confirmation step is omitted because the comma
 `Optional`. Invalid indexes are described below rather than combined with either successful
 interaction. The `X` marks objects that are no longer used once the command has returned.*
 
-`Parser` checks that the argument is a single positive whole number. A missing, non-numeric, signed,
-zero or extra argument is rejected with the usage line `Format: record-meal INDEX`; nothing is read or
+`Parser` uses `MealEntryParser` to separate the index from the optional `date/` and `s/` fields, then
+checks that the index is a single positive whole number. A missing, non-numeric, signed,
+zero or extra argument is rejected with the `record-meal` usage line; nothing is read or
 changed. The command is created only after validation succeeds.
 
 During execution the command converts the index to a zero-based position, as `DeleteRecipeCommand`
 does, and looks the recipe up in the `RecipeBook` passed to `execute`. If the book is empty or the index
 exceeds the number of recipes, it throws a `MishMashException` and nothing is recorded. Otherwise it calls
-`MealLog.record(recipe)`, creates a `MealLogViewer`, reads `MealLog.getTotals()`, and asks
+`MealLog.record(entry)` with a new `MealEntry`, creates a `MealLogViewer`, reads `MealLog.getTotals()`, and asks
 `MealLogViewer.viewRecorded` to format the recorded meal's calories and macros with the running totals,
 so the user sees the effect immediately. The viewer is created before the totals are read because Java
 evaluates the object a method is called on before that method's arguments.
@@ -1168,11 +1182,24 @@ Recording a meal needs no confirmation: it is quick to repeat, and it changes on
 *Figure 19: Parsing mirrors `record-meal` and is omitted. The sequence follows a non-empty log; the
 empty-log result is described below.*
 
-`view-meals` takes no arguments; any argument is rejected with its usage line. `ViewMealsCommand` reads
-the meals from the `MealLog`. An empty log is a valid state, not an error, so the command returns
+`view-meals` accepts one optional `date/` field; anything else is rejected with its usage line. A date
+keeps each meal's number from the whole log, so a number shown for one date works with `edit-meal` and
+`delete-meal`. `ViewMealsCommand` reads
+the entries from the `MealLog`. An empty log is a valid state, not an error, so the command returns
 `No meals recorded yet.` Otherwise it creates a `MealLogViewer`, asks the log for the totals and delegates
 formatting to the viewer. Each meal appears with its own calories and macros, followed by one totals line. Viewing
 never changes the log.
+
+#### Correcting recorded meals
+
+`edit-meal` and `delete-meal` find a meal by the number `view-meals` shows, using `MealLookup` so that both
+report a bad number the same way. `EditMealCommand` builds a new `MealEntry` with `MealEntry.with(changes)`
+and calls `MealLog.replace`, so the meal keeps its place and no other number changes. `DeleteMealCommand`
+overrides `confirmationPrompt`, which also rejects a number that does not exist before the user is asked
+anything, and then calls `MealLog.remove`; later meals move up by one. Both show the totals for the
+affected date, and totals are recomputed from the log, so a correction cannot leave them out of step.
+Editing needs no confirmation because it is easy to redo, whereas a deleted entry would have to be
+recorded again.
 
 #### Invalid input and recovery
 
@@ -1190,7 +1217,13 @@ Figure 20 shows where `record-meal` can be rejected; every rejection happens bef
 | `record-meal` with no argument, a non-numeric, signed, zero or decimal index, or an extra token | Reject with the command format; no data is read or changed. |
 | Index larger than the number of recipes | Reject with `Recipe index must be between 1 and N.`; nothing is recorded. |
 | `record-meal` while the recipe book is empty | Reject with a message that there are no recipes to record; nothing is recorded. |
-| `view-meals` with any argument | Reject with the command format. |
+| `date/` that is not `YYYY-MM-DD` or is not a real date | Reject with the command format; nothing changes. |
+| `date/` after today in `record-meal` or `edit-meal` | Reject, because a recorded meal has already been eaten. `view-meals` accepts any real date. |
+| `s/` outside 1 to 100 | Reject with the command format; the limit catches typos and keeps totals within `long`. |
+| `view-meals` with anything other than one `date/` | Reject with the command format. |
+| `view-meals date/...` with no meals on that date | Return `No meals recorded on DATE.` |
+| `edit-meal` with no field, or either correction command with a missing or invalid number | Reject with the command format; the log is unchanged. |
+| `edit-meal` or `delete-meal` with a number beyond the log | Reject with `Meal number must be between 1 and N.`; `delete-meal` reports this before asking for confirmation. |
 | `view-meals` before any meal is recorded | Return `No meals recorded yet.` |
 | Recipe deleted, edited with `edit-recipe`, or otherwise changed after a meal was recorded | The recorded meal keeps its original calories and macros. |
 | Same recipe recorded twice | Two entries are kept, and both count toward the totals. |
@@ -1209,21 +1242,21 @@ Figure 20 shows where `record-meal` can be rejected; every rejection happens bef
 #### Limitations and possible extensions
 
 * The log lives in memory for one session and is lost when the application exits.
-* All meals form one list. A later version could add `d/DATE` to record meals against a day and show
-  daily totals, or compare the totals with the targets given to `check-shortfall`.
-* There is no command to remove or correct a recorded meal yet.
-* Each recorded meal counts as one whole recipe; recorded-meal portion sizes are not supported. Planned meals
-  have independent whole-recipe portion counts through `adjust-portion`.
+* A later version could compare a date's totals with the targets given to `check-shortfall`.
+* `edit-meal` cannot change which recipe was eaten; deleting the entry and recording the right recipe
+  does the same job.
+* Servings are whole numbers, matching the whole-recipe portion counts of `adjust-portion`.
 
 #### Verification
 
-The feature is covered by `MealLogTest`, `MealLogViewerTest`, `RecordMealCommandTest`,
+The feature is covered by `MealLogTest`, `MealEntryTest`, `MealEntryParserTest`,
+`MealCorrectionCommandsTest`, `MealLogViewerTest`, `RecordMealCommandTest`,
 `ViewMealsCommandTest`, `ParserRecordMealTest`, and console-workflow tests in `MishMashTest`. They check
 the totals (including values beyond the `int` range), the exact output layout, every invalid index in
 the table above, the empty-log
 and empty-book cases, that failed commands leave the log unchanged, and that the log is separate from the
 active plan. The manual checks are under [Record and View Meals](#record-and-view-meals); the use cases are
-UC11 and UC12.
+UC11, UC12, UC19 and UC20.
 
 #### Diagram maintenance
 
@@ -1657,6 +1690,16 @@ failure in `MishMashException`. Parser validation for `generate-plan`, `delete-r
 the existing recoverable error and can retry; developers can inspect the original exception through
 `getCause()` or the application's rejection log. This does not add new command syntax.
 
+After a failure, `GeneratePlanCommand` also asks `PlanFailureAdvisor` (logic) to explain it. If the dietary
+preferences removed any recipes, the advisor reports how many remain. It then compares each target with the sum of the
+three lowest and three highest values available, which proves cheaply that a target cannot be reached.
+If every target passes that check, the targets conflict, so it suggests relaxing one. For recipe books
+large enough to be sampled it also suggests retrying, because `MealPlanGenerator.checksEveryCombination`
+is false and a valid combination could have been missed. The advice runs only on failure, so the
+generator's selection rules do not change. The error shows the `generate-plan` usage rather than every
+command, which keeps the advice visible. A more advanced alternative is to report the closest combination
+found, but that would have to keep extra state during generation for a similar suggestion.
+
 `MealPlanGenerator` uses assertions to check two internal invariants: the returned number of days
 matches the request, and candidate construction starts with enough recipes. Normal argument validation
 still handles user mistakes; assertions diagnose programming errors. Tests enable assertions through
@@ -1886,7 +1929,7 @@ The actor in each use case is the user. A command session has already started an
 **Extensions**
 
 - 2a. Days are outside 1 to 7, a target is not a positive integer, or arguments are malformed: MishMash rejects the command.
-- 3a. Fewer than three recipe entries are available, or no acceptable plan is found: MishMash displays an error. The previous plan and groceries remain available.
+- 3a. Fewer than three recipe entries are available, or no acceptable plan is found: MishMash displays an error, the likely cause, and what to try next. The previous plan and groceries remain available.
 
 Recipes may be repeated on different days. With no targets, there are no nutrition constraints on the selection. Targets saved with `set-targets` (UC13) apply to every nutrient that the command leaves out, and a target typed in the command replaces the saved one for that plan.
 
@@ -1991,14 +2034,14 @@ the retained generation targets. Clearing the plan removes the warnings.
 
 **MSS**
 
-1. The user enters `record-meal INDEX`, using an index shown by `list-recipes`.
-2. MishMash validates the index and finds the recipe at that position.
-3. MishMash adds the recipe to the recorded meals.
+1. The user enters `record-meal INDEX`, using an index shown by `list-recipes`, optionally with a date and servings.
+2. MishMash validates the input and finds the recipe at that position.
+3. MishMash adds the recipe, date and servings to the recorded meals. The date defaults to today and the servings default to 1.
 4. MishMash displays the meal and the totals of all recorded meals, then prompts for another command.
 
 **Extensions**
 
-- 2a. The index is missing, or is not a single positive whole number: MishMash displays an error and the `record-meal` format. The use case ends without recording anything.
+- 2a. The index is missing or is not a single positive whole number, or the date or servings are invalid: MishMash displays an error and the `record-meal` format. The use case ends without recording anything.
 - 2b. There are no recipes, or the index is larger than the number of recipes: MishMash displays an error. The use case ends without recording anything.
 
 No confirmation is requested. Recording changes only the recorded meals; recipes, the meal plan, and groceries are unchanged. Recording the same recipe again adds another entry.
@@ -2007,16 +2050,17 @@ No confirmation is requested. Recording changes only the recorded meals; recipes
 
 **MSS**
 
-1. The user enters `view-meals`.
-2. MishMash reads the recorded meals and sums their nutrition.
-3. MishMash displays each meal in the order recorded with its calories and macronutrients, followed by the totals, then prompts for another command.
+1. The user enters `view-meals`, optionally with a date.
+2. MishMash reads the recorded meals and sums their nutrition, for that date if one was given.
+3. MishMash displays each meal in the order recorded with its calories, macronutrients, servings and date, followed by the totals, then prompts for another command.
 
 **Extensions**
 
-- 1a. The user adds an argument: MishMash displays an error and the `view-meals` format. The use case ends.
+- 1a. The user adds anything other than one valid date: MishMash displays an error and the `view-meals` format. The use case ends.
 - 2a. No meal has been recorded: MishMash displays `No meals recorded yet.` The use case ends.
+- 2b. No meal was recorded on the given date: MishMash displays `No meals recorded on DATE.` The use case ends.
 
-Viewing leaves the recorded meals unchanged. The totals cover every meal recorded in the session, because meals are not recorded against dates.
+Viewing leaves the recorded meals unchanged. Without a date, the totals cover every meal recorded in the session.
 
 <!-- @@author -->
 <!-- @@author neil0618 -->
@@ -2110,6 +2154,39 @@ Viewing never changes the profile or generated data.
 - 2a. The index or a supplied field is invalid, or no edits are supplied: MishMash displays an error and leaves the recipe unchanged. The use case ends.
 - Existing meal plans and recorded meals keep their previous recipe snapshots.
 
+<!-- @@author GauthamNandi -->
+#### UC19 Correct a recorded meal
+
+**Precondition:** At least one meal has been recorded.
+
+**MSS**
+
+1. The user enters `edit-meal MEAL_NUMBER` with a new date, new servings or both, using a number shown by `view-meals`.
+2. MishMash validates the input and replaces the meal, keeping its number.
+3. MishMash displays the corrected meal and the totals for its date, then prompts for another command.
+
+**Extensions**
+
+- 1a. The number or a supplied field is invalid, or no field is supplied: MishMash displays an error and the `edit-meal` format. The use case ends without changing anything.
+- 2a. The number is larger than the number of recorded meals: MishMash displays an error and the `edit-meal` format. The use case ends without changing anything.
+
+#### UC20 Delete a recorded meal
+
+**Precondition:** At least one meal has been recorded.
+
+**MSS**
+
+1. The user enters `delete-meal MEAL_NUMBER`, using a number shown by `view-meals`.
+2. MishMash describes the meal and asks for confirmation.
+3. The user confirms.
+4. MishMash removes the meal, moves later meals up by one, and displays the deleted meal and the totals remaining for its date.
+
+**Extensions**
+
+- 1a. The number is missing, invalid or larger than the number of recorded meals: MishMash displays an error and the `delete-meal` format without asking for confirmation. The use case ends.
+- 3a. The user does not confirm: MishMash reports that nothing was changed. The use case ends.
+
+<!-- @@author -->
 ## Appendix C: Non-Functional Requirements
 
 - The application requires Java 25 and provides a command-line interface.
@@ -2336,13 +2413,15 @@ existing logging configuration; absence of a `FINE` record at a higher log level
    ```
 
 3. Enter `record-meal 2`. Expect Tofu Rice and `Total so far: 1100 kcal | Protein: 65g | Carbs: 130g | Fats: 27g`.
-4. Enter `view-meals`. Expect the header, `Meal 1: Chicken Rice ...` and `Meal 2: Tofu Rice ...`, then a divider, `Total: 1100 kcal | Protein: 65g | Carbs: 130g | Fats: 27g`, and the footer.
+4. Enter `view-meals`. Expect the header, `Meal 1: Chicken Rice ...` and `Meal 2: Tofu Rice ...`, each ending with `| 1 serving |` and today's date, then a divider, `Total: 1100 kcal | Protein: 65g | Carbs: 130g | Fats: 27g`, and the footer.
 5. Enter `record-meal 1` again, then `view-meals`. Expect a third entry, `Meal 3: Chicken Rice ...`, and `Total: 1700 kcal | Protein: 105g | Carbs: 200g | Fats: 42g`.
 6. Enter `add-recipe n/Black Coffee cal/5 p/0 c/0 f/0 i/Coffee:1cup`, then `record-meal 4`. Expect 0g for each macronutrient and a total that grows by 5 kcal only.
-7. Try `record-meal`, `record-meal 0`, `record-meal 5`, `record-meal two`, `record-meal -1`, `record-meal 1 2`, `view-meals now`. Each should produce a recoverable error. Enter `view-meals` afterwards and confirm that the recorded meals are unchanged.
-8. Enter `edit-recipe 2 cal/100`, then `delete-recipe 1` and confirm. Enter `view-meals`. Every recorded meal should keep the calories and macros it had when recorded.
-9. Enter `generate-plan d/1`, then `view-meals` and `view-plan`. The recorded meals should be unchanged by plan generation, and the plan should be unaffected by the recorded meals.
-10. Enter `help` and confirm that both commands are listed. Enter `bye`, restart, and enter a name.
+7. Enter `record-meal 1 date/2026-03-02 s/2`, then `view-meals date/2026-03-02`. Expect only that meal, with doubled nutrition, its original meal number, and a `Total for 2026-03-02:` line.
+8. Enter `edit-meal 1 s/2`. Expect `[DONE] Meal updated!` and the meal's nutrition doubled. Enter `delete-meal 1`, then `n`, and expect the log to be unchanged. Enter `delete-meal 1`, then `y`, and expect `[DONE] Meal deleted!`; `view-meals` then shows one meal fewer, renumbered from 1.
+9. Try `record-meal`, `record-meal 0`, `record-meal 5`, `record-meal two`, `record-meal -1`, `record-meal 1 2`, `view-meals now`. Each should produce a recoverable error. Enter `view-meals` afterwards and confirm that the recorded meals are unchanged.
+10. Enter `edit-recipe 2 cal/100`, then `delete-recipe 1` and confirm. Enter `view-meals`. Every recorded meal should keep the calories and macros it had when recorded.
+11. Enter `generate-plan d/1`, then `view-meals` and `view-plan`. The recorded meals should be unchanged by plan generation, and the plan should be unaffected by the recorded meals.
+12. Enter `help` and confirm that all four commands are listed. Enter `bye`, restart, and enter a name.
     `view-meals` should report `[NOTE] No meals recorded yet.`
 <!-- @@author -->
 

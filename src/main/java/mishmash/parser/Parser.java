@@ -1,5 +1,6 @@
 package mishmash.parser;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,9 @@ import mishmash.command.CheckShortfallCommand;
 import mishmash.command.ClearDietCommand;
 import mishmash.command.Command;
 import mishmash.command.CustomizeMealCommand;
+import mishmash.command.DeleteMealCommand;
 import mishmash.command.DeleteRecipeCommand;
+import mishmash.command.EditMealCommand;
 import mishmash.command.EditRecipeCommand;
 import mishmash.command.GenerateListCommand;
 import mishmash.command.GeneratePlanCommand;
@@ -41,6 +44,7 @@ import mishmash.model.FoodInfo;
 import mishmash.model.GeneratePlanRequest;
 import mishmash.model.GroceryItem;
 import mishmash.model.IngredientCustomization;
+import mishmash.model.MealEntryChanges;
 import mishmash.model.MealLog;
 import mishmash.model.MealPlan;
 import mishmash.model.NutritionTargets;
@@ -105,6 +109,8 @@ public class Parser {
     public static final String CLEAR_DIET_USAGE = ClearDietCommand.USAGE;
     public static final String RECORD_MEAL_USAGE = RecordMealCommand.USAGE;
     public static final String VIEW_MEALS_USAGE = ViewMealsCommand.USAGE;
+    public static final String EDIT_MEAL_USAGE = EditMealCommand.USAGE;
+    public static final String DELETE_MEAL_USAGE = DeleteMealCommand.USAGE;
     //@@author neil0618
     public static final String SET_TARGETS_USAGE = SetTargetsParser.USAGE;
     public static final String VIEW_TARGETS_USAGE = ViewTargetsCommand.USAGE;
@@ -125,7 +131,7 @@ public class Parser {
             GENERATE_LIST_USAGE, VIEW_LIST_USAGE,
             DietaryPreferencesParser.USAGE, "Format: view-diet", CLEAR_DIET_USAGE,
             SET_TARGETS_USAGE, VIEW_TARGETS_USAGE,
-            RECORD_MEAL_USAGE, VIEW_MEALS_USAGE,
+            RECORD_MEAL_USAGE, VIEW_MEALS_USAGE, EDIT_MEAL_USAGE, DELETE_MEAL_USAGE,
             "Format: help", "Format: bye");
 
     /**
@@ -148,6 +154,8 @@ public class Parser {
             Pattern.compile("(?<!\\S)([^\\s/]+)/");
 
     private static final Pattern DAY_PATTERN = Pattern.compile("d/\\s*([0-9]+)");
+
+    private static final Pattern VIEW_MEALS_DATE_PATTERN = Pattern.compile("date/\\s*(\\S+)");
 
     /**
      * Supplies the active plan at command execution, so view-plan always shows the latest generated plan.
@@ -370,6 +378,12 @@ public class Parser {
         }
         if (commandWord.equals(ViewMealsCommand.COMMAND_WORD)) {
             return parseViewMeals(arguments);
+        }
+        if (commandWord.equals(EditMealCommand.COMMAND_WORD)) {
+            return parseEditMeal(arguments);
+        }
+        if (commandWord.equals(DeleteMealCommand.COMMAND_WORD)) {
+            return parseDeleteMeal(arguments);
         }
         if (commandWord.equals(COMMAND_GENERATE_PLAN)) {
             return parseGeneratePlan(arguments);
@@ -661,8 +675,13 @@ public class Parser {
      */
     private Command parseRecordMeal(String arguments) throws MishMashException {
         try {
-            int index = parseRecipeIndex(arguments);
-            RecordMealCommand command = new RecordMealCommand(index, mealLog);
+            LocalDate today = LocalDate.now();
+            MealEntryParser entryParser = new MealEntryParser(today);
+            int index = parseRecipeIndex(entryParser.parsePosition(arguments));
+            MealEntryChanges details = entryParser.parseChanges(arguments);
+            RecordMealCommand command = new RecordMealCommand(index,
+                    details.date() != null ? details.date() : today,
+                    details.servings() != null ? details.servings() : 1, mealLog);
             LOGGER.fine(() -> "Parsed record-meal for index " + index);
             return command;
         } catch (IllegalArgumentException e) {
@@ -671,19 +690,66 @@ public class Parser {
     }
 
     /**
-     * Creates a command that displays the recorded meals after rejecting unexpected arguments.
+     * Creates a command that displays all recorded meals, or those of one date.
      *
-     * @param arguments The text after view-meals.
+     * @param arguments The text after view-meals: nothing, or one date/ field.
      * @return A command that reads the shared meal log only when it runs.
-     * @throws MishMashException If arguments are supplied.
+     * @throws MishMashException If the arguments are anything else, or the date is invalid.
      */
     private Command parseViewMeals(String arguments) throws MishMashException {
-        if (!arguments.isBlank()) {
-            LOGGER.warning("view-meals rejected: unexpected arguments");
-            throw new MishMashException("view-meals does not accept arguments.", VIEW_MEALS_USAGE, null);
+        if (arguments.isBlank()) {
+            LOGGER.fine("Parsed view-meals with no arguments");
+            return new ViewMealsCommand(mealLog);
         }
-        LOGGER.fine("Parsed view-meals with no arguments");
-        return new ViewMealsCommand(mealLog);
+        Matcher matcher = VIEW_MEALS_DATE_PATTERN.matcher(arguments.trim());
+        if (!matcher.matches()) {
+            LOGGER.warning("view-meals rejected: unexpected arguments");
+            throw new MishMashException("view-meals accepts only an optional date/YYYY-MM-DD.",
+                    VIEW_MEALS_USAGE, null);
+        }
+        try {
+            LOGGER.fine("Parsed view-meals for one date");
+            return new ViewMealsCommand(mealLog, new MealEntryParser(LocalDate.now()).parseDate(matcher.group(1)));
+        } catch (IllegalArgumentException e) {
+            throw new MishMashException(e.getMessage(), VIEW_MEALS_USAGE, e);
+        }
+    }
+
+    /**
+     * Creates a command that corrects the date or servings of a recorded meal.
+     *
+     * @param arguments The meal number followed by at least one of date/ and s/.
+     * @return A command that leaves the lookup of the meal until it runs.
+     * @throws MishMashException If the number or a field is invalid, or no field is supplied.
+     */
+    private Command parseEditMeal(String arguments) throws MishMashException {
+        try {
+            MealEntryParser entryParser = new MealEntryParser(LocalDate.now());
+            int mealNumber = entryParser.parseMealNumber(entryParser.parsePosition(arguments));
+            EditMealCommand command = new EditMealCommand(mealNumber, entryParser.parseChanges(arguments), mealLog);
+            LOGGER.fine(() -> "Parsed edit-meal for meal " + mealNumber);
+            return command;
+        } catch (IllegalArgumentException e) {
+            throw new MishMashException(e.getMessage(), EDIT_MEAL_USAGE, e);
+        }
+    }
+
+    /**
+     * Creates a command that removes a recorded meal.
+     *
+     * @param arguments The text after delete-meal, which must be one meal number.
+     * @return A command that leaves the lookup of the meal until it runs.
+     * @throws MishMashException If the number is missing or is not a positive whole number.
+     */
+    private Command parseDeleteMeal(String arguments) throws MishMashException {
+        try {
+            int mealNumber = new MealEntryParser(LocalDate.now()).parseMealNumber(arguments);
+            DeleteMealCommand command = new DeleteMealCommand(mealNumber, mealLog);
+            LOGGER.fine(() -> "Parsed delete-meal for meal " + mealNumber);
+            return command;
+        } catch (IllegalArgumentException e) {
+            throw new MishMashException(e.getMessage(), DELETE_MEAL_USAGE, e);
+        }
     }
     //@@author
 

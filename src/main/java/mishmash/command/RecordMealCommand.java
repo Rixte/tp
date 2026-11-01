@@ -1,10 +1,12 @@
 package mishmash.command;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
 import mishmash.exception.MishMashException;
+import mishmash.model.MealEntry;
 import mishmash.model.MealLog;
 import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
@@ -21,17 +23,19 @@ public class RecordMealCommand implements Command {
     public static final String COMMAND_WORD = "record-meal";
 
     /**
-     * Describes the command's single index argument.
+     * Describes the command's index argument and its optional date and servings.
      */
-    public static final String USAGE = "Format: " + COMMAND_WORD + " INDEX";
+    public static final String USAGE = "Format: " + COMMAND_WORD + " INDEX [date/YYYY-MM-DD] [s/SERVINGS]";
 
     private static final Logger LOGGER = Logger.getLogger(RecordMealCommand.class.getName());
 
     private final int index;
+    private final LocalDate date;
+    private final int servings;
     private final MealLog mealLog;
 
     /**
-     * Creates a command that records the recipe at the supplied position.
+     * Creates a command that records one serving, eaten today, of the recipe at the supplied position.
      *
      * @param index The position as typed by the user, where the first recipe is 1.
      * @param mealLog The log the meal is added to.
@@ -39,10 +43,27 @@ public class RecordMealCommand implements Command {
      * @throws NullPointerException If the meal log is null.
      */
     public RecordMealCommand(int index, MealLog mealLog) {
+        this(index, LocalDate.now(), 1, mealLog);
+    }
+
+    /**
+     * Creates a command that records the recipe at the supplied position.
+     *
+     * @param index The position as typed by the user, where the first recipe is 1.
+     * @param date The date the meal was eaten.
+     * @param servings The number of servings eaten.
+     * @param mealLog The log the meal is added to.
+     * @throws IllegalArgumentException If the index is less than 1 or the servings are out of range.
+     * @throws NullPointerException If the date or the meal log is null.
+     */
+    public RecordMealCommand(int index, LocalDate date, int servings, MealLog mealLog) {
         if (index < 1) {
             throw new IllegalArgumentException("Recipe index must be at least 1.");
         }
+        MealEntry.requireValidServings(servings);
         this.index = index;
+        this.date = Objects.requireNonNull(date, "date");
+        this.servings = servings;
         this.mealLog = Objects.requireNonNull(mealLog, "mealLog");
     }
 
@@ -70,10 +91,10 @@ public class RecordMealCommand implements Command {
         }
 
         // The user counts from 1, but the list counts from 0.
-        Recipe meal = recipes.get(index - 1);
-        mealLog.record(meal);
-        LOGGER.fine(() -> "record-meal recorded meal " + mealLog.getMeals().size());
-        return new MealLogViewer().viewRecorded(meal, mealLog.getTotals());
+        MealEntry entry = new MealEntry(recipes.get(index - 1), date, servings);
+        mealLog.record(entry);
+        LOGGER.fine(() -> "record-meal recorded meal " + mealLog.getEntries().size());
+        return new MealLogViewer().viewRecorded(entry, mealLog.getTotals());
     }
 
     @Override

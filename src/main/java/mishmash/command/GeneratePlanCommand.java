@@ -1,5 +1,6 @@
 package mishmash.command;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -7,6 +8,7 @@ import java.util.logging.Logger;
 import mishmash.exception.MishMashException;
 import mishmash.logic.DietaryPlanner;
 import mishmash.logic.MealPlanGenerator;
+import mishmash.logic.PlanFailureAdvisor;
 import mishmash.model.ActiveMealPlan;
 import mishmash.model.DietarySettings;
 import mishmash.model.GeneratePlanRequest;
@@ -15,6 +17,7 @@ import mishmash.model.Nutrient;
 import mishmash.model.NutritionTargets;
 import mishmash.model.RecipeBook;
 import mishmash.model.TargetSettings;
+import mishmash.parser.GeneratePlanParser;
 
 /**
  * Runs a parsed {@code generate-plan} command: generates a plan from the recipe book
@@ -123,7 +126,15 @@ public class GeneratePlanCommand implements Command {
                         + " (including your saved targets). Change those with 'set-targets'.";
             }
             //@@author
-            throw new MishMashException(message, e);
+            //@@author GauthamNandi
+            // The advice is specific to this failure, so show the short usage rather than every command.
+            List<String> advice = new PlanFailureAdvisor().explain(recipeBook.getRecipes(), effective.targets(),
+                    dietarySettings.get());
+            if (message != null && !advice.isEmpty()) {
+                message += System.lineSeparator() + String.join(System.lineSeparator(), advice);
+            }
+            throw new MishMashException(message, GeneratePlanParser.USAGE, e);
+            //@@author
         }
 
         // Store the effective request, so view-plan and set-diet repair use the targets actually applied.

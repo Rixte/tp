@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +56,7 @@ class RecordMealCommandTest {
 
         String expected = String.join(System.lineSeparator(),
                 "Meal recorded!",
-                "Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)",
+                "Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g) | 1 serving | " + LocalDate.now(),
                 "Total so far: 450 kcal | Protein: 35g | Carbs: 60g | Fats: 8g");
         assertEquals(expected, result);
         assertEquals(List.of(oatmeal), log.getMeals());
@@ -160,7 +161,7 @@ class RecordMealCommandTest {
 
     @Test
     void usage_namesTheCommandAndItsIndex() {
-        assertEquals("Format: record-meal INDEX", RecordMealCommand.USAGE);
+        assertEquals("Format: record-meal INDEX [date/YYYY-MM-DD] [s/SERVINGS]", RecordMealCommand.USAGE);
         assertEquals("record-meal", RecordMealCommand.COMMAND_WORD);
     }
 }

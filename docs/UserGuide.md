@@ -159,7 +159,7 @@ Type `help` to see every supported command, its purpose, and its syntax. This in
 `add-recipe`, `list-recipes`, `edit-recipe`, `delete-recipe`, `generate-plan`, `view-plan`, `adjust-portion`,
 `customize-meal`, `reset-plan`,
 `check-shortfall`, `generate-list`, `view-list`, `set-diet`, `view-diet`, `clear-diet`, `set-targets`,
-`view-targets`, `record-meal`, `view-meals`, `help`, and `bye`.
+`view-targets`, `record-meal`, `view-meals`, `edit-meal`, `delete-meal`, `help`, and `bye`.
 The `help` command takes no arguments.
 
 The compact `mishmash >` prompt appears when the command session starts and after every command, including
@@ -460,7 +460,20 @@ Use 'view-plan' to inspect your planned meals.
 
 **Errors and Recovery:** If generation reports that it cannot find three recipes meeting your daily targets
 within 15%, try different targets or add recipes. If fewer than three eligible recipes are available, add
-or classify suitable recipes before retrying. Failed generation leaves the previous plan, targets, and
+or classify suitable recipes before retrying. The error also lists what caused the failure and what to try next:
+it reports how many recipes your dietary preferences allow, and names any target that your recipes cannot reach.
+For example, with recipes of 400, 500, and 600 kcal, `generate-plan d/1 cal/5000` shows:
+
+```text
+[ERROR] Error: Could not find 3 recipes that meet your daily targets within 15%. Try different targets or add more recipes.
+Why this happened:
+- Calories: your target is 5000 kcal, but your 3 highest recipes total only 1500 kcal.
+What to try next:
+- Lower cal/ or add recipes higher in Calories.
+[TRY] Format: generate-plan d/DAYS [cal/DAILY_CALORIES] [p/DAILY_PROTEIN] [c/DAILY_CARBS] [f/DAILY_FATS]
+```
+
+Failed generation leaves the previous plan, targets, and
 grocery list intact. If a saved target was applied, the error adds a line such as `Daily targets applied: 1500 kcal,
 200 g protein (including your saved targets). Change those with 'set-targets'.` Use `view-targets` to see what is saved,
 then change or remove a target with `set-targets`. There is no way to ignore a saved target for a single `generate-plan`;
@@ -1188,19 +1201,21 @@ With no targets saved, `view-targets` replies:
 <!-- @@author GauthamNandi -->
 ### Recording a Meal
 
-Records a recipe as a meal you have eaten, so you can keep track of your actual food intake. Each time you record a meal, MishMash shows its calories and macronutrients, and the totals of everything you have recorded so far. Recording a meal does not change your recipes, meal plan, or grocery list.
+Records a recipe as a meal you have eaten, so you can keep track of your actual food intake. Each time you record a meal, MishMash shows its calories and macronutrients for the servings you ate, its date, and the totals of everything you have recorded so far. Recording a meal does not change your recipes, meal plan, or grocery list.
 
 **Before You Start:** Add at least one recipe, then use `list-recipes` to see each recipe's number.
 
 **Format:**
 
 ```text
-record-meal INDEX
+record-meal INDEX [date/YYYY-MM-DD] [s/SERVINGS]
 ```
 
 | Parameter | Meaning |
 | --- | --- |
 | `INDEX` | The number of the recipe you ate, as shown by `list-recipes`. The first recipe is number 1. |
+| `date/YYYY-MM-DD` | Optional. The date you ate the meal. It defaults to today and cannot be in the future. |
+| `s/SERVINGS` | Optional. The number of whole servings you ate, from 1 to 100. It defaults to 1. |
 
 **Example:**
 
@@ -1209,36 +1224,36 @@ In a fresh session, after entering your name, enter these commands one line at a
 ```text
 add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken Breast:200g i/White Rice:150g i/Olive Oil:10ml
 add-recipe n/Protein Oatmeal cal/450 p/35 c/60 f/8 i/Rolled Oats:50g i/Whey Protein:30g
-record-meal 1
-record-meal 2
+record-meal 1 date/2026-03-02
+record-meal 2 date/2026-03-03 s/2
 ```
 
 **Example Output:**
 
-After `record-meal 1`:
+After `record-meal 1 date/2026-03-02`:
 
 ```text
 [DONE] Meal recorded!
-Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)
+Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g) | 1 serving | 2026-03-02
 Total so far: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g
 ```
 
-After `record-meal 2`:
+After `record-meal 2 date/2026-03-03 s/2`:
 
 ```text
 [DONE] Meal recorded!
-Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)
-Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
+Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-03
+Total so far: 1550 kcal | Protein: 120g | Carbs: 190g | Fats: 31g
 ```
 
 **Rules:**
 
-- Supply exactly **one** index, written as a positive whole number such as `2`. Signs, decimals, and extra words are rejected.
+- Supply exactly **one** index first, written as a positive whole number such as `2`. Signs, decimals, and extra words are rejected. `date/` and `s/` can follow in either order.
 - The index must match a recipe in your current recipe list. If you delete a recipe, the numbers of the recipes after it change, so check `list-recipes` again.
 - The meal is recorded with the recipe's calories and macronutrients as stored when you record it. Deleting or editing that recipe later (for example with `edit-recipe`) does not change a meal you have already recorded.
 - You can record the same recipe more than once. Each entry counts separately toward the totals.
 - Recorded meals are kept only for the current session. They are separate from the meals in a generated plan.
-- MishMash does not ask for confirmation. There is currently no command to remove a recorded meal.
+- MishMash does not ask for confirmation. To fix a mistake, use [`edit-meal`](#correcting-a-recorded-meal) or [`delete-meal`](#deleting-a-recorded-meal).
 
 **Errors and Recovery:**
 
@@ -1249,8 +1264,12 @@ Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
 | `record-meal 5` with only three recipes | `[ERROR] Error: Recipe index must be between 1 and 3.` | Enter `list-recipes` to check the numbers, then use one within that range. |
 | `record-meal 0` | `[ERROR] Error: Recipe index must be at least 1.` | Recipe numbers start at 1, for example `record-meal 1`. |
 | `record-meal two`, `record-meal -1`, or `record-meal 1 2` | `[ERROR] Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `record-meal 2`. |
+| `record-meal 1 date/03-02-2026` | `[ERROR] Error: Date must use the format YYYY-MM-DD.` | Write the date as year-month-day, for example `date/2026-03-02`. |
+| `record-meal 1 date/2026-02-30` | `[ERROR] Error: Date 2026-02-30 does not exist.` | Enter a real calendar date. |
+| A date after today | `[ERROR] Error: Date must not be in the future.` | Record the meal after you have eaten it. |
+| `record-meal 1 s/0` or `record-meal 1 s/101` | `[ERROR] Error: Servings must be at least 1.` or `[ERROR] Error: Servings must be between 1 and 100.` | Enter a whole number of servings from 1 to 100. |
 
-Errors in the index also display `Format: record-meal INDEX`. The "no recipes" error and the "index too large" error display the list of all command formats instead. Enter the corrected command at the next prompt; errors leave your recorded meals unchanged.
+Errors in the index, date, or servings also display the `record-meal` format. The "no recipes" error and the "index too large" error display the list of all command formats instead. Enter the corrected command at the next prompt; errors leave your recorded meals unchanged.
 
 
 <!-- @@author -->
@@ -1258,14 +1277,14 @@ Errors in the index also display `Format: record-meal INDEX`. The "no recipes" e
 <!-- @@author GauthamNandi -->
 ### Viewing Recorded Meals
 
-Displays every meal you have recorded, with the calories and macronutrients of each meal, followed by the totals for all recorded meals. Viewing does not record or change anything.
+Displays the meals you have recorded, with the servings, date, calories, and macronutrients of each meal, followed by their totals. Supply a date to review one day's meals and daily totals. Viewing does not record or change anything.
 
 **Before You Start:** Record at least one meal using `record-meal INDEX`.
 
 **Format:**
 
 ```text
-view-meals
+view-meals [date/YYYY-MM-DD]
 ```
 
 **Example:**
@@ -1274,25 +1293,37 @@ After the two `record-meal` commands in [Recording a Meal](#recording-a-meal), e
 
 ```text
 view-meals
+view-meals date/2026-03-03
 ```
 
 **Example Output:**
 
+After `view-meals`:
+
 ```text
 ================ Recorded Meals ================
-Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)
-Meal 2: Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)
+Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g) | 1 serving | 2026-03-02
+Meal 2: Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-03
 ------------------------------------------------
-Total: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
+Total: 1550 kcal | Protein: 120g | Carbs: 190g | Fats: 31g
+================================================
+```
+
+After `view-meals date/2026-03-03`:
+
+```text
+================ Recorded Meals ================
+Meal 2: Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-03
+------------------------------------------------
+Total for 2026-03-03: 900 kcal | Protein: 70g | Carbs: 120g | Fats: 16g
 ================================================
 ```
 
 **Rules:**
 
-- `view-meals` takes **no arguments**.
-- Meals appear in the order you recorded them, and are numbered from 1.
-- Each meal's line gives its calories (kcal) and its protein (P), carbohydrates (C), and fats (F) in grams.
-- The total line adds up all recorded meals. It is not a daily total: MishMash does not record dates, so everything you record in the session is counted together.
+- `date/` is optional. Without it, every recorded meal is shown and the total line adds up all of them.
+- Meals appear in the order you recorded them, and are numbered from 1. A meal keeps the same number when you view one date, so you can use that number with `edit-meal` and `delete-meal`.
+- Each meal's line gives the calories (kcal), protein (P), carbohydrates (C), and fats (F) in grams for all of the servings eaten, then the servings and the date.
 - These meals are what you recorded as eaten. They are not the meals in your meal plan, and `check-shortfall` does not use them.
 
 **Errors and Recovery:**
@@ -1300,7 +1331,83 @@ Total: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
 | Situation or Input | Response | What to Do |
 | --- | --- | --- |
 | No meals recorded yet | `[NOTE] No meals recorded yet.` | Enter `record-meal 1` (or another recipe number), then try `view-meals` again. |
-| Extra arguments, such as `view-meals 1` | `[ERROR] Error: view-meals does not accept arguments.` followed by `[TRY] Format: view-meals`. | Enter `view-meals` on its own. |
+| No meals on the chosen date | `[NOTE] No meals recorded on 2026-03-09.` | Check the date, or enter `view-meals` to see every meal. |
+| Other arguments, such as `view-meals 1` | `[ERROR] Error: view-meals accepts only an optional date/YYYY-MM-DD.` followed by `[TRY] Format: view-meals [date/YYYY-MM-DD]`. | Enter `view-meals`, or add one date. |
+
+
+<!-- @@author -->
+
+<!-- @@author GauthamNandi -->
+### Correcting a Recorded Meal
+
+Changes the date or servings of a recorded meal, so your intake records and daily totals stay accurate. To change which recipe you recorded, delete the meal and record the right recipe.
+
+**Before You Start:** Use `view-meals` to see each meal's number.
+
+**Format:**
+
+```text
+edit-meal MEAL_NUMBER [date/YYYY-MM-DD] [s/SERVINGS]
+```
+
+**Example:**
+
+After the commands in [Recording a Meal](#recording-a-meal), `edit-meal 1 s/2` shows:
+
+```text
+[DONE] Meal updated!
+Chicken and Rice (1300 kcal | P: 100g, C: 140g, F: 30g) | 2 servings | 2026-03-02
+Total for 2026-03-02: 1300 kcal | Protein: 100g | Carbs: 140g | Fats: 30g
+```
+
+**Rules:**
+
+- Supply at least one of `date/` and `s/`. Anything you leave out keeps its current value.
+- Dates and servings follow the same rules as `record-meal`.
+- The meal keeps its number, and MishMash does not ask for confirmation.
+
+**Errors and Recovery:**
+
+| Situation or Input | Response | What to Do |
+| --- | --- | --- |
+| No meals recorded | `[ERROR] Error: No meals recorded yet. Use 'record-meal' to add one.` | Record a meal first. |
+| `edit-meal 5 s/2` with two meals | `[ERROR] Error: Meal number must be between 1 and 2.` | Enter `view-meals` to check the numbers. |
+| `edit-meal` | `[ERROR] Error: Meal number is required.` | Add a number, for example `edit-meal 1 s/2`. |
+| `edit-meal 1` | `[ERROR] Error: Provide date/ or s/ to correct.` | Add the value to change. |
+
+
+<!-- @@author -->
+
+<!-- @@author GauthamNandi -->
+### Deleting a Recorded Meal
+
+Removes a recorded meal, for example one you logged by mistake. A deleted meal cannot be brought back, so MishMash describes it and asks you to confirm first.
+
+**Before You Start:** Use `view-meals` to see each meal's number.
+
+**Format:**
+
+```text
+delete-meal MEAL_NUMBER
+```
+
+**Example:**
+
+After the commands in [Recording a Meal](#recording-a-meal), `delete-meal 2` followed by `y` shows:
+
+```text
+[CONFIRM] Are you sure you want to delete meal 2: Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-03? [y/N]:
+[DONE] Meal deleted!
+Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-03
+Total for 2026-03-03: 0 kcal | Protein: 0g | Carbs: 0g | Fats: 0g
+```
+
+**Rules:**
+
+- Meals after the deleted one move up by one number, so check `view-meals` before deleting another.
+- Any answer other than `y` or `yes` cancels the deletion.
+
+**Errors and Recovery:** The errors match [`edit-meal`](#correcting-a-recorded-meal), and a number that does not exist is reported before you are asked to confirm.
 
 
 <!-- @@author -->
@@ -1593,7 +1700,7 @@ The meal plan, created by `generate-plan`, is what you intend to eat. Recorded m
 
 **Can I remove a meal I recorded by mistake?**
 
-Not yet. There is currently no command to remove or edit a recorded meal. Restarting MishMash clears all recorded meals.
+Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or servings, and [`delete-meal`](#deleting-a-recorded-meal) to remove it. Restarting MishMash clears all recorded meals.
 
 <!-- TEAM: Confirm the release download link, actual JAR filename, feature availability, sample workflow, and storage behavior before publishing. Remove unfinished fields and owner comments from the release guide. -->
 
@@ -1682,6 +1789,8 @@ Click a task to jump directly to its instructions. The commands below are suppor
 | [Generate groceries](#generating-a-grocery-list) | `generate-list` | Generate a meal plan first. |
 | [View groceries](#viewing-a-grocery-list) | `view-list` | Generate a grocery list first. |
 | [Record a meal I ate](#recording-a-meal) | `record-meal INDEX` | Add at least one recipe; use an index from the latest recipe list. |
-| [View recorded meals](#viewing-recorded-meals) | `view-meals` | Record at least one meal to see nutrition totals. |
+| [View recorded meals](#viewing-recorded-meals) | `view-meals [date/YYYY-MM-DD]` | Record at least one meal to see nutrition totals. |
+| [Correct a recorded meal](#correcting-a-recorded-meal) | `edit-meal MEAL_NUMBER [date/YYYY-MM-DD] [s/SERVINGS]` | Supply at least one field. |
+| [Delete a recorded meal](#deleting-a-recorded-meal) | `delete-meal MEAL_NUMBER` | Asks for confirmation. |
 | [Show command help](#viewing-available-commands-help) | `help` | No prerequisites. |
 | [Exit](#exiting-mishmash) | `bye` | Session data will be cleared. |

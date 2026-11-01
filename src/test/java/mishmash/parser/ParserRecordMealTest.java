@@ -167,7 +167,7 @@ class ParserRecordMealTest {
             MishMashException error = assertThrows(MishMashException.class,
                     () -> parser.parseCommand("view-meals " + arguments), arguments);
 
-            assertEquals("view-meals does not accept arguments."
+            assertEquals("view-meals accepts only an optional date/YYYY-MM-DD."
                     + System.lineSeparator() + Parser.VIEW_MEALS_USAGE, error.getMessage(), arguments);
         }
     }
@@ -204,8 +204,8 @@ class ParserRecordMealTest {
 
     @Test
     void usage_isListedInTheGeneralCommandUsage() {
-        assertEquals("Format: record-meal INDEX", Parser.RECORD_MEAL_USAGE);
-        assertEquals("Format: view-meals", Parser.VIEW_MEALS_USAGE);
+        assertEquals("Format: record-meal INDEX [date/YYYY-MM-DD] [s/SERVINGS]", Parser.RECORD_MEAL_USAGE);
+        assertEquals("Format: view-meals [date/YYYY-MM-DD]", Parser.VIEW_MEALS_USAGE);
         assertTrue(Parser.COMMAND_USAGE.contains(Parser.RECORD_MEAL_USAGE));
         assertTrue(Parser.COMMAND_USAGE.contains(Parser.VIEW_MEALS_USAGE));
     }

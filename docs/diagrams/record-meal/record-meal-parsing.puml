@@ -4,18 +4,31 @@ title Parsing record-meal 2
 
 participant ":MishMash" as App
 participant ":Parser" as Parser
+participant "entryParser:MealEntryParser" as EntryParser
 participant "cmd:RecordMealCommand" as Command
 
 App -> Parser : parseCommand("record-meal 2")
 activate Parser
 Parser -> Parser : parseRecordMeal("2")
 activate Parser
+create EntryParser
+Parser -> EntryParser : MealEntryParser(today)
+activate EntryParser
+deactivate EntryParser
+Parser -> EntryParser : parsePosition("2")
+activate EntryParser
+EntryParser --> Parser : "2"
+deactivate EntryParser
 Parser -> Parser : parseRecipeIndex("2")
 activate Parser
 Parser --> Parser : 2
 deactivate Parser
+Parser -> EntryParser : parseChanges("2")
+activate EntryParser
+EntryParser --> Parser : details
+deactivate EntryParser
 create Command
-Parser -> Command : RecordMealCommand(2, ...)
+Parser -> Command : RecordMealCommand(2, today, 1, mealLog)
 activate Command
 deactivate Command
 Parser --> Parser : cmd
@@ -25,5 +38,6 @@ deactivate Parser
 
 note over Parser
   parseCommand first dispatches on the command word. That step is omitted.
+  details holds no date or servings here, so today and 1 serving are used.
 end note
 @enduml

@@ -9,9 +9,9 @@ participant "viewer:MealLogViewer" as Viewer
 
 App -> Command : executeWithResult(recipeBook)
 activate Command
-Command -> Log : getMeals()
+Command -> Log : getEntries()
 activate Log
-Log --> Command : meals
+Log --> Command : entries
 deactivate Log
 create Viewer
 Command -> Viewer : MealLogViewer()
@@ -21,7 +21,7 @@ Command -> Log : getTotals()
 activate Log
 Log --> Command : totals
 deactivate Log
-Command -> Viewer : view(meals, totals)
+Command -> Viewer : view(entries, totals)
 activate Viewer
 Viewer --> Command : text
 deactivate Viewer
@@ -35,6 +35,7 @@ destroy Command
 note over Command, Log
   result is a CommandResult holding the text and an info status.
   With an empty log the command returns a note status with "No meals
-  recorded yet." without creating a viewer.
+  recorded yet." without creating a viewer. With date/, the command
+  calls getTotalsOn(date) and viewDate(entries, date, totals) instead.
 end note
 @enduml

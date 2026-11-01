@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -760,18 +761,19 @@ class MishMashTest {
     //@@author GauthamNandi
     @Test
     void main_recordAndViewMeals_showsFeedbackAndCumulativeTotals() {
+        String today = " | 1 serving | " + LocalDate.now();
         String output = runCli(session(
                 "add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken:200g",
                 "add-recipe n/Protein Oatmeal cal/450 p/35 c/60 f/8 i/Oats:50g",
                 "record-meal 1", "record-meal 2", "view-meals", "bye"));
 
         assertTrue(output.contains("Meal recorded!" + System.lineSeparator()
-                + "Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)" + System.lineSeparator()
+                + "Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)" + today + System.lineSeparator()
                 + "Total so far: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g"), output);
         assertTrue(output.contains("Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g"), output);
         assertTrue(output.contains("================ Recorded Meals ================" + System.lineSeparator()
-                + "Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)" + System.lineSeparator()
-                + "Meal 2: Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)" + System.lineSeparator()
+                + "Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)" + today + System.lineSeparator()
+                + "Meal 2: Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)" + today + System.lineSeparator()
                 + "------------------------------------------------" + System.lineSeparator()
                 + "Total: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g" + System.lineSeparator()
                 + "================================================"), output);
@@ -793,7 +795,7 @@ class MishMashTest {
         assertTrue(output.contains("Error: Recipe index must be at least 1."), output);
         assertTrue(output.contains("Error: Recipe index is required."), output);
         assertTrue(output.contains("Error: Recipe index must be a single positive whole number."), output);
-        assertTrue(output.contains("Error: view-meals does not accept arguments."), output);
+        assertTrue(output.contains("Error: view-meals accepts only an optional date/YYYY-MM-DD."), output);
         assertEquals(6, countOccurrences(output, "Error: "), output);
         // The failed commands record nothing; only the final successful recording appears in the last view.
         assertEquals(1, countOccurrences(output, "Meal recorded!"), output);

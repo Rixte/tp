@@ -1,17 +1,19 @@
 package mishmash.command;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
+import mishmash.model.MealEntry;
 import mishmash.model.MealLog;
-import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 import mishmash.ui.MealLogViewer;
 
 //@@author GauthamNandi
 /**
- * Displays the recorded meals, each with its calories and macronutrients, followed by their totals.
+ * Displays the recorded meals, or those of one date, each with its servings, date, calories and
+ * macronutrients, followed by their totals.
  */
 public class ViewMealsCommand implements Command {
     /**
@@ -20,9 +22,9 @@ public class ViewMealsCommand implements Command {
     public static final String COMMAND_WORD = "view-meals";
 
     /**
-     * Describes the command, which takes no arguments.
+     * Describes the command's optional date.
      */
-    public static final String USAGE = "Format: " + COMMAND_WORD;
+    public static final String USAGE = "Format: " + COMMAND_WORD + " [date/YYYY-MM-DD]";
 
     private static final String NO_MEALS_MESSAGE = "No meals recorded yet.";
 
@@ -30,14 +32,29 @@ public class ViewMealsCommand implements Command {
 
     private final MealLog mealLog;
 
+    /** The date to show, or null to show every recorded meal. */
+    private final LocalDate date;
+
     /**
-     * Creates a command that reads the given log when it runs.
+     * Creates a command that shows the whole log when it runs.
      *
      * @param mealLog The log to display.
      * @throws NullPointerException If the meal log is null.
      */
     public ViewMealsCommand(MealLog mealLog) {
+        this(mealLog, null);
+    }
+
+    /**
+     * Creates a command that shows one date of the log when it runs.
+     *
+     * @param mealLog The log to display.
+     * @param date The date to show, or null to show every recorded meal.
+     * @throws NullPointerException If the meal log is null.
+     */
+    public ViewMealsCommand(MealLog mealLog, LocalDate date) {
         this.mealLog = Objects.requireNonNull(mealLog, "mealLog");
+        this.date = date;
     }
 
     /**
@@ -54,14 +71,21 @@ public class ViewMealsCommand implements Command {
 
     @Override
     public CommandResult executeWithResult(RecipeBook recipeBook) {
-        List<Recipe> meals = mealLog.getMeals();
-        if (meals.isEmpty()) {
+        List<MealEntry> entries = mealLog.getEntries();
+        if (entries.isEmpty()) {
             LOGGER.fine("view-meals requested with no recorded meals");
             return CommandResult.note(NO_MEALS_MESSAGE);
         }
-        String result = new MealLogViewer().view(meals, mealLog.getTotals());
-        LOGGER.fine(() -> "view-meals displayed " + meals.size() + " meals");
-        return CommandResult.info(result);
+        MealLogViewer viewer = new MealLogViewer();
+        if (date == null) {
+            LOGGER.fine(() -> "view-meals displayed " + entries.size() + " meals");
+            return CommandResult.info(viewer.view(entries, mealLog.getTotals()));
+        }
+        if (entries.stream().noneMatch(entry -> date.equals(entry.date()))) {
+            LOGGER.fine("view-meals found no meals on the requested date");
+            return CommandResult.note("No meals recorded on " + date + ".");
+        }
+        return CommandResult.info(viewer.viewDate(entries, date, mealLog.getTotalsOn(date)));
     }
 }
 //@@author
