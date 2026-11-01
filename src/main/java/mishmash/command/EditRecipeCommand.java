@@ -14,7 +14,9 @@ import mishmash.ui.RecipeViewer;
  * Replaces one recipe in place using validated edits, keeping all omitted fields.
  */
 public class EditRecipeCommand implements Command {
-    /** Records successful edits and rejected positions without including recipe contents. */
+    /**
+     * Records successful edits and rejected positions without including recipe contents.
+     */
     private static final Logger LOGGER = Logger.getLogger(EditRecipeCommand.class.getName());
 
     private final int index;

@@ -11,7 +11,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 //@@author Rixte
-/** Checks model validation and immutable ingredient edits independently of command parsing. */
+/**
+ * Checks model validation and immutable ingredient edits independently of command parsing.
+ */
 class RecipeChangesTest {
     @Test
     void constructor_noEditsOrBlankName_rejectsInvalidChanges() {

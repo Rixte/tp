@@ -21,6 +21,7 @@ import mishmash.model.MealPlan;
 import mishmash.model.NutritionTargets;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
+import mishmash.testutil.AssertionDisabledClassLoader;
 import mishmash.testutil.LogCapture;
 import mishmash.testutil.TestRecipes;
 
@@ -28,6 +29,44 @@ import mishmash.testutil.TestRecipes;
  * Checks nutrition-shortfall logs, parser exception causes, and recovery after invalid targets.
  */
 class CheckShortfallDiagnosticsTest {
+    //@@author Rixte
+    @Test
+    void execute_negativeModelTotal_rejectsBrokenInvariantBeforeReportingSuccess() {
+        DayPlan invalidDay = new DayPlan(List.of()) {
+            @Override
+            public long getTotalCalories() {
+                return -1;
+            }
+        };
+        ActiveMealPlan active = new ActiveMealPlan();
+        active.set(new MealPlan(List.of(invalidDay)));
+        CheckShortfallCommand command = new CheckShortfallCommand(active,
+                new NutritionTargets(100, null, null, null));
+        try (LogCapture logs = new LogCapture(CheckShortfallCommand.class)) {
+            AssertionError error = assertThrows(AssertionError.class, () -> command.execute(new RecipeBook()));
+
+            assertEquals("Planned nutrition totals must not be negative.", error.getMessage());
+            assertTrue(logs.getRecords().isEmpty());
+        }
+    }
+
+    @Test
+    void execute_assertionsDisabled_reportsCorrectDeficitWithoutChangingPlan() throws Exception {
+        ActiveMealPlan active = new ActiveMealPlan();
+        MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(TestRecipes.recipe("Meal", 50, 1, 1, 1)))));
+        active.set(plan);
+        try (AssertionDisabledClassLoader loader = new AssertionDisabledClassLoader(CheckShortfallCommand.class)) {
+            Class<?> commandClass = loader.loadClass(CheckShortfallCommand.class.getName());
+            Command command = (Command) commandClass.getConstructor(ActiveMealPlan.class, NutritionTargets.class)
+                    .newInstance(active, new NutritionTargets(100, null, null, null));
+
+            assertFalse(commandClass.desiredAssertionStatus());
+            assertTrue(command.execute(new RecipeBook()).contains("Calories: 50/100 kcal (short by 50 kcal)."));
+            assertEquals(plan, active.get().orElseThrow());
+        }
+    }
+    //@@author
+
     @Test
     void execute_mixedDays_logsCountOfAffectedDaysWithoutRecipeContents() {
         ActiveMealPlan active = new ActiveMealPlan();

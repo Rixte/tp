@@ -24,9 +24,13 @@ import mishmash.testutil.TestRecipes;
 import mishmash.ui.RecipeViewer;
 
 //@@author Rixte
-/** Checks positional edits, atomic failures, execution-time lookup, and generated snapshots. */
+/**
+ * Checks positional edits, atomic failures, execution-time lookup, and generated snapshots.
+ */
 class EditRecipeCommandTest {
-    /** Builds a protein-only change for direct command tests. */
+    /**
+     * Builds a protein-only change for direct command tests.
+     */
     private RecipeChanges proteinChange() {
         return new RecipeChanges(null, null, 25, null, null, List.of(), null);
     }

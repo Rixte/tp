@@ -122,7 +122,9 @@ class ResetPlanDiagnosticsTest {
         private final Level originalLevel;
         private final boolean originalUseParentHandlers;
 
-        /** Attaches a temporary handler without replacing other registered handlers. */
+        /**
+         * Attaches a temporary handler without replacing other registered handlers.
+         */
         private RecordingHandler(Class<?> source) {
             logger = Logger.getLogger(source.getName());
             originalLevel = logger.getLevel();
@@ -147,7 +149,9 @@ class ResetPlanDiagnosticsTest {
             // Records are already in memory.
         }
 
-        /** Removes this temporary handler and restores the settings captured at construction. */
+        /**
+         * Removes this temporary handler and restores the settings captured at construction.
+         */
         @Override
         public void close() {
             logger.removeHandler(this);

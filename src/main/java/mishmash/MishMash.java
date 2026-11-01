@@ -40,9 +40,13 @@ public class MishMash {
      */
     private static final int LOG_FILE_COUNT = 3;
 
-    /** Borrowed console input; the caller remains responsible for closing it. */
+    /**
+     * Borrowed console input; the caller remains responsible for closing it.
+     */
     private final Scanner scanner;
-    /** Destination for user-facing output, independent of diagnostic logging. */
+    /**
+     * Destination for user-facing output, independent of diagnostic logging.
+     */
     private final PrintStream output;
     private final Parser parser;
     private final RecipeBook recipeBook;
@@ -70,9 +74,19 @@ public class MishMash {
      * @param args Command-line arguments, which are not used.
      */
     public static void main(String[] args) {
+        main(args, "mishmash.%g.log");
+    }
+
+    /**
+     * Runs the entry point with a supplied log location for testing startup and shutdown failures.
+     *
+     * @param args Unused command-line arguments.
+     * @param logPattern The rotating log destination.
+     */
+    static void main(String[] args, String logPattern) {
         Level originalLogLevel = APP_LOGGER.getLevel();
         boolean wasUsingParentHandlers = APP_LOGGER.getUseParentHandlers();
-        FileHandler logFile = configureLogging();
+        FileHandler logFile = configureLogging(logPattern);
         try (Scanner scanner = new Scanner(System.in)) {
             MishMash session;
             try {
@@ -117,12 +131,13 @@ public class MishMash {
      * Writes package diagnostics to rotating files without mixing them into console interaction.
      * Logging failure leaves the application usable with its existing console logging configuration.
      *
+     * @param pattern The rotating file pattern accepted by {@link FileHandler}.
      * @return The file handler to close at shutdown, or null if its file could not be opened.
      */
-    private static FileHandler configureLogging() {
+    private static FileHandler configureLogging(String pattern) {
         try {
             // Append across sessions and rotate files when the size limit is reached.
-            FileHandler logFile = new FileHandler("mishmash.%g.log",
+            FileHandler logFile = new FileHandler(pattern,
                     LOG_FILE_SIZE_LIMIT_BYTES, LOG_FILE_COUNT, true);
             logFile.setFormatter(new SimpleFormatter());
             logFile.setLevel(Level.FINE);
@@ -163,33 +178,56 @@ public class MishMash {
      */
     private void executeCommand(String input) {
         try {
-            Command command = parser.parseCommand(input);
-            if (command == null) {
-                throw new MishMashException("The parser did not return a command.");
-            }
-            Optional<String> question = command.confirmationPrompt(recipeBook);
-            if (question == null) {
-                throw new MishMashException("The command did not return a confirmation prompt.");
-            }
-            if (question.isPresent() && question.get().isBlank()) {
-                throw new MishMashException("Confirmation prompts must not be blank.");
-            }
+            Command command = parseRequiredCommand(input);
+            Optional<String> question = getConfirmationQuestion(command);
             if (question.isPresent() && !userConfirms(question.get())) {
                 LOGGER.fine(() -> "Cancelled " + command.getClass().getSimpleName());
                 output.println(CliFormatter.cancellation());
                 return;
             }
-            LOGGER.fine(() -> "Executing " + command.getClass().getSimpleName());
-            String feedback = command.execute(recipeBook);
-            if (feedback == null) {
-                throw new MishMashException("The command did not return feedback.");
-            }
-            output.println(CliFormatter.feedback(command, feedback));
-            LOGGER.fine(() -> "Completed " + command.getClass().getSimpleName());
+            executeAndDisplayFeedback(command);
         } catch (MishMashException e) {
             LOGGER.log(Level.FINE, "Command rejected", e);
             displayError(e);
         }
+    }
+
+    /**
+     * Returns a parsed command, reporting a missing parser result as a recoverable error.
+     */
+    private Command parseRequiredCommand(String input) throws MishMashException {
+        Command command = parser.parseCommand(input);
+        if (command == null) {
+            throw new MishMashException("The parser did not return a command.");
+        }
+        return command;
+    }
+
+    /**
+     * Returns the command's optional question after checking the confirmation contract.
+     */
+    private Optional<String> getConfirmationQuestion(Command command) throws MishMashException {
+        Optional<String> question = command.confirmationPrompt(recipeBook);
+        if (question == null) {
+            throw new MishMashException("The command did not return a confirmation prompt.");
+        }
+        if (question.isPresent() && question.get().isBlank()) {
+            throw new MishMashException("Confirmation prompts must not be blank.");
+        }
+        return question;
+    }
+
+    /**
+     * Executes an accepted command and displays its feedback, rejecting a missing result.
+     */
+    private void executeAndDisplayFeedback(Command command) throws MishMashException {
+        LOGGER.fine(() -> "Executing " + command.getClass().getSimpleName());
+        String feedback = command.execute(recipeBook);
+        if (feedback == null) {
+            throw new MishMashException("The command did not return feedback.");
+        }
+        output.println(CliFormatter.feedback(command, feedback));
+        LOGGER.fine(() -> "Completed " + command.getClass().getSimpleName());
     }
 
     /**

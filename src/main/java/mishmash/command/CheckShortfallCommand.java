@@ -17,19 +17,27 @@ import mishmash.model.RecipeBook;
  * A shortfall is any amount below a supplied target, independently of generation's tolerance.
  */
 public class CheckShortfallCommand implements Command {
-    /** Command word shared by parsing, help, and usage instructions. */
+    /**
+     * Command word shared by parsing, help, and usage instructions.
+     */
     public static final String COMMAND_WORD = "check-shortfall";
 
-    /** At least one of these daily targets must be supplied. */
+    /**
+     * At least one of these daily targets must be supplied.
+     */
     public static final String USAGE = "Format: " + COMMAND_WORD + " [cal/DAILY_CALORIES] [p/DAILY_PROTEIN]"
             + " [c/DAILY_CARBS] [f/DAILY_FATS]";
 
     private static final Logger LOGGER = Logger.getLogger(CheckShortfallCommand.class.getName());
 
-    /** Reads the latest plan when the command executes, rather than capturing an earlier plan. */
+    /**
+     * Reads the latest plan when the command executes, rather than capturing an earlier plan.
+     */
     private final ActiveMealPlan activePlan;
 
-    /** Request-specific targets; a null nutrient value means that nutrient is not checked. */
+    /**
+     * Request-specific targets; a null nutrient value means that nutrient is not checked.
+     */
     private final NutritionTargets targets;
 
     /**

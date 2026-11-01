@@ -144,7 +144,9 @@ class MishMashResetPlanTest {
         assertEquals(1, countOccurrences(output, ResetPlanCommand.USAGE));
     }
 
-    /** Checks state immediately after a failed reset, then retries with the same session dependencies. */
+    /**
+     * Checks state immediately after a failed reset, then retries with the same session dependencies.
+     */
     private void verifyRecoverableReset(String scenario) throws MishMashException {
         ActiveMealPlan active = failsFirstReset(scenario);
         MealLog meals = new MealLog();
@@ -195,7 +197,9 @@ class MishMashResetPlanTest {
         }
     }
 
-    /** Simulates either a failed clear or an incomplete clear once, followed by a normal retry. */
+    /**
+     * Simulates either a failed clear or an incomplete clear once, followed by a normal retry.
+     */
     private ActiveMealPlan failsFirstReset(String scenario) {
         return new ActiveMealPlan() {
             private boolean firstReset = true;
@@ -215,12 +219,16 @@ class MishMashResetPlanTest {
         };
     }
 
-    /** Runs a session with borrowed streams, leaving global console and logging settings untouched. */
+    /**
+     * Runs a session with borrowed streams, leaving global console and logging settings untouched.
+     */
     private String runCli(String... commands) {
         return runSession(new Parser(), new RecipeBook(), commands);
     }
 
-    /** Runs commands against supplied dependencies so tests can inspect retained session data directly. */
+    /**
+     * Runs commands against supplied dependencies so tests can inspect retained session data directly.
+     */
     private String runSession(Parser parser, RecipeBook book, String... commands) {
         String input = "Tester" + System.lineSeparator() + String.join(System.lineSeparator(), commands)
                 + System.lineSeparator();

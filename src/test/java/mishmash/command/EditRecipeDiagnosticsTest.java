@@ -19,6 +19,7 @@ import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 import mishmash.model.RecipeChanges;
 import mishmash.parser.Parser;
+import mishmash.testutil.AssertionDisabledClassLoader;
 import mishmash.testutil.LogCapture;
 import mishmash.testutil.TestRecipes;
 
@@ -26,6 +27,46 @@ import mishmash.testutil.TestRecipes;
  * Checks recipe-editing logs, parser exception causes, and failures without false success messages.
  */
 class EditRecipeDiagnosticsTest {
+    //@@author Rixte
+    @Test
+    void execute_assertionsDisabled_replacesRecipeWithoutChangingCount() throws Exception {
+        RecipeBook book = TestRecipes.recipeBook(100, 1, 1, 1);
+        RecipeChanges changes = new RecipeChanges("Updated", null, null, null, null, List.of(), null);
+        try (AssertionDisabledClassLoader loader = new AssertionDisabledClassLoader(EditRecipeCommand.class)) {
+            Class<?> commandClass = loader.loadClass(EditRecipeCommand.class.getName());
+            Command command = (Command) commandClass.getConstructor(int.class, RecipeChanges.class)
+                    .newInstance(1, changes);
+
+            assertFalse(commandClass.desiredAssertionStatus());
+            assertTrue(command.execute(book).contains("Recipe updated!"));
+            assertEquals("Updated", book.getRecipes().getFirst().getName());
+            assertEquals(3, book.size());
+        }
+    }
+    //@@author
+
+    //@@author Rixte
+    @Test
+    void execute_storageAddsInsteadOfReplacing_detectsBrokenRecipeCountWithoutSuccessLog() {
+        // Simulate a faulty storage implementation to exercise the command's invariant check.
+        RecipeBook book = new RecipeBook() {
+            @Override
+            public void replace(int index, Recipe recipe) {
+                add(recipe);
+            }
+        };
+        book.add(TestRecipes.recipe("Original", 100, 1, 1, 1));
+        RecipeChanges changes = new RecipeChanges("New", null, null, null, null, List.of(), null);
+        try (LogCapture logs = new LogCapture(EditRecipeCommand.class)) {
+            AssertionError error = assertThrows(AssertionError.class,
+                    () -> new EditRecipeCommand(1, changes).execute(book));
+
+            assertEquals("Editing must preserve the recipe count.", error.getMessage());
+            assertFalse(logs.getMessages().contains("Recipe edited"));
+        }
+    }
+    //@@author
+
     @Test
     void execute_failedEdits_logReasonsWithoutSuccessThenRecover() throws MishMashException {
         RecipeBook book = new RecipeBook();
