@@ -1,6 +1,7 @@
 package mishmash.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,6 +20,7 @@ import mishmash.model.Diet;
 import mishmash.model.DietaryPreferences;
 import mishmash.model.DietarySettings;
 import mishmash.model.FoodInfo;
+import mishmash.model.FoodTag;
 import mishmash.model.GeneratePlanRequest;
 import mishmash.model.GroceryItem;
 import mishmash.model.IngredientCustomization;
@@ -55,7 +57,9 @@ class CustomizeMealCommandTest {
         List<GroceryItem> groceries = activePlan.getGroceryList().orElseThrow();
 
         assertThrows(MishMashException.class, () -> command(2, 1, rice).execute(recipeBook));
-        assertThrows(MishMashException.class, () -> command(1, 2, rice).execute(recipeBook));
+        MishMashException error = assertThrows(MishMashException.class,
+                () -> command(1, 2, rice).execute(recipeBook));
+        assertEquals(CustomizeMealCommand.USAGE, error.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
         assertSame(request, activePlan.getRequest().orElseThrow());
         assertSame(groceries, activePlan.getGroceryList().orElseThrow());
@@ -69,7 +73,8 @@ class CustomizeMealCommandTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> command(1, 1, rice).execute(recipeBook));
 
-        assertEquals("Day 1 has no meals to customize.", error.getMessage());
+        assertEquals("Day 1 has no meals to customize.", error.getExplanation());
+        assertEquals(CustomizeMealCommand.USAGE, error.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
     }
 
@@ -78,10 +83,11 @@ class CustomizeMealCommandTest {
         MealPlan originalPlan = createGeneratedPlan();
         GroceryItem tofu = new GroceryItem("Tofu", new BigDecimal("150"), "g");
 
-        String result = command(1, 1, tofu).execute(recipeBook);
+        CommandResult result = command(1, 1, tofu).executeWithResult(recipeBook);
 
         MealPlan updatedPlan = activePlan.get().orElseThrow();
-        assertTrue(result.startsWith("Meal 1 on Day 1 ingredients customized."));
+        assertTrue(result.feedback().startsWith("Meal 1 on Day 1 ingredients customized."));
+        assertEquals(CommandResult.Status.DONE, result.status());
         assertEquals(List.of(tofu), updatedPlan.getDays().get(0).getPlannedMeals().get(0).getIngredients());
         assertEquals(List.of(rice), originalPlan.getDays().get(0).getPlannedMeals().get(0).getIngredients());
         assertEquals(List.of(rice), recipe.getIngredients());
@@ -95,11 +101,52 @@ class CustomizeMealCommandTest {
         List<GroceryItem> groceries = activePlan.getGroceryList().orElseThrow();
         GroceryItem numericallyEqualRice = new GroceryItem("Rice", new BigDecimal("100.0"), "g");
 
-        String result = command(1, 1, numericallyEqualRice).execute(recipeBook);
+        CommandResult result = command(1, 1, numericallyEqualRice).executeWithResult(recipeBook);
 
-        assertEquals("Meal 1 on Day 1 already uses those ingredients. Nothing was changed.", result);
+        assertEquals("Meal 1 on Day 1 already uses those ingredients. Nothing was changed.", result.feedback());
+        assertEquals(CommandResult.Status.NOTE, result.status());
         assertSame(plan, activePlan.get().orElseThrow());
         assertSame(groceries, activePlan.getGroceryList().orElseThrow());
+    }
+
+    @Test
+    void execute_reorderedAndRecasedIngredients_changesGroceriesBecauseAggregationIsExact()
+            throws MishMashException {
+        GroceryItem tofu = new GroceryItem("Tofu", new BigDecimal("50"), "g");
+        Recipe bowl = new Recipe("Bowl", 500, 20, 80, 10,
+                List.of(rice, tofu), FoodInfo.parseField("none"));
+        MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(bowl))));
+        List<GroceryItem> groceries = List.of(rice, tofu);
+        activePlan.setGenerated(plan, new GeneratePlanRequest(1, NutritionTargets.none()),
+                Optional.of(groceries));
+        CommandResult result = command(1, 1,
+                new GroceryItem("tofu", new BigDecimal("50.0"), "G"),
+                new GroceryItem("RICE", new BigDecimal("100.00"), "g"))
+                .executeWithResult(recipeBook);
+
+        assertEquals(CommandResult.Status.DONE, result.status());
+        assertTrue(activePlan.get().orElseThrow().getDays().get(0).getPlannedMeals().get(0)
+                .hasCustomizedIngredients());
+        assertTrue(activePlan.getGroceryList().isEmpty());
+
+        new GenerateListCommand(activePlan).execute(recipeBook);
+        List<GroceryItem> regenerated = activePlan.getGroceryList().orElseThrow();
+        assertEquals(List.of("tofu", "RICE"), regenerated.stream().map(GroceryItem::getName).toList());
+        assertEquals(List.of("G", "g"), regenerated.stream().map(GroceryItem::getUnit).toList());
+    }
+
+    @Test
+    void execute_categoryRestrictions_warnsThatCustomizedNamesAreNotClassified() throws MishMashException {
+        createGeneratedPlan();
+        dietarySettings.set(new DietaryPreferences(Diet.VEGETARIAN, Set.of(FoodTag.SOY), Set.of()));
+        GroceryItem chicken = new GroceryItem("Chicken", BigDecimal.ONE, "g");
+
+        CommandResult result = command(1, 1, chicken).executeWithResult(recipeBook);
+
+        assertEquals(CommandResult.Status.WARNING, result.status());
+        assertTrue(result.feedback().contains("not classified for named-diet or avoided-category rules"));
+        assertEquals(List.of(chicken), activePlan.get().orElseThrow().getDays().get(0)
+                .getPlannedMeals().get(0).getIngredients());
     }
 
     @Test
@@ -110,9 +157,14 @@ class CustomizeMealCommandTest {
         command(1, 1, tofu).execute(recipeBook);
         activePlan.setGroceryList(List.of(tofu));
 
-        String result = command(1, 1, rice).execute(recipeBook);
+        dietarySettings.set(new DietaryPreferences(Diet.VEGETARIAN, Set.of(), Set.of()));
 
-        assertTrue(result.startsWith("Meal 1 on Day 1 ingredients restored from its source recipe."));
+        CommandResult result = command(1, 1, rice).executeWithResult(recipeBook);
+
+        assertEquals(CommandResult.Status.DONE, result.status());
+        assertTrue(result.feedback().startsWith(
+                "Meal 1 on Day 1 ingredients restored from its source recipe."));
+        assertFalse(result.feedback().contains("not classified"));
         assertTrue(activePlan.get().orElseThrow().getDays().get(0).getPlannedMeals().stream()
                 .noneMatch(meal -> meal.hasCustomizedIngredients()));
         assertTrue(activePlan.getGroceryList().isEmpty());
@@ -129,7 +181,8 @@ class CustomizeMealCommandTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> command(1, 1, peanut).execute(recipeBook));
 
-        assertEquals("Those ingredients conflict with your current dietary preferences.", error.getMessage());
+        assertEquals("Those ingredients conflict with your current dietary preferences.", error.getExplanation());
+        assertEquals(CustomizeMealCommand.USAGE, error.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
         assertSame(request, activePlan.getRequest().orElseThrow());
         assertSame(groceries, activePlan.getGroceryList().orElseThrow());

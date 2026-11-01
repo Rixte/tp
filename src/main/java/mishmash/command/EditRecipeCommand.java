@@ -70,5 +70,10 @@ public class EditRecipeCommand implements Command {
         LOGGER.fine(() -> "Recipe edited at index " + index + "; recipe count: " + recipeBook.size());
         return confirmation;
     }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
+        return CommandResult.done(execute(recipeBook));
+    }
 }
 //@@author

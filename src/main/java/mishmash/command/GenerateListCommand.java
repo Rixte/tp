@@ -42,16 +42,21 @@ public class GenerateListCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         Optional<MealPlan> plan = activeMealPlan.get();
         if (plan.isEmpty()) {
             LOGGER.warning("Grocery generation rejected: no active meal plan");
-            return "No active meal plan. Use 'generate-plan' first.";
+            return CommandResult.note("No active meal plan. Use 'generate-plan' first.");
         }
 
         // The generator combines exact name/unit matches without converting incompatible units.
         List<GroceryItem> groceries = new GroceryListGenerator().generateForPlan(plan.get());
         activeMealPlan.setGroceryList(groceries);
         LOGGER.info(() -> "Generated grocery list containing " + groceries.size() + " combined items");
-        return "Grocery list generated. Use 'view-list' to view it.";
+        return CommandResult.done("Grocery list generated. Use 'view-list' to view it.");
     }
 }

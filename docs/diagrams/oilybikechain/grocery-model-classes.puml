@@ -14,7 +14,11 @@ class MealPlan {
   + getDays(): List<DayPlan>
 }
 class DayPlan {
-  + getMeals(): List<Recipe>
+  + getPlannedMeals(): List<PlannedMeal>
+}
+class PlannedMeal {
+  - portionCount: int
+  + getScaledIngredients(): List<GroceryItem>
 }
 class Recipe {
   + getIngredients(): List<GroceryItem>
@@ -28,7 +32,9 @@ class GroceryItem {
 ActiveMealPlan --> "0..1" MealPlan : -plan
 ActiveMealPlan --> "0..*" GroceryItem : -groceryList\n{ordered, nonunique}
 MealPlan --> "0..*" DayPlan : -days\n{ordered, nonunique}
-DayPlan --> "0..*" Recipe : -meals\n{ordered, nonunique}
+DayPlan --> "0..*" PlannedMeal : -plannedMeals\n{ordered, nonunique}
+PlannedMeal --> "1" Recipe : -recipe
+PlannedMeal --> "0..*" GroceryItem : -customizedIngredients\n{ordered, nonunique}
 Recipe --> "1..*" GroceryItem : -ingredients\n{ordered, nonunique}
 
 legend bottom

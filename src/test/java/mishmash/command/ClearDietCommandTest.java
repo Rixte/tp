@@ -26,10 +26,11 @@ class ClearDietCommandTest {
     void execute_restrictedProfile_clearsEveryRestriction() {
         settings.set(new DietaryPreferences(Diet.VEGAN, Set.of(FoodTag.SOY), Set.of("Peanut")));
 
-        String result = new ClearDietCommand(settings).execute(recipeBook);
+        CommandResult result = new ClearDietCommand(settings).executeWithResult(recipeBook);
 
         assertEquals("Dietary preferences and restrictions cleared." + System.lineSeparator()
-                + "Recipes, meal plans, groceries, targets, and recorded meals are unchanged.", result);
+                + "Recipes, meal plans, groceries, targets, and recorded meals are unchanged.", result.feedback());
+        assertEquals(CommandResult.Status.DONE, result.status());
         assertFalse(settings.get().isRestricted());
     }
 
@@ -37,8 +38,10 @@ class ClearDietCommandTest {
     void execute_alreadyClear_isIdempotent() {
         ClearDietCommand command = new ClearDietCommand(settings);
 
-        assertEquals("Dietary preferences are already clear. Nothing was changed.",
-                command.execute(recipeBook));
+        CommandResult result = command.executeWithResult(recipeBook);
+
+        assertEquals("Dietary preferences are already clear. Nothing was changed.", result.feedback());
+        assertEquals(CommandResult.Status.NOTE, result.status());
         assertFalse(settings.get().isRestricted());
     }
 

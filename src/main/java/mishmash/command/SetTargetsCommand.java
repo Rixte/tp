@@ -50,5 +50,10 @@ public class SetTargetsCommand implements Command {
         return saved + System.lineSeparator()
                 + "They apply to the next 'generate-plan'; your current meal plan is unchanged.";
     }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
+        return CommandResult.done(execute(recipeBook));
+    }
 }
 //@@author

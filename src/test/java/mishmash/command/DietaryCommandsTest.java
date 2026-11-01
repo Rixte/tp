@@ -159,7 +159,9 @@ class DietaryCommandsTest {
         addSuitableRecipes();
         execute("generate-plan d/1");
         execute("generate-list");
-        String message = execute("set-diet avoid/soy");
+        CommandResult result = parser.parseCommand("set-diet avoid/soy").executeWithResult(book);
+        String message = result.feedback();
+        assertEquals(CommandResult.Status.WARNING, result.status());
         assertTrue(message.contains("found 2"));
         assertTrue(message.contains("have been cleared"));
         assertTrue(active.get().isEmpty());

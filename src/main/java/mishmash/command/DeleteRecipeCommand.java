@@ -64,6 +64,11 @@ public class DeleteRecipeCommand implements Command {
                 + "Recipes remaining: " + recipeBook.size();
     }
 
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
+        return CommandResult.done(execute(recipeBook));
+    }
+
     /**
      * Looks up the recipe at the chosen index without changing the book.
      *

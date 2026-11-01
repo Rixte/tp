@@ -16,12 +16,14 @@ class DayPlan {
   + getTotalCarbs(): long
   + getTotalFats(): long
 }
-class Recipe {
-  + getCalories(): int
-  + getProtein(): int
-  + getCarbs(): int
-  + getFats(): int
+class PlannedMeal {
+  - portionCount: int
+  + getCalories(): long
+  + getProtein(): long
+  + getCarbs(): long
+  + getFats(): long
 }
+class Recipe
 class NutritionTotals <<record>> {
   - calories: long
   - protein: long
@@ -29,7 +31,8 @@ class NutritionTotals <<record>> {
   - fats: long
 }
 
-DayPlan --> "0..*" Recipe : -meals\n{ordered, nonunique}
+DayPlan --> "0..*" PlannedMeal : -plannedMeals\n{ordered, nonunique}
+PlannedMeal --> "1" Recipe : -recipe
 DayPlan ..> NutritionTotals : creates
 
 legend bottom

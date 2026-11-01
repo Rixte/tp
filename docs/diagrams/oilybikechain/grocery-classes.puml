@@ -10,15 +10,16 @@ skinparam ranksep 55
 hide empty members
 
 class Parser {
-  - activeMealPlan: ActiveMealPlan
   - parseGenerateList(arguments: String): Command
 }
 interface Command <<interface>> {
   + execute(recipeBook: RecipeBook): String
 }
 class GenerateListCommand {
-  - activeMealPlan: ActiveMealPlan
   + execute(recipeBook: RecipeBook): String
+}
+class GroceryListGenerator {
+  + generateForPlan(plan: MealPlan): List<GroceryItem>
 }
 class ActiveMealPlan {
   + get(): Optional<MealPlan>
@@ -29,6 +30,8 @@ Parser --> "1" ActiveMealPlan : -activeMealPlan
 Parser ..> GenerateListCommand : creates
 GenerateListCommand ..|> Command
 GenerateListCommand --> "1" ActiveMealPlan : -activeMealPlan
+GenerateListCommand ..> GroceryListGenerator : creates
+GroceryListGenerator ..> MealPlan : reads
 legend bottom
   Only feature-relevant members are shown.
 endlegend

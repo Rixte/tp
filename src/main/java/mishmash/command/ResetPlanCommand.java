@@ -61,6 +61,11 @@ public class ResetPlanCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) throws MishMashException {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
         boolean hadPlan = activePlan.get().isPresent();
         boolean hadGroceries = activePlan.getGroceryList().isPresent();
         try {
@@ -75,9 +80,10 @@ public class ResetPlanCommand implements Command {
         }
         LOGGER.fine(() -> "Reset plan state; had plan: " + hadPlan + "; had groceries: " + hadGroceries);
         if (!hadPlan && !hadGroceries) {
-            return "No active meal plan to reset.";
+            return CommandResult.note("No active meal plan to reset.");
         }
-        return "Meal plan reset. Recipes, dietary preferences, saved daily targets, and recorded meals are unchanged.";
+        return CommandResult.done("Meal plan reset. Recipes, dietary preferences, saved daily targets, "
+                + "and recorded meals are unchanged.");
     }
 }
 //@@author

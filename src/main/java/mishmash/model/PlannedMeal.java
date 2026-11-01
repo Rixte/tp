@@ -184,7 +184,7 @@ public final class PlannedMeal {
     }
 
     /**
-     * Compares ingredient values exactly by order, name, numeric quantity, and unit.
+     * Compares ingredients in order by exact name and unit and by numeric quantity.
      */
     private static boolean sameIngredients(List<GroceryItem> first, List<GroceryItem> second) {
         if (first.size() != second.size()) {

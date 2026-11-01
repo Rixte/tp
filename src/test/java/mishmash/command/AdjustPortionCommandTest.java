@@ -60,7 +60,8 @@ class AdjustPortionCommandTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> command(1, 1, 2).execute(recipeBook));
 
-        assertEquals("Day 1 has no meals to adjust.", error.getMessage());
+        assertEquals("Day 1 has no meals to adjust.", error.getExplanation());
+        assertEquals(AdjustPortionCommand.USAGE, error.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
     }
 
@@ -70,8 +71,12 @@ class AdjustPortionCommandTest {
         GeneratePlanRequest request = activePlan.getRequest().orElseThrow();
         List<GroceryItem> groceries = activePlan.getGroceryList().orElseThrow();
 
-        assertThrows(MishMashException.class, () -> command(2, 1, 2).execute(recipeBook));
-        assertThrows(MishMashException.class, () -> command(1, 3, 2).execute(recipeBook));
+        MishMashException dayError = assertThrows(MishMashException.class,
+                () -> command(2, 1, 2).execute(recipeBook));
+        MishMashException mealError = assertThrows(MishMashException.class,
+                () -> command(1, 3, 2).execute(recipeBook));
+        assertEquals(AdjustPortionCommand.USAGE, dayError.getUsage().orElseThrow());
+        assertEquals(AdjustPortionCommand.USAGE, mealError.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
         assertSame(request, activePlan.getRequest().orElseThrow());
         assertSame(groceries, activePlan.getGroceryList().orElseThrow());
@@ -83,12 +88,13 @@ class AdjustPortionCommandTest {
         DayPlan originalDay = originalPlan.getDays().get(0);
         GeneratePlanRequest request = activePlan.getRequest().orElseThrow();
 
-        String result = command(1, 2, 3).execute(recipeBook);
+        CommandResult result = command(1, 2, 3).executeWithResult(recipeBook);
 
         MealPlan updatedPlan = activePlan.get().orElseThrow();
         DayPlan updatedDay = updatedPlan.getDays().get(0);
         assertEquals("Meal 2 on Day 1 updated to 3 portions." + System.lineSeparator()
-                + "The previous grocery list was cleared. Run 'generate-list' to update it.", result);
+                + "The previous grocery list was cleared. Run 'generate-list' to update it.", result.feedback());
+        assertEquals(CommandResult.Status.DONE, result.status());
         assertEquals(1, originalDay.getPlannedMeals().get(1).getPortionCount());
         assertEquals(3, updatedDay.getPlannedMeals().get(1).getPortionCount());
         assertSame(originalDay.getPlannedMeals().get(0), updatedDay.getPlannedMeals().get(0));
@@ -102,9 +108,10 @@ class AdjustPortionCommandTest {
         MealPlan plan = createGeneratedPlan();
         List<GroceryItem> groceries = activePlan.getGroceryList().orElseThrow();
 
-        String result = command(1, 1, 1).execute(recipeBook);
+        CommandResult result = command(1, 1, 1).executeWithResult(recipeBook);
 
-        assertEquals("Meal 1 on Day 1 already has 1 portion. Nothing was changed.", result);
+        assertEquals("Meal 1 on Day 1 already has 1 portion. Nothing was changed.", result.feedback());
+        assertEquals(CommandResult.Status.NOTE, result.status());
         assertSame(plan, activePlan.get().orElseThrow());
         assertSame(groceries, activePlan.getGroceryList().orElseThrow());
     }
@@ -125,7 +132,8 @@ class AdjustPortionCommandTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> command(1, 3, Integer.MAX_VALUE).execute(recipeBook));
 
-        assertEquals("That portion count makes the day's nutrition totals too large.", error.getMessage());
+        assertEquals("That portion count makes the day's nutrition totals too large.", error.getExplanation());
+        assertEquals(AdjustPortionCommand.USAGE, error.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
         assertSame(request, activePlan.getRequest().orElseThrow());
         assertSame(groceries, activePlan.getGroceryList().orElseThrow());

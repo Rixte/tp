@@ -108,4 +108,9 @@ public class HelpCommand implements Command {
                 "",
                 "Square brackets indicate optional arguments. Use list-recipes to find recipe indexes.");
     }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
+        return CommandResult.help(execute(recipeBook));
+    }
 }

@@ -49,14 +49,19 @@ public class ViewMealsCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         List<Recipe> meals = mealLog.getMeals();
         if (meals.isEmpty()) {
             LOGGER.fine("view-meals requested with no recorded meals");
-            return NO_MEALS_MESSAGE;
+            return CommandResult.note(NO_MEALS_MESSAGE);
         }
         String result = new MealLogViewer().view(meals, mealLog.getTotals());
         LOGGER.fine(() -> "view-meals displayed " + meals.size() + " meals");
-        return result;
+        return CommandResult.info(result);
     }
 }
 //@@author
