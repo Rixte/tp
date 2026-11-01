@@ -1,60 +1,63 @@
 @startuml
 !include ../rixte/shortfall/style.iuml
 title delete-recipe 2: confirm and delete
-autonumber
 
 actor User
-participant "mishMash:MishMash" as App
-participant "deleteCommand:DeleteRecipeCommand" as Delete
+participant ":MishMash" as App
+participant "cmd:DeleteRecipeCommand" as Cmd
 participant "recipeBook:RecipeBook" as Book
 
-App -> Delete : confirmationPrompt(recipeBook)
-activate Delete
-Delete -> Delete : findTarget(recipeBook)
-activate Delete
-Delete -> Book : size()
-activate Book
-Book --> Delete : recipeCount
-deactivate Book
-Delete -> Book : getRecipes()
-activate Book
-Book --> Delete : recipes
-deactivate Book
-Delete --> Delete : target recipe
-deactivate Delete
-Delete --> App : Optional.of(question)
-deactivate Delete
+note over App, Cmd : Parsing has already created cmd for index 2.
 
-App -> App : userConfirms(question)
-activate App
+App -> Cmd : confirmationPrompt(recipeBook)
+activate Cmd
+Cmd -> Cmd : findTarget(recipeBook)
+activate Cmd
+Cmd -> Book : size()
+activate Book
+Book --> Cmd : recipeCount
+deactivate Book
+Cmd -> Book : getRecipes()
+activate Book
+Book --> Cmd : recipes
+deactivate Book
+Cmd --> Cmd : target
+deactivate Cmd
+Cmd --> App : question
+deactivate Cmd
+
 App -> User : display question
-User -> App : "y"
-App --> App : true
-deactivate App
+User --> App : "y"
 
-App -> Delete : execute(recipeBook)
-activate Delete
-Delete -> Delete : findTarget(recipeBook)
-activate Delete
-Delete -> Book : size()
+App -> Cmd : executeWithResult(recipeBook)
+activate Cmd
+Cmd -> Cmd : execute(recipeBook)
+activate Cmd
+Cmd -> Cmd : findTarget(recipeBook)
+activate Cmd
+note right : Repeats the checks above
+Cmd --> Cmd : target
+deactivate Cmd
+Cmd -> Book : remove(1)
 activate Book
-Book --> Delete : recipeCount
+Book --> Cmd : deleted
 deactivate Book
-Delete -> Book : getRecipes()
+Cmd -> Book : size()
 activate Book
-Book --> Delete : recipes
+Book --> Cmd : recipesRemaining
 deactivate Book
-Delete --> Delete : target recipe
-deactivate Delete
-Delete -> Book : remove(index - 1)
-activate Book
-Book --> Delete : deleted recipe
-deactivate Book
-Delete -> Book : size()
-activate Book
-Book --> Delete : recipes remaining
-deactivate Book
-Delete --> App : deletion confirmation
-deactivate Delete
-App -> User : display result
+Cmd --> Cmd : confirmation
+deactivate Cmd
+Cmd --> App : result
+deactivate Cmd
+App -> User : display confirmation
+
+Cmd -[hidden]-> App
+destroy Cmd
+
+note over Cmd, Book
+  An index that is out of range makes findTarget fail
+  before the question, so nothing is asked or removed.
+  result is a CommandResult holding the confirmation text with status done.
+end note
 @enduml

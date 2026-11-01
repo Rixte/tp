@@ -5,29 +5,27 @@ hide circle
 
 title Listing recipes: selected classes and relationships
 top to bottom direction
-skinparam nodesep 55
+skinparam nodesep 60
 skinparam ranksep 85
 hide empty members
 
 class Parser {
   + parseCommand(input: String): Command
-  - parseListRecipe(arguments: String): Command
-  - parseRecipeIndex(arguments: String): int
 }
 interface Command <<interface>> {
-  + confirmationPrompt(recipeBook: RecipeBook): Optional<String>
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
 }
+class CommandResult <<record>>
 class ListRecipeCommand {
   - index: Integer [0..1]
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
 }
 class RecipeBook {
   + getRecipes(): List<Recipe>
 }
 class Recipe {
-  - name: String
-  - calories: int
   + getName(): String
   + getCalories(): int
 }
@@ -37,10 +35,11 @@ class RecipeViewer {
 
 Parser ..> ListRecipeCommand : creates
 ListRecipeCommand .up.|> Command
+Command ..> CommandResult : returns
 ListRecipeCommand ..> RecipeBook : execution parameter
 ListRecipeCommand ..> RecipeViewer : creates
 ListRecipeCommand ..> Recipe : reads name and calories
-RecipeBook --> "0..*" Recipe : -recipes\n{ordered, nonunique}
+RecipeBook --> "0..*" Recipe : -recipes\n{ordered}
 RecipeViewer ..> Recipe : reads
 Parser -[hidden]right-> Command
 

@@ -3,38 +3,48 @@
 !include ../rixte/shortfall/style.iuml
 hide circle
 
-title Saving daily targets: selected classes
+title Setting and viewing daily targets: selected classes
 top to bottom direction
-skinparam nodesep 35
-skinparam ranksep 55
+skinparam nodesep 60
+skinparam ranksep 80
 hide empty members
 
 class Parser {
-  - targetSettings: TargetSettings
-  - parseSetTargets(arguments: String): Command
-  - parseViewTargets(arguments: String): Command
+  + parseCommand(input: String): Command
+}
+class SetTargetsParser {
+  + parse(arguments: String): TargetChanges
 }
 interface Command <<interface>> {
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
 }
-class SetTargetsCommand {
-  + execute(recipeBook: RecipeBook): String
-}
-class ViewTargetsCommand {
-  + execute(recipeBook: RecipeBook): String
+class CommandResult <<record>>
+class SetTargetsCommand
+class ViewTargetsCommand
+class TargetChanges {
+  + applyTo(current: NutritionTargets): NutritionTargets
 }
 class TargetSettings {
-  - targets: NutritionTargets
   + get(): NutritionTargets
   + set(targets: NutritionTargets): void
 }
-Parser --> "1" TargetSettings : -targetSettings
+class NutritionTargets
+
+Parser ..> SetTargetsParser : parses with
 Parser ..> SetTargetsCommand : creates
 Parser ..> ViewTargetsCommand : creates
+Parser --> "1" TargetSettings : -targetSettings
+SetTargetsParser ..> TargetChanges : creates
 SetTargetsCommand .up.|> Command
 ViewTargetsCommand .up.|> Command
-SetTargetsCommand --> "1" TargetSettings : -targetSettings
-ViewTargetsCommand --> "1" TargetSettings : -targetSettings
+Command ..> CommandResult : returns
+SetTargetsCommand --> "1" TargetChanges : -changes
+SetTargetsCommand --> "1" TargetSettings : -settings
+ViewTargetsCommand --> "1" TargetSettings : -settings
+TargetSettings --> "1" NutritionTargets : -targets
+TargetChanges ..> NutritionTargets : creates
+
 legend bottom
   Only feature-relevant members are shown.
 endlegend

@@ -1,28 +1,38 @@
 @startuml
 !include ../rixte/shortfall/style.iuml
-title list-recipes 2: display one recipe
-autonumber
+title Executing list-recipes 2
 
-participant "mishMash:MishMash" as App
-participant "command:ListRecipeCommand" as Command
+participant ":MishMash" as App
+participant "cmd:ListRecipeCommand" as Cmd
 participant "recipeBook:RecipeBook" as Book
 participant "viewer:RecipeViewer" as Viewer
 
-App -> Command : execute(recipeBook)
-activate Command
-Command -> Book : getRecipes()
+ref over App, Cmd : Parse "list-recipes 2"
+
+App -> Cmd : executeWithResult(recipeBook)
+activate Cmd
+Cmd -> Book : getRecipes()
 activate Book
-Book --> Command : recipes
+Book --> Cmd : recipes
 deactivate Book
 create Viewer
-Command -> Viewer : new RecipeViewer()
+Cmd -> Viewer : RecipeViewer()
 activate Viewer
-Viewer --> Command : viewer
 deactivate Viewer
-Command -> Viewer : view(recipes.get(1))
+Cmd -> Viewer : view(recipe)
 activate Viewer
-Viewer --> Command : formatted recipe
+Viewer --> Cmd : details
 deactivate Viewer
-Command --> App : formatted recipe
-deactivate Command
+Cmd --> App : result
+deactivate Cmd
+Viewer -[hidden]-> App
+destroy Viewer
+Cmd -[hidden]-> App
+destroy Cmd
+
+note over Cmd, Viewer
+  recipe is the second element of recipes. result is a CommandResult holding
+  the details and an info status. The no-index form returns the numbered list
+  instead and creates no viewer.
+end note
 @enduml

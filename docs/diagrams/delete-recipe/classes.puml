@@ -5,27 +5,24 @@ hide circle
 
 title Recipe deletion: selected classes and relationships
 top to bottom direction
-skinparam nodesep 55
+skinparam nodesep 60
 skinparam ranksep 85
 hide empty members
 
-class MishMash {
-  - executeCommand(input: String): void
-  - userConfirms(question: String): boolean
-}
+class MishMash
 class Parser {
   + parseCommand(input: String): Command
-  - parseDeleteRecipe(arguments: String): Command
 }
 interface Command <<interface>> {
   + confirmationPrompt(recipeBook: RecipeBook): Optional<String>
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
 }
+class CommandResult <<record>>
 class DeleteRecipeCommand {
-  - index: int
   + confirmationPrompt(recipeBook: RecipeBook): Optional<String>
   + execute(recipeBook: RecipeBook): String
-  - findTarget(recipeBook: RecipeBook): Recipe
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
 }
 class RecipeBook {
   + size(): int
@@ -33,7 +30,6 @@ class RecipeBook {
   + remove(index: int): Recipe
 }
 class Recipe {
-  - name: String
   + getName(): String
 }
 
@@ -41,8 +37,9 @@ MishMash --> "1" Parser : -parser
 MishMash ..> Command : asks, then executes
 Parser ..> DeleteRecipeCommand : creates
 DeleteRecipeCommand .up.|> Command
+Command ..> CommandResult : returns
 DeleteRecipeCommand ..> RecipeBook : execution parameter
-RecipeBook --> "0..*" Recipe : -recipes\n{ordered, nonunique}
+RecipeBook --> "0..*" Recipe : -recipes\n{ordered}
 
 legend bottom
   Only feature-relevant members are shown.

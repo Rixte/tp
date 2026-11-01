@@ -1,32 +1,40 @@
 @startuml
 !include style.iuml
-title view-meals: display a non-empty meal log
-autonumber
+title Executing view-meals with a non-empty log
 
-participant "mishMash:MishMash" as App
-participant "command:ViewMealsCommand" as Command
+participant ":MishMash" as App
+participant "cmd:ViewMealsCommand" as Command
 participant "mealLog:MealLog" as Log
 participant "viewer:MealLogViewer" as Viewer
 
-App -> Command : execute(recipeBook)
+App -> Command : executeWithResult(recipeBook)
 activate Command
 Command -> Log : getMeals()
 activate Log
 Log --> Command : meals
 deactivate Log
+create Viewer
+Command -> Viewer : MealLogViewer()
+activate Viewer
+deactivate Viewer
 Command -> Log : getTotals()
 activate Log
 Log --> Command : totals
 deactivate Log
-create Viewer
-Command -> Viewer : new MealLogViewer()
-activate Viewer
-Viewer --> Command : viewer
-deactivate Viewer
 Command -> Viewer : view(meals, totals)
 activate Viewer
-Viewer --> Command : formatted meals and totals
+Viewer --> Command : text
 deactivate Viewer
-Command --> App : formatted meals and totals
+Command --> App : result
 deactivate Command
+Viewer -[hidden]-> App
+destroy Viewer
+Command -[hidden]-> App
+destroy Command
+
+note over Command, Log
+  result is a CommandResult holding the text and an info status.
+  With an empty log the command returns a note status with "No meals
+  recorded yet." without creating a viewer.
+end note
 @enduml

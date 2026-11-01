@@ -1,37 +1,50 @@
 @startuml
 !include style.iuml
-title record-meal 2: store and display a selected recipe
-autonumber
+title Executing record-meal 2
 
-participant "mishMash:MishMash" as App
-participant "command:RecordMealCommand" as Command
+participant ":MishMash" as App
+participant "cmd:RecordMealCommand" as Command
 participant "recipeBook:RecipeBook" as Book
 participant "mealLog:MealLog" as Log
 participant "viewer:MealLogViewer" as Viewer
 
-App -> Command : execute(recipeBook)
+ref over App, Command : Parse "record-meal 2"
+
+App -> Command : executeWithResult(recipeBook)
+activate Command
+Command -> Command : execute(recipeBook)
 activate Command
 Command -> Book : getRecipes()
 activate Book
 Book --> Command : recipes
 deactivate Book
-Command -> Log : record(recipes.get(1))
+Command -> Log : record(recipe)
 activate Log
-Log --> Command : void
 deactivate Log
+create Viewer
+Command -> Viewer : MealLogViewer()
+activate Viewer
+deactivate Viewer
 Command -> Log : getTotals()
 activate Log
 Log --> Command : totals
 deactivate Log
-create Viewer
-Command -> Viewer : new MealLogViewer()
-activate Viewer
-Viewer --> Command : viewer
-deactivate Viewer
 Command -> Viewer : viewRecorded(recipe, totals)
 activate Viewer
-Viewer --> Command : formatted result
+Viewer --> Command : text
 deactivate Viewer
-Command --> App : formatted result
+Command --> Command : text
 deactivate Command
+Command --> App : result
+deactivate Command
+Viewer -[hidden]-> App
+destroy Viewer
+Command -[hidden]-> App
+destroy Command
+
+note over Command, Log
+  recipe is the second element of recipes. The viewer is created
+  before the totals are read, as in the Java code. executeWithResult
+  wraps the text from execute in a CommandResult with status done.
+end note
 @enduml
