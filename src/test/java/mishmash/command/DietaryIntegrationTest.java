@@ -79,6 +79,7 @@ class DietaryIntegrationTest {
         execute("generate-list");
 
         for (DayPlan day : active.get().orElseThrow().getDays()) {
+            assertEquals(3, day.getMeals().size());
             assertEquals(Set.of("Rice", "Beans", "Corn"),
                     Set.copyOf(day.getMeals().stream().map(Recipe::getName).toList()));
         }
@@ -168,6 +169,7 @@ class DietaryIntegrationTest {
         GeneratePlanRequest request = active.getRequest().orElseThrow();
         List<GroceryItem> groceries = active.getGroceryList().orElseThrow();
         for (DayPlan day : plan.getDays()) {
+            assertEquals(3, day.getMeals().size());
             assertEquals(Set.of("Rice", "Beans", "Corn"),
                     Set.copyOf(day.getMeals().stream().map(Recipe::getName).toList()));
             assertTrue(request.targets().isSatisfiedBy(day));
