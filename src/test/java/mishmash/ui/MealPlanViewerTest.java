@@ -62,7 +62,8 @@ class MealPlanViewerTest {
     //@@author Rixte
     @Test
     void formatDay_invalidInternalDay_detectsBrokenInvariant() throws ReflectiveOperationException {
-        // Public entry points reject invalid days first; invoke the formatter to check its internal safeguard.
+        // Public entry points reject invalid days first, so reflection directly checks this private safeguard.
+        // Renaming formatDay or changing its parameters also requires updating this reflection-based test.
         Method formatter = MealPlanViewer.class.getDeclaredMethod(
                 "formatDay", List.class, int.class, NutritionTargets.class);
         formatter.setAccessible(true);

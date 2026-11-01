@@ -31,6 +31,8 @@ class EditRecipeDiagnosticsTest {
     @Test
     void execute_assertionsDisabled_replacesRecipeWithoutChangingCount() throws Exception {
         RecipeBook book = TestRecipes.recipeBook(100, 1, 1, 1);
+        List<Recipe> originalRecipes = book.getRecipes();
+        Recipe originalEditedRecipe = originalRecipes.getFirst();
         RecipeChanges changes = new RecipeChanges("Updated", null, null, null, null, List.of(), null);
         try (AssertionDisabledClassLoader loader = new AssertionDisabledClassLoader(EditRecipeCommand.class)) {
             Class<?> commandClass = loader.loadClass(EditRecipeCommand.class.getName());
@@ -39,7 +41,16 @@ class EditRecipeDiagnosticsTest {
 
             assertFalse(commandClass.desiredAssertionStatus());
             assertTrue(command.execute(book).contains("Recipe updated!"));
-            assertEquals("Updated", book.getRecipes().getFirst().getName());
+            List<Recipe> editedRecipes = book.getRecipes();
+            Recipe updatedRecipe = editedRecipes.getFirst();
+            assertEquals("Updated", updatedRecipe.getName());
+            assertEquals(originalEditedRecipe.getCalories(), updatedRecipe.getCalories());
+            assertEquals(originalEditedRecipe.getProtein(), updatedRecipe.getProtein());
+            assertEquals(originalEditedRecipe.getCarbs(), updatedRecipe.getCarbs());
+            assertEquals(originalEditedRecipe.getFats(), updatedRecipe.getFats());
+            assertEquals(originalEditedRecipe.getIngredients(), updatedRecipe.getIngredients());
+            assertSame(originalRecipes.get(1), editedRecipes.get(1));
+            assertSame(originalRecipes.get(2), editedRecipes.get(2));
             assertEquals(3, book.size());
         }
     }
