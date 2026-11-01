@@ -84,6 +84,7 @@ class AddRecipeCommandTest {
         assertFalse(command.confirmationPrompt(book).isPresent());
         assertEquals(0, book.getRecipes().size());
     }
+
     @Test
     void executeWithResult_validRecipe_returnsDoneAndAddsExactlyOnce() {
         Recipe recipe = createRecipe();
@@ -101,7 +102,7 @@ class AddRecipeCommandTest {
     }
 
     @Test
-    void execute_formattingFailure_preservesBookAndDoesNotLogSuccess() {
+    void executeWithResult_formattingFailure_preservesBookAndDoesNotLogSuccess() {
         IllegalStateException failure = new IllegalStateException("Cannot format recipe");
         Recipe recipe = new Recipe("Broken", 0, 0, 0, 0, createRecipe().getIngredients()) {
             @Override
@@ -122,7 +123,7 @@ class AddRecipeCommandTest {
     }
 
     @Test
-    void execute_rejectedAddition_preservesBookAndDoesNotLogSuccess() {
+    void executeWithResult_rejectedAddition_preservesBookAndDoesNotLogSuccess() {
         IllegalStateException failure = new IllegalStateException("Book unavailable");
         RecipeBook book = new RecipeBook() {
             @Override
@@ -138,6 +139,4 @@ class AddRecipeCommandTest {
             assertTrue(logs.getRecords().isEmpty());
         }
     }
-
 }
-
