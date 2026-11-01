@@ -1658,8 +1658,6 @@ These features are planned under the v2.0b milestone and are **not implemented i
 | Feature | Status | Tracking issue |
 | --- | --- | --- |
 | Replace one planned meal with another recipe | **Coming soon (v2.0b)** | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) |
-| Review recorded meals by date | **Coming soon (v2.0b)** | [#62](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/62) |
-| Correct or remove a recorded meal | **Coming soon (v2.0b)** | [#63](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/63) |
 
 Other v2.0b stories already have support in this checkout, including resetting a plan, confirming plan changes,
 viewing dietary preferences, and clearing dietary restrictions. Their existing instructions describe that support.
@@ -1668,7 +1666,8 @@ Automatic local persistence is implemented in the development build; see [Data R
 ### Data Retention
 
 The development build saves recipes, dietary preferences and exclusions, daily targets, the active plan and
-its original targets, portion counts, custom ingredients, generated groceries, and recorded meal snapshots.
+its original targets, portion counts, custom ingredients, generated groceries, and recorded meal snapshots
+including dates and servings. Meal corrections and confirmed deletions are saved too.
 The greeting name and interactive command history are not retained. Build the updated JAR before using this
 feature; an older downloaded release may still use session-only data.
 
@@ -1679,6 +1678,10 @@ elsewhere. Launching from another directory starts a separate data set. No manua
 The data folder also contains `mishmash.backup.json` (the previous valid snapshot) and `mishmash.lock`. Only one
 MishMash instance can use a data folder at a time. Close the first instance before launching another. A leftover
 lock file is harmless: the operating system releases the actual lock when the process ends.
+
+Older version 1 save files are upgraded automatically. Their undated meal records are assigned the upgrade
+day and one serving, with a warning; the original file is kept as the backup. Version 2 saves retain actual
+meal dates and servings, including subsequent corrections.
 
 If the primary file is damaged or unsupported, MishMash tries the backup and displays `[WARN]`. Invalid files
 are preserved under unique names containing `corrupt`, a timestamp, and a random identifier. If neither file

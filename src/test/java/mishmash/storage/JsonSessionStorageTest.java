@@ -8,6 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -26,10 +30,15 @@ import mishmash.model.FoodInfo;
 import mishmash.model.FoodTag;
 import mishmash.model.GeneratePlanRequest;
 import mishmash.model.GroceryItem;
+import mishmash.model.MealEntry;
 import mishmash.model.MealPlan;
 import mishmash.model.NutritionTargets;
 import mishmash.model.PlannedMeal;
 import mishmash.model.Recipe;
+
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Verifies retention, recovery, locks, and validation against real temporary files. */
 class JsonSessionStorageTest {
@@ -124,7 +133,10 @@ class JsonSessionStorageTest {
         }
         String template = Files.readString(templateFile);
         return Stream.of(
-                template.replace("\"schemaVersion\" : 1", "\"schemaVersion\" : 99"),
+                template.replace("\"schemaVersion\" : 2", "\"schemaVersion\" : 99"),
+                template.replace("\"servings\" : 3", "\"servings\" : 0"),
+                template.replace("\"servings\" : 3", "\"servings\" : 101"),
+                template.replace("2024-01-02", "2024-02-30"),
                 template.replace("\"calories\" : 100,", ""),
                 template.replace("\"calories\" : 100", "\"calories\" : null"),
                 template.replace("\"calories\" : 100", "\"calories\" : -1"),
@@ -276,15 +288,63 @@ class JsonSessionStorageTest {
         }
     }
 
-    /** Builds snapshots with duplicates, precise decimals, and a case-only ingredient customization. */
+    @Test
+    void load_legacySnapshot_upgradesOnceAndPreservesOriginalBackup() throws Exception {
+        String original = legacySnapshot();
+        Path file = directory.resolve("legacy.json");
+        Files.writeString(file, original);
+        Clock clock = Clock.fixed(Instant.parse("2026-01-01T12:00:00Z"), ZoneOffset.UTC);
+        try (JsonSessionStorage storage = JsonSessionStorage.open(file, clock)) {
+            LoadResult result = storage.load();
+            assertTrue(result.warning().orElseThrow().contains("upgraded"));
+            assertEquals(2, result.state().getMealLog().getEntries().size());
+            assertEquals(LocalDate.of(2026, 1, 1), result.state().getMealLog().getEntries().getFirst().date());
+            assertEquals(1, result.state().getMealLog().getEntries().getFirst().servings());
+            assertEquals(original, Files.readString(directory.resolve("legacy.backup.json")));
+        }
+        try (JsonSessionStorage storage = JsonSessionStorage.open(file, Clock.offset(clock,
+                java.time.Duration.ofDays(1)))) {
+            LoadResult result = storage.load();
+            assertTrue(result.warning().isEmpty());
+            assertEquals(LocalDate.of(2026, 1, 1), result.state().getMealLog().getEntries().getFirst().date());
+        }
+    }
+
+    @Test
+    void load_legacyUpgradeFailure_preservesOriginalWithoutQuarantine() throws Exception {
+        String original = legacySnapshot();
+        Path file = directory.resolve("legacy.json");
+        Files.writeString(file, original);
+        Files.createDirectory(directory.resolve("legacy.backup.json"));
+        try (JsonSessionStorage storage = JsonSessionStorage.open(file)) {
+            assertThrows(StorageException.class, storage::load);
+            assertEquals(original, Files.readString(file));
+            try (Stream<Path> paths = Files.list(directory)) {
+                assertFalse(paths.anyMatch(path -> path.toString().contains("corrupt")));
+            }
+        }
+    }
+
+    /** Recreates the previous undated recipe-only meal-log representation. */
+    private static String legacySnapshot() {
+        JsonMapper mapper = JsonMapper.builder().build();
+        ObjectNode root = (ObjectNode) mapper.valueToTree(SessionData.fromState(populatedState()));
+        ArrayNode legacyMeals = mapper.createArrayNode();
+        root.get("recordedMeals").forEach(entry -> legacyMeals.add(entry.get("recipe")));
+        root.set("recordedMeals", legacyMeals);
+        root.put("schemaVersion", 1);
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root);
+    }
+
+    /** Builds snapshots with dated servings, duplicates, decimals, and a case-only customization. */
     static ApplicationState populatedState() {
         ApplicationState state = new ApplicationState();
         GroceryItem rice = new GroceryItem("Rice", new BigDecimal("100.00100"), "g");
         Recipe recipe = new Recipe("Bowl", 100, 20, 30, 4, List.of(rice), FoodInfo.parseField("none"));
         state.getRecipeBook().add(recipe);
         state.getRecipeBook().add(recipe);
-        state.getMealLog().record(recipe);
-        state.getMealLog().record(recipe);
+        state.getMealLog().record(new MealEntry(recipe, LocalDate.of(2024, 1, 2), 3));
+        state.getMealLog().record(new MealEntry(recipe, LocalDate.of(2024, 2, 3), 100));
         state.getDietarySettings().set(new DietaryPreferences(Diet.VEGETARIAN, Set.of(FoodTag.SOY), Set.of("Oil")));
         state.getTargetSettings().set(new NutritionTargets(2000, null, 100, null));
         PlannedMeal meal = new PlannedMeal(recipe, 3).withIngredients(

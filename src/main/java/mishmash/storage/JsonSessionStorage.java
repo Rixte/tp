@@ -12,6 +12,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -24,8 +25,11 @@ import tools.jackson.core.StreamReadConstraints;
 import tools.jackson.core.StreamReadFeature;
 import tools.jackson.core.json.JsonFactory;
 import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Persists complete application snapshots as strict, versioned JSON with backup recovery and process locking.
@@ -67,7 +71,7 @@ public final class JsonSessionStorage implements SessionStorage {
      * @throws StorageException If the directory or exclusive lock cannot be acquired.
      */
     public static JsonSessionStorage open(Path dataFile) throws StorageException {
-        return open(dataFile, Clock.systemUTC());
+        return open(dataFile, Clock.systemDefaultZone());
     }
 
     /** Opens storage with an injectable clock for deterministic recovery tests. */
@@ -112,8 +116,11 @@ public final class JsonSessionStorage implements SessionStorage {
             return recoverFromBackup("The primary data file was missing.");
         }
 
+        byte[] bytes;
+        ApplicationState state;
         try {
-            return LoadResult.normal(readState(dataFile));
+            bytes = readBytes(dataFile);
+            state = decodeSnapshot(bytes, dataFile);
         } catch (InvalidSnapshotException primaryFailure) {
             if (!Files.notExists(backupFile)) {
                 ApplicationState backupState = null;
@@ -124,7 +131,7 @@ public final class JsonSessionStorage implements SessionStorage {
                 }
                 if (backupState != null) {
                     Path quarantined = quarantine(dataFile, "corrupt");
-                    writeAtomically(dataFile, readBytes(backupFile));
+                    save(backupState);
                     return LoadResult.recovered(backupState,
                             "Saved data was damaged, so MishMash recovered the last valid backup."
                                     + System.lineSeparator() + "The damaged file was preserved as "
@@ -133,6 +140,13 @@ public final class JsonSessionStorage implements SessionStorage {
             }
             return quarantineAndStartEmpty(primaryFailure);
         }
+        // Upgrade failures are filesystem failures, not evidence that the validated primary is corrupt.
+        if (hasLegacySchema(bytes)) {
+            save(state);
+            return LoadResult.recovered(state, "Saved data was upgraded to retain meal dates and servings. "
+                    + "Previously undated meals were assigned today's date and one serving.");
+        }
+        return LoadResult.normal(state);
     }
 
     @Override
@@ -219,7 +233,7 @@ public final class JsonSessionStorage implements SessionStorage {
         } catch (InvalidSnapshotException e) {
             return quarantineAndStartEmpty(e);
         }
-        writeAtomically(dataFile, readBytes(backupFile));
+        save(state);
         return LoadResult.recovered(state, reason + " MishMash restored its last valid backup.");
     }
 
@@ -244,7 +258,11 @@ public final class JsonSessionStorage implements SessionStorage {
 
     /** Reads, bounds, parses, and reconstructs one complete snapshot. */
     private ApplicationState readState(Path path) throws StorageException {
-        byte[] bytes = readBytes(path);
+        return decodeSnapshot(readBytes(path), path);
+    }
+
+    /** Validates exactly the bytes read, retaining the filename for failure diagnostics. */
+    private ApplicationState decodeSnapshot(byte[] bytes, Path path) throws StorageException {
         try {
             return validateBytes(bytes);
         } catch (IOException | RuntimeException e) {
@@ -277,11 +295,39 @@ public final class JsonSessionStorage implements SessionStorage {
         if (bytes.length > MAX_FILE_SIZE_BYTES) {
             throw new IOException("Saved data exceeds the 10 MiB safety limit.");
         }
-        SessionData data = mapper.readValue(bytes, SessionData.class);
+        JsonNode root = mapper.readTree(bytes);
+        if (root instanceof ObjectNode object && hasLegacyVersion(root)) {
+            JsonNode meals = object.get("recordedMeals");
+            if (meals == null || !meals.isArray()) {
+                throw new IOException("Legacy recorded meals must be an array.");
+            }
+            ArrayNode entries = mapper.createArrayNode();
+            for (JsonNode recipe : meals) {
+                ObjectNode entry = mapper.createObjectNode();
+                entry.set("recipe", recipe);
+                entry.put("date", LocalDate.now(clock).toString());
+                entry.put("servings", 1);
+                entries.add(entry);
+            }
+            object.set("recordedMeals", entries);
+            object.put("schemaVersion", SessionData.CURRENT_SCHEMA_VERSION);
+        }
+        SessionData data = mapper.treeToValue(root, SessionData.class);
         if (data == null) {
             throw new IOException("Saved data must contain one JSON object.");
         }
         return data.toState();
+    }
+
+    /** Checks a previously validated snapshot for the old undated-meal format. */
+    private boolean hasLegacySchema(byte[] bytes) {
+        return hasLegacyVersion(mapper.readTree(bytes));
+    }
+
+    /** Matches only an integral version marker, leaving malformed markers to strict DTO validation. */
+    private static boolean hasLegacyVersion(JsonNode root) {
+        JsonNode version = root == null ? null : root.get("schemaVersion");
+        return version != null && version.isIntegralNumber() && version.canConvertToInt() && version.intValue() == 1;
     }
 
     /** Returns file bytes only when the candidate is present and fully valid. */

@@ -134,6 +134,22 @@ class StorageJarTest {
         assertTrue(second.contains("Day 2"), second);
     }
 
+    @Test
+    void jar_mealCorrectionsAndDeletions_retainDatesServingsAndSnapshots() throws Exception {
+        String first = runJar(String.join("\n", "Tester", ADD_RECIPE,
+                "record-meal 1 date/2024-01-02 s/3", "record-meal 1 date/2024-01-03 s/2",
+                "edit-meal 1 date/2024-02-02 s/4", "delete-meal 2", "yes", "edit-recipe 1 n/Changed", "bye", ""));
+        assertFalse(first.contains("[ERROR]"), first);
+        String restored = runJar("Tester\nview-meals date/2024-02-02\nbye\n");
+        assertTrue(restored.contains("Meal 1: A (400 kcal |"), restored);
+        assertTrue(restored.contains("4 servings | 2024-02-02"), restored);
+        assertFalse(restored.contains("Meal 2:"), restored);
+        assertFalse(restored.contains("Changed"), restored);
+        String deleted = runJar("Tester\ndelete-meal 1\nyes\nbye\n");
+        assertFalse(deleted.contains("[ERROR]"), deleted);
+        assertTrue(runJar("Tester\nview-meals\nbye\n").contains("No meals recorded yet."));
+    }
+
     /** Runs with bounded time and redirected output to avoid pipe deadlocks and native-terminal dependencies. */
     private String runJar(String input) throws Exception {
         Path output = Files.createTempFile(directory, "output-", ".txt");

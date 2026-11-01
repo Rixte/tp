@@ -1,6 +1,7 @@
 package mishmash.storage;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,7 @@ import mishmash.model.FoodInfo;
 import mishmash.model.FoodTag;
 import mishmash.model.GeneratePlanRequest;
 import mishmash.model.GroceryItem;
+import mishmash.model.MealEntry;
 import mishmash.model.MealLog;
 import mishmash.model.MealPlan;
 import mishmash.model.NutritionTargets;
@@ -28,8 +30,8 @@ import mishmash.model.TargetSettings;
 
 /** Defines the versioned JSON representation without coupling domain classes to Jackson. */
 record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData dietaryPreferences,
-                   TargetsData dailyTargets, ActivePlanData activePlan, List<RecipeData> recordedMeals) {
-    static final int CURRENT_SCHEMA_VERSION = 1;
+                   TargetsData dailyTargets, ActivePlanData activePlan, List<MealEntryData> recordedMeals) {
+    static final int CURRENT_SCHEMA_VERSION = 2;
 
     /** Converts all live model roots into an immutable persistence snapshot. */
     static SessionData fromState(ApplicationState state) {
@@ -39,7 +41,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
                 DietaryData.fromPreferences(state.getDietarySettings().get()),
                 TargetsData.fromTargets(state.getTargetSettings().get()),
                 ActivePlanData.fromActivePlan(state.getActiveMealPlan()),
-                state.getMealLog().getMeals().stream().map(RecipeData::fromRecipe).toList());
+                state.getMealLog().getEntries().stream().map(MealEntryData::fromEntry).toList());
     }
 
     /** Reconstructs domain objects through their validating constructors and methods. */
@@ -65,8 +67,8 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
         }
 
         MealLog mealLog = new MealLog();
-        for (RecipeData meal : requiredList(recordedMeals, "recordedMeals")) {
-            mealLog.record(required(meal, "recorded meal").toRecipe());
+        for (MealEntryData meal : requiredList(recordedMeals, "recordedMeals")) {
+            mealLog.record(required(meal, "recorded meal").toEntry());
         }
 
         return new ApplicationState(recipeBook, activeMealPlan, dietarySettings, targetSettings, mealLog);
@@ -158,6 +160,20 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
             Set<String> restoredIngredients = Set.copyOf(requiredList(excludedIngredients,
                     "excludedIngredients"));
             return new DietaryPreferences(Diet.parse(required(diet, "diet")), restoredTags, restoredIngredients);
+        }
+    }
+
+    /** Stores a recorded recipe snapshot with its date and whole-serving count. */
+    record MealEntryData(RecipeData recipe, String date, int servings) {
+        /** Copies all fields of a recorded entry without referring to the current recipe book. */
+        static MealEntryData fromEntry(MealEntry entry) {
+            return new MealEntryData(RecipeData.fromRecipe(entry.recipe()), entry.date().toString(), entry.servings());
+        }
+
+        /** Restores the date and servings through the same validation used by meal commands. */
+        MealEntry toEntry() {
+            return new MealEntry(required(recipe, "recorded recipe").toRecipe(),
+                    LocalDate.parse(required(date, "recorded date")), servings);
         }
     }
 

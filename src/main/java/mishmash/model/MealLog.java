@@ -7,7 +7,7 @@ import java.util.Objects;
 
 //@@author GauthamNandi
 /**
- * Holds the meals the user has recorded as eaten during the current session, in the order they were recorded.
+ * Holds retained meals the user has recorded as eaten, in the order they were recorded.
  *
  * <p>This is separate from the active meal plan, which holds meals the user intends to eat. A recorded meal
  * keeps the recipe's nutrition as it was when it was recorded, because {@link Recipe} cannot be changed.

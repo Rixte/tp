@@ -2060,7 +2060,7 @@ No confirmation is requested. Recording changes only the recorded meals; recipes
 - 2a. No meal has been recorded: MishMash displays `No meals recorded yet.` The use case ends.
 - 2b. No meal was recorded on the given date: MishMash displays `No meals recorded on DATE.` The use case ends.
 
-Viewing leaves the recorded meals unchanged. Without a date, the totals cover every meal recorded in the session.
+Viewing leaves the recorded meals unchanged. Without a date, the totals cover every retained recorded meal.
 
 <!-- @@author -->
 <!-- @@author neil0618 -->
@@ -2219,9 +2219,10 @@ reading or overwriting a developer's real data. `StorageJarTest` covers the actu
 
 ![Persistence ownership and dependencies](images/storage/classes.svg)
 
-`SessionData` is a storage-only record hierarchy with schema version 1. Recipe values are embedded independently
+`SessionData` is a storage-only record hierarchy with schema version 2. Recipe values are embedded independently
 in the recipe book, planned occurrences, and recorded meals. Orders and duplicates are preserved; sets are sorted
-for deterministic output. Decimal quantities are plain strings and nullable targets use JSON null. Null groceries
+for deterministic output. Recorded entries retain their ISO calendar date and whole-serving count. Decimal
+quantities are plain strings and nullable targets use JSON null. Null groceries
 mean not generated; an empty array means a generated empty snapshot. Restoration uses domain constructors,
 including exact ordered ingredient equality from the defensive PR fixes.
 
@@ -2247,7 +2248,10 @@ Operating-system locks and file flushing do not provide a guarantee against ever
 Startup distinguishes invalid JSON from filesystem access failure. Only invalid files are quarantined;
 an inaccessible file or a failed backup restoration stops startup. Recovery never quarantines a valid backup
 merely because writing the primary failed. Unsupported versions are preserved like malformed snapshots;
-there is no older application-data format to migrate in this release.
+version 1 snapshots are upgraded automatically to version 2. Legacy undated records receive the local upgrade
+date and one serving, with warning feedback. The original file is retained as the backup. The upgrade is saved
+immediately so repeated restarts do not change those assigned dates. Failed upgrades stop startup and preserve
+the original primary; they never classify a valid legacy file as corrupt.
 
 Run Java 25 `./gradlew check shadowJar`. Storage tests use temporary directories and cover round trips,
 validation, locks, backups, quarantine, write failures, and retry behavior. The check task also builds and runs
