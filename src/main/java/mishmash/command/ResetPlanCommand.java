@@ -14,8 +14,7 @@ import mishmash.model.RecipeBook;
  */
 public class ResetPlanCommand implements Command {
     public static final String COMMAND_WORD = "reset-plan";
-    public static final String USAGE = "Format: " + COMMAND_WORD + System.lineSeparator()
-            + "Clears the meal plan and groceries; saved daily targets are preserved.";
+    public static final String USAGE = "Format: " + COMMAND_WORD;
 
     private static final String RESET_FAILURE_MESSAGE = "The meal plan could not be reset. Please try again.";
 
@@ -46,8 +45,7 @@ public class ResetPlanCommand implements Command {
                 && activePlan.getGroceryList().isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of("Reset the current meal plan and clear its groceries?"
-                + " Saved daily targets will be preserved. (y/n)");
+        return Optional.of("Reset the current meal plan and clear its groceries? (y/n)");
     }
 
     /**
@@ -76,7 +74,7 @@ public class ResetPlanCommand implements Command {
         if (!hadPlan && !hadGroceries) {
             return "No active meal plan to reset.";
         }
-        return "Meal plan reset. Recipes, dietary preferences, saved daily targets, and recorded meals are unchanged.";
+        return "Meal plan reset. Recipes, dietary preferences, and recorded meals are unchanged.";
     }
 }
 //@@author

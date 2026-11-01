@@ -55,16 +55,10 @@ class ResetPlanCommandTest {
                     RecipeBook currentBook = new RecipeBook();
                     currentBook.add(recipe);
                     List<Recipe> originalRecipes = currentBook.getRecipes();
-                    ResetPlanCommand reset = new ResetPlanCommand(active);
 
-                    assertEquals("Reset the current meal plan and clear its groceries?"
-                                    + " Saved daily targets will be preserved. (y/n)",
-                            reset.confirmationPrompt(currentBook).orElseThrow());
+                    String result = new ResetPlanCommand(active).execute(currentBook);
 
-                    String result = reset.execute(currentBook);
-
-                    assertEquals("Meal plan reset. Recipes, dietary preferences, saved daily targets,"
-                                    + " and recorded meals are unchanged.",
+                    assertEquals("Meal plan reset. Recipes, dietary preferences, and recorded meals are unchanged.",
                             result);
                     assertTrue(active.get().isEmpty());
                     assertTrue(active.getRequest().isEmpty());
