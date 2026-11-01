@@ -23,6 +23,9 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 - [JUnit Jupiter](https://junit.org/junit5/) provides the automated testing framework.
 - [Checkstyle](https://checkstyle.org/) checks Java coding conventions.
 - [Shadow](https://gradleup.com/shadow/) packages the application JAR.
+- [JLine](https://jline.org/docs/line-reader/) provides interactive line editing, completion, and session history
+  in the development build. The JNI terminal provider supports native consoles; unsupported environments
+  retain the existing Scanner-based input. JLine is distributed under the BSD 3-Clause license.
 - [PlantUML](https://plantuml.com/) generates the UML diagrams from the editable sources under `docs/diagrams`, which has one folder per feature.
 
 <!-- TEAM: Add any further sources of reused or adapted code, ideas, and documentation before submission. -->
@@ -30,6 +33,34 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 ## Setting Up, Getting Started
 
 Refer to [Setting Up and Getting Started](SettingUp.md) for Java 25 prerequisites, importing the project, running tests, packaging the JAR, and troubleshooting.
+
+<!-- @@author Rixte -->
+### Interactive Input in the Development Build
+
+`MishMash` reads names, commands, and confirmations through `ConsoleInput`. The existing
+Scanner constructor remains available for borrowed streams and deterministic tests. The launcher
+owns and closes its adapter; `run()` does not close caller-provided input or output.
+
+`ConsoleInputs` selects `JLineConsoleInput` when Java exposes an interactive console and `TERM`
+does not declare a dumb terminal. Terminal initialization failures fall back to
+`ScannerConsoleInput` before reading application input. An editor initialization failure closes
+the newly created terminal before falling back. Terminal-close failures retain their cause in the log.
+
+`CommandCompleter` derives command names and prefixes from `Parser.COMMAND_USAGE`. It avoids a second
+hand-maintained command registry and leaves validation to the existing parser. Already supplied scalar
+prefixes are omitted from suggestions; repeated `i/` arguments remain available.
+
+JLine records commands only in session memory. Name and confirmation reads disable both history and
+completion. History expansion, quote interpretation, and escape interpretation are disabled so the
+editor does not change the existing command grammar. Ctrl+C clears a command or supplies a blank
+confirmation answer; EOF remains distinct from a submitted blank line.
+
+Gradle packages the JLine reader and JNI provider, merges service-loader registrations, and adds the
+`Enable-Native-Access: ALL-UNNAMED` JAR manifest attribute required for native terminal access on Java 25.
+The Gradle application launcher also supplies the corresponding JVM option. Unit tests use in-memory
+terminals, scripted interruptions, and injected terminal factories; native terminal behavior is checked
+separately using the packaged JAR.
+<!-- @@author -->
 
 The JAR currently published on the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) is **v2.0**. The team has verified that the published v2.0 JAR matches the current source code described in this guide. Pending v2.0b features are explicitly labelled **Coming soon** in [User Stories](#v20b-follow-up-stories).
 

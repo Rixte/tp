@@ -53,6 +53,31 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 5. **Enter one command per line** and press Enter to run it. Enter `bye` to exit.
 <!-- @@author -->
 
+<!-- @@author Rixte -->
+### Interactive Command Entry (Development Build)
+
+The development build adds editing shortcuts when launched in a supported terminal with
+`java -jar "MishMash.jar"`. These shortcuts are not part of the published v2.0 JAR.
+
+| Key | Action |
+| --- | --- |
+| **Tab** | Complete a command name or suggest argument prefixes for that command. |
+| **Up / Down** | Recall commands entered during the current session. |
+| **Left / Right**, **Home / End**, **Backspace / Delete** | Edit the current line before submitting it. |
+| **Ctrl+C** | Discard the current command line. At a confirmation prompt, cancel the pending action. |
+| **Ctrl+D** on an empty line | End input. If a confirmation is pending, cancel it before ending the session. |
+
+For example, type `check-sh` and press **Tab** to complete `check-shortfall`.
+Then type `ca` and press **Tab** to insert `cal/`; enter the target immediately after the slash.
+For `generate-plan `, **Tab** suggests prefixes such as `d/`, `cal/`, and `p/`.
+Completion does not run a command: press **Enter** to submit it.
+
+History is kept in memory for one session. Names and confirmation answers are not added to it.
+Quotes, backslashes, and exclamation marks retain their existing literal meaning in commands.
+In IDE Run consoles, redirected input, or terminals declaring `TERM=dumb`, MishMash uses ordinary
+line-based input automatically. Use your terminal application for completion and history shortcuts.
+<!-- @@author -->
+
 ### Try Your First Command
 
 After entering your name, add a recipe:

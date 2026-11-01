@@ -15,6 +15,9 @@ import mishmash.exception.MishMashException;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
 import mishmash.ui.CliFormatter;
+import mishmash.ui.ConsoleInput;
+import mishmash.ui.ConsoleInputs;
+import mishmash.ui.ScannerConsoleInput;
 
 /**
  * Runs the MishMash command-line application.
@@ -43,7 +46,7 @@ public class MishMash {
     /**
      * Borrowed console input; the caller remains responsible for closing it.
      */
-    private final Scanner scanner;
+    private final ConsoleInput input;
     /**
      * Destination for user-facing output, independent of diagnostic logging.
      */
@@ -62,7 +65,20 @@ public class MishMash {
      * @throws NullPointerException If any dependency is null.
      */
     public MishMash(Scanner scanner, PrintStream output, Parser parser, RecipeBook recipeBook) {
-        this.scanner = Objects.requireNonNull(scanner, "scanner");
+        this(new ScannerConsoleInput(scanner, output), output, parser, recipeBook);
+    }
+
+    /**
+     * Creates a session with a terminal-independent input adapter.
+     *
+     * @param input The borrowed source of commands and confirmation answers.
+     * @param output The destination for application feedback.
+     * @param parser The parser connected to this session's shared state.
+     * @param recipeBook The recipes used by commands in this session.
+     * @throws NullPointerException If a dependency is missing.
+     */
+    public MishMash(ConsoleInput input, PrintStream output, Parser parser, RecipeBook recipeBook) {
+        this.input = Objects.requireNonNull(input, "input");
         this.output = Objects.requireNonNull(output, "output");
         this.parser = Objects.requireNonNull(parser, "parser");
         this.recipeBook = Objects.requireNonNull(recipeBook, "recipeBook");
@@ -87,16 +103,17 @@ public class MishMash {
         Level originalLogLevel = APP_LOGGER.getLevel();
         boolean wasUsingParentHandlers = APP_LOGGER.getUseParentHandlers();
         FileHandler logFile = configureLogging(logPattern);
-        try (Scanner scanner = new Scanner(System.in)) {
-            MishMash session;
-            try {
-                session = new MishMash(scanner, System.out, new Parser(), new RecipeBook());
-            } catch (RuntimeException | AssertionError e) {
-                // run() handles its own failures; construction must be logged separately to avoid duplicates.
-                LOGGER.log(Level.SEVERE, "Unexpected application startup failure", e);
-                throw e;
-            }
+        boolean hasStarted = false;
+        try (ConsoleInput input = ConsoleInputs.open()) {
+            MishMash session = new MishMash(input, System.out, new Parser(), new RecipeBook());
+            hasStarted = true;
             session.run();
+        } catch (RuntimeException | AssertionError e) {
+            // run() logs its own failures; input or session construction failures are logged here instead.
+            if (!hasStarted) {
+                LOGGER.log(Level.SEVERE, "Unexpected application startup failure", e);
+            }
+            throw e;
         } finally {
             if (logFile != null) {
                 APP_LOGGER.removeHandler(logFile);
@@ -156,18 +173,20 @@ public class MishMash {
      * Reads commands until the user exits or console input ends.
      */
     private void readCommands() {
-        displayCommandPrompt();
-        while (scanner.hasNextLine()) {
-            String input = scanner.nextLine().trim();
-            if (input.equals("bye")) {
+        while (true) {
+            Optional<String> nextLine = input.readCommand(CliFormatter.commandPrompt());
+            if (nextLine.isEmpty()) {
+                LOGGER.fine("Console input ended");
+                return;
+            }
+            String commandLine = nextLine.get().trim();
+            if (commandLine.equals("bye")) {
                 LOGGER.fine("Exit requested with bye");
                 output.println(CliFormatter.goodbye());
                 return;
             }
-            executeCommand(input);
-            displayCommandPrompt();
+            executeCommand(commandLine);
         }
-        LOGGER.fine("Console input ended");
     }
 
     /**
@@ -241,14 +260,6 @@ public class MishMash {
     }
 
     /**
-     * Displays a consistent prompt after every command, including errors and cancellations.
-     */
-    private void displayCommandPrompt() {
-        output.println(CliFormatter.commandPrompt());
-        output.flush();
-    }
-
-    /**
      * Asks a yes/no question and reads the answer from the next input line.
      * Only "y" or "yes" (in any letter case) counts as agreement; anything else, including
      * the end of input, counts as "no" so that a destructive action never runs by accident.
@@ -257,11 +268,11 @@ public class MishMash {
      * @return True if the user agreed.
      */
     private boolean userConfirms(String question) {
-        output.println(CliFormatter.confirmation(question));
-        if (!scanner.hasNextLine()) {
+        Optional<String> nextLine = input.readAnswer(CliFormatter.confirmation(question));
+        if (nextLine.isEmpty()) {
             return false;
         }
-        String answer = scanner.nextLine().trim();
+        String answer = nextLine.get().trim();
         return answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes");
     }
 
@@ -270,9 +281,9 @@ public class MishMash {
      */
     private void greet() {
         output.println(CliFormatter.banner());
-        output.println(CliFormatter.namePrompt());
-        if (scanner.hasNextLine()) {
-            output.println(CliFormatter.greeting(scanner.nextLine()));
+        Optional<String> name = input.readAnswer(CliFormatter.namePrompt());
+        if (name.isPresent()) {
+            output.println(CliFormatter.greeting(name.get()));
         }
     }
 }
