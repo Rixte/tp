@@ -38,6 +38,11 @@ public class AddRecipeCommand implements Command {
         LOGGER.fine(() -> "Recipe added; recipe count: " + recipeBook.size());
         return confirmation;
     }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
+        return CommandResult.done(execute(recipeBook));
+    }
 }
 //@@author
 

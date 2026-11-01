@@ -468,10 +468,7 @@ public class Parser {
      * @throws MishMashException If any argument is supplied.
      */
     private Command parseClearDiet(String arguments) throws MishMashException {
-        if (!arguments.isBlank()) {
-            throw new MishMashException(ClearDietCommand.COMMAND_WORD + " does not accept arguments.",
-                    CLEAR_DIET_USAGE, null);
-        }
+        requireNoDietArguments(ClearDietCommand.COMMAND_WORD, arguments);
         return new ClearDietCommand(dietarySettings);
     }
 

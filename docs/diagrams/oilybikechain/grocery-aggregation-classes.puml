@@ -10,6 +10,7 @@ skinparam ranksep 55
 hide empty members
 
 class GroceryListGenerator {
+  + generateForPlan(plan: MealPlan): List<GroceryItem>
   + generate(ingredients: List<GroceryItem>): List<GroceryItem>
 }
 class "GroceryListGenerator.ItemKey" as ItemKey <<record>> {
@@ -24,6 +25,7 @@ class GroceryItem {
 
 GroceryListGenerator ..> ItemKey : creates temporary keys
 GroceryListGenerator ..> GroceryItem : reads and creates
+GroceryListGenerator ..> MealPlan : reads planned meals
 
 legend bottom
   Only feature-relevant members are shown.

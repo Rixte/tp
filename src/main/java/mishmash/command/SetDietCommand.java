@@ -73,16 +73,21 @@ public final class SetDietCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         Objects.requireNonNull(recipeBook, "recipeBook");
         Optional<MealPlan> currentPlan = activePlan.get();
         if (currentPlan.isEmpty()) {
             activePlan.clear();
             settings.set(preferences);
-            return "Dietary preferences saved. Future meal plans will use them.";
+            return CommandResult.done("Dietary preferences saved. Future meal plans will use them.");
         }
         if (planner.isCompatible(currentPlan.get(), preferences)) {
             settings.set(preferences);
-            return "Dietary preferences saved. Your existing meal plan already matches.";
+            return CommandResult.done("Dietary preferences saved. Your existing meal plan already matches.");
         }
         try {
             GeneratePlanRequest request = activePlan.getRequest().orElseThrow(
@@ -97,17 +102,17 @@ public final class SetDietCommand implements Command {
             String groceryMessage = groceries.isPresent()
                     ? "Your grocery list has also been updated."
                     : "Use 'generate-list' when you need a grocery list.";
-            return "Dietary preferences saved. Conflicting days were replaced."
-                    + System.lineSeparator() + groceryMessage;
+            return CommandResult.done("Dietary preferences saved. Conflicting days were replaced."
+                    + System.lineSeparator() + groceryMessage);
         } catch (IllegalArgumentException e) {
             // Never leave an incompatible plan visible under newly saved restrictions.
             settings.set(preferences);
             activePlan.clear();
-            return "Dietary preferences saved, but a replacement plan could not be generated."
+            return CommandResult.warning("Dietary preferences saved, but a replacement plan could not be generated."
                     + System.lineSeparator() + e.getMessage() + System.lineSeparator()
                     + "The previous meal plan and grocery list have been cleared."
                     + System.lineSeparator()
-                    + "Add suitable recipes or adjust your targets, then use 'generate-plan'.";
+                    + "Add suitable recipes or adjust your targets, then use 'generate-plan'.");
         }
     }
 }

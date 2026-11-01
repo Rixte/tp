@@ -39,16 +39,21 @@ public final class ClearDietCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         Objects.requireNonNull(recipeBook, "recipeBook");
         boolean hadRestrictions = dietarySettings.clear();
         if (!hadRestrictions) {
             LOGGER.fine("clear-diet requested for an already unrestricted profile");
-            return "Dietary preferences are already clear. Nothing was changed.";
+            return CommandResult.note("Dietary preferences are already clear. Nothing was changed.");
         }
 
         LOGGER.fine("Cleared all dietary preferences and restrictions");
-        return "Dietary preferences and restrictions cleared."
+        return CommandResult.done("Dietary preferences and restrictions cleared."
                 + System.lineSeparator()
-                + "Recipes, meal plans, groceries, targets, and recorded meals are unchanged.";
+                + "Recipes, meal plans, groceries, targets, and recorded meals are unchanged.");
     }
 }

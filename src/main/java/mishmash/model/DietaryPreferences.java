@@ -62,6 +62,15 @@ public record DietaryPreferences(Diet diet, Set<FoodTag> avoidedTags, Set<String
     }
 
     /**
+     * Checks whether recipe category declarations are needed to verify the current profile.
+     *
+     * @return True if a named diet or avoided food category is active.
+     */
+    public boolean hasCategoryRestrictions() {
+        return diet != Diet.NONE || !avoidedTags.isEmpty();
+    }
+
+    /**
      * Checks a recipe against every active requirement.
      *
      * <p>Unclassified recipes are rejected whenever any restriction is active. Classification is based

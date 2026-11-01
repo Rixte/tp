@@ -5,9 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import mishmash.command.Command;
-import mishmash.command.HelpCommand;
-import mishmash.model.RecipeBook;
+import mishmash.command.CommandResult;
 
 /**
  * Checks exact ANSI boundaries and safe-default prompts in the console formatter.
@@ -35,7 +33,8 @@ class CliFormatterTest {
         assertTrue(welcome.contains("list-recipes"));
         assertTrue(welcome.contains("generate-plan d/3"));
         assertTrue(welcome.contains("view-plan"));
-        assertEquals(4, welcome.lines().filter(line -> line.contains("|")).count());
+        assertTrue(welcome.contains("bye"));
+        assertEquals(5, welcome.lines().filter(line -> line.contains("|")).count());
     }
 
     @Test
@@ -43,7 +42,7 @@ class CliFormatterTest {
         String manual = "Heading" + System.lineSeparator() + "Format: help";
 
         assertEquals(ESCAPE + "1;93m" + manual + RESET,
-                CliFormatter.feedback(new HelpCommand(), manual));
+                CliFormatter.feedback(CommandResult.help(manual)));
     }
 
     @Test
@@ -51,7 +50,7 @@ class CliFormatterTest {
         String feedback = "First line" + System.lineSeparator() + "Second line";
 
         assertEquals(ESCAPE + "1;96m" + feedback + RESET,
-                CliFormatter.feedback(commandReturning(feedback), feedback));
+                CliFormatter.feedback(CommandResult.info(feedback)));
     }
 
     @Test
@@ -59,7 +58,17 @@ class CliFormatterTest {
         String feedback = "No meals recorded yet.";
 
         assertEquals(ESCAPE + "1;93m[NOTE]" + RESET + " " + feedback,
-                CliFormatter.feedback(commandReturning(feedback), feedback));
+                CliFormatter.feedback(CommandResult.note(feedback)));
+    }
+
+    @Test
+    void feedback_statusIsExplicitForNoOpSuccessAndWarning() {
+        assertEquals(ESCAPE + "1;93m[NOTE]" + RESET + " Nothing was changed.",
+                CliFormatter.feedback(CommandResult.note("Nothing was changed.")));
+        assertEquals(ESCAPE + "1;92m[DONE]" + RESET + " Updated.",
+                CliFormatter.feedback(CommandResult.done("Updated.")));
+        assertEquals(ESCAPE + "1;93m[WARN]" + RESET + " Settings saved, but repair failed.",
+                CliFormatter.feedback(CommandResult.warning("Settings saved, but repair failed.")));
     }
 
     @Test
@@ -76,15 +85,5 @@ class CliFormatterTest {
         assertEquals(ESCAPE + "1;91m[CONFIRM]" + RESET + " Delete this? "
                         + ESCAPE + "93m[y/N]:" + RESET,
                 CliFormatter.confirmation("Delete this? (y/n)"));
-    }
-
-    /** Returns a minimal read-only command for presentation tests. */
-    private Command commandReturning(String feedback) {
-        return new Command() {
-            @Override
-            public String execute(RecipeBook recipeBook) {
-                return feedback;
-            }
-        };
     }
 }

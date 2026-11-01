@@ -5,7 +5,7 @@ autonumber
 
 actor Caller
 participant "day:DayPlan" as Day
-participant "meal:Recipe" as Meal
+participant "meal:PlannedMeal" as Meal
 participant "totals:NutritionTotals" as Totals
 
 Caller -> Day : calculateDailyNutritionTotals()

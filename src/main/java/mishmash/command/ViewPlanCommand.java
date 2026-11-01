@@ -93,6 +93,11 @@ public class ViewPlanCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) throws MishMashException {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
         //@@author Rixte
         List<List<MealSummary>> mealsByDay = mealPlanSource.get();
         if (mealsByDay == null) {
@@ -101,13 +106,13 @@ public class ViewPlanCommand implements Command {
         MealPlanViewer viewer = new MealPlanViewer();
         if (mealsByDay.isEmpty()) {
             LOGGER.fine("view-plan requested with no active meal plan");
-            return viewer.view(mealsByDay);
+            return CommandResult.note(viewer.view(mealsByDay));
         }
         //@@author
         if (dayNumber == null) {
             String result = viewer.view(mealsByDay, targetsSource.get());
             LOGGER.fine(() -> "view-plan displayed all " + mealsByDay.size() + " days");
-            return result;
+            return CommandResult.info(result);
         }
         //@@author Rixte
         if (dayNumber > mealsByDay.size()) {
@@ -118,6 +123,6 @@ public class ViewPlanCommand implements Command {
         //@@author
         String result = viewer.view(mealsByDay, dayNumber, targetsSource.get());
         LOGGER.fine(() -> "view-plan displayed day " + dayNumber);
-        return result;
+        return CommandResult.info(result);
     }
 }

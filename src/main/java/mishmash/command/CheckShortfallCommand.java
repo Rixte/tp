@@ -65,10 +65,15 @@ public class CheckShortfallCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         MealPlan plan = activePlan.get().orElse(null);
         if (plan == null || plan.getNumberOfDays() == 0) {
             LOGGER.fine("Shortfall check skipped: no active days to check");
-            return "No active meal plan. Use 'generate-plan' first.";
+            return CommandResult.note("No active meal plan. Use 'generate-plan' first.");
         }
 
         List<String> outputLines = new ArrayList<>();
@@ -87,7 +92,7 @@ public class CheckShortfallCommand implements Command {
 
         LOGGER.fine("Checked nutrition shortfalls for " + plan.getNumberOfDays()
                 + " days; days with shortfalls: " + daysWithShortfalls);
-        return String.join(System.lineSeparator(), outputLines);
+        return CommandResult.info(String.join(System.lineSeparator(), outputLines));
     }
 
     /**

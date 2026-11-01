@@ -75,5 +75,10 @@ public class RecordMealCommand implements Command {
         LOGGER.fine(() -> "record-meal recorded meal " + mealLog.getMeals().size());
         return new MealLogViewer().viewRecorded(meal, mealLog.getTotals());
     }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
+        return CommandResult.done(execute(recipeBook));
+    }
 }
 //@@author

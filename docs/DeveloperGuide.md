@@ -82,7 +82,13 @@ Command names and prefixes are case-sensitive. Invalid commands normally produce
 
 ### UI Component
 
-`MishMash` owns the terminal input loop, greeting, name prompt, command execution, confirmation prompts, and recoverable error display. Classes in `mishmash.ui` format recipes, plans, groceries, and recorded meals as text. Commands return results to the loop rather than reading console input themselves. This keeps command execution testable without an interactive terminal.
+`MishMash` owns the terminal input loop, greeting, name prompt, command execution, confirmation prompts, and
+recoverable error display. Classes in `mishmash.ui` format recipes, plans, groceries, and recorded meals as text.
+Commands return `CommandResult` values to the loop rather than reading console input themselves. Each result
+explicitly selects `DONE`, `NOTE`, `WARNING`, `INFO`, or `HELP`; `CliFormatter` never guesses from a command class
+or message prefix. The first three render as `[DONE]`, `[NOTE]`, and `[WARN]`; `INFO` remains unlabelled.
+The default is `INFO`, so a new command cannot accidentally claim success. This keeps command execution and
+presentation testable without an interactive terminal.
 
 ### Logic Component
 
@@ -118,6 +124,7 @@ Commands validate their arguments and relevant application state. Requests that 
 
 | Class | Represents |
 | --- | --- |
+| `CommandResult` | User-facing command feedback and its explicit presentation status. |
 | `Recipe` | A recipe name, calorie and macronutrient values, and ingredient entries. |
 | `RecipeBook` | The session's ordered collection of recipes. |
 | `RecipeChanges` | Validated optional edits, applied to the current recipe during execution. |
@@ -309,7 +316,7 @@ are in [diagrams/add-recipe](diagrams/peilingggg/add-recipe/README.md).
 
 This feature implements the story: **As a user managing recipes, I want to confirm the deletion of a selected recipe so that I can check that I am removing the intended entry.**
 
-`delete-recipe INDEX` removes the recipe at the displayed, one-based position. Deletion cannot be undone, so the application first names the recipe and asks `(y/n)`. Only `y` or `yes`, ignoring letter case and surrounding whitespace, deletes the recipe. Any other answer, including a blank line or the end of input, cancels. For example, `delete-recipe 2` followed by `y` removes the second recipe, and every later recipe moves up one position.
+`delete-recipe INDEX` removes the recipe at the displayed, one-based position. Deletion cannot be undone, so the application first names the recipe and `CliFormatter` presents the question as `[CONFIRM] ... [y/N]:`. Only `y` or `yes`, ignoring letter case and surrounding whitespace, deletes the recipe. Any other answer, including a blank line or the end of input, cancels. For example, `delete-recipe 2` followed by `y` removes the second recipe, and every later recipe moves up one position.
 
 The command changes only the `RecipeBook`. It does not use `ActiveMealPlan`, so an existing meal plan and its grocery list keep the recipes they were generated with. No undo is provided.
 
@@ -715,9 +722,15 @@ a no-op, and removes the override when values match the source recipe again. Por
 and grocery generation multiplies effective quantities by the portion count. Nutrition continues to use the
 recipe values because the application has no ingredient-to-nutrition database.
 
-Dietary category checks continue to use the source recipe's declared `FoodInfo`. Ingredient-name exclusions
-use the effective planned-meal ingredients. The command rejects a conflicting replacement before state changes,
-and later `set-diet` compatibility checks also inspect effective ingredients.
+Dietary category checks continue to use the source recipe's declared `FoodInfo`; MishMash cannot infer whether
+an arbitrary replacement name belongs to a named-diet or avoided category. Ingredient-name exclusions use the
+effective planned-meal ingredients and are rejected before state changes. When category restrictions are active,
+an accepted customization returns `WARNING` and tells the user to verify the replacement. Later `set-diet`
+compatibility checks still inspect the source declaration together with effective ingredient exclusions.
+
+Ingredient equality is multiset-based: order, name case, unit case, and insignificant decimal scale do not create
+a change, while duplicate counts, quantities, and units remain significant. A semantic no-op preserves the plan
+and grocery snapshot and returns `NOTE`.
 
 `CustomizeMealParserTest`, `IngredientCustomizationTest`, `CustomizeMealCommandTest`, and
 `CustomizeMealIntegrationTest` cover syntax, defensive copying, atomic failure, dietary conflicts, source
@@ -2232,7 +2245,7 @@ and verify that a subsequent `view-plan` retains those warnings. Finally run `ge
 ### Check Nutrition Shortfalls
 
 1. In a fresh session, enter `check-shortfall cal/2000` before generating a plan. Expect
-   `No active meal plan. Use 'generate-plan' first.` and another command prompt.
+   `[NOTE] No active meal plan. Use 'generate-plan' first.` and another `mishmash >` prompt.
 2. Load exactly the three [sample recipes](#sample-recipes), enter `generate-plan d/2`,
    and then `generate-list`. Each day's planned totals are 1500 kcal, 80 g protein,
    180 g carbohydrates, and 37 g fat.
@@ -2261,7 +2274,7 @@ dependencies, and integer-overflow boundaries are covered by the automated tests
 With exactly the sample recipes, generate a two-day plan and enter `generate-list`. Expect:
 
 ```text
-Grocery list generated. Use 'view-list' to view it.
+[DONE] Grocery list generated. Use 'view-list' to view it.
 ```
 
 Then enter `view-list` and verify:
@@ -2311,11 +2324,13 @@ existing logging configuration; absence of a `FINE` record at a higher log level
 <!-- @@author GauthamNandi -->
 ### Record and View Meals
 
-1. In a fresh session, enter `record-meal 1`. Expect `Error: There are no recipes to record. Use 'add-recipe' to add one.`, the list of command formats, and another prompt. Enter `view-meals` and expect `No meals recorded yet.`
+1. In a fresh session, enter `record-meal 1`. Expect
+   `[ERROR] Error: There are no recipes to record. Use 'add-recipe' to add one.`, `[TRY]` command formats,
+   and another `mishmash >` prompt. Enter `view-meals` and expect `[NOTE] No meals recorded yet.`
 2. Load exactly the three [sample recipes](#sample-recipes). Enter `record-meal 1`. Expect:
 
    ```text
-   Meal recorded!
+   [DONE] Meal recorded!
    Chicken Rice (600 kcal | P: 40g, C: 70g, F: 15g)
    Total so far: 600 kcal | Protein: 40g | Carbs: 70g | Fats: 15g
    ```
@@ -2327,7 +2342,8 @@ existing logging configuration; absence of a `FINE` record at a higher log level
 7. Try `record-meal`, `record-meal 0`, `record-meal 5`, `record-meal two`, `record-meal -1`, `record-meal 1 2`, `view-meals now`. Each should produce a recoverable error. Enter `view-meals` afterwards and confirm that the recorded meals are unchanged.
 8. Enter `edit-recipe 2 cal/100`, then `delete-recipe 1` and confirm. Enter `view-meals`. Every recorded meal should keep the calories and macros it had when recorded.
 9. Enter `generate-plan d/1`, then `view-meals` and `view-plan`. The recorded meals should be unchanged by plan generation, and the plan should be unaffected by the recorded meals.
-10. Enter `help` and confirm that both commands are listed. Enter `bye`, restart, and enter a name. `view-meals` should report `No meals recorded yet.`
+10. Enter `help` and confirm that both commands are listed. Enter `bye`, restart, and enter a name.
+    `view-meals` should report `[NOTE] No meals recorded yet.`
 <!-- @@author -->
 
 <!-- @@author peilingggg -->
@@ -2359,13 +2375,24 @@ existing logging configuration; absence of a `FINE` record at a higher log level
 
 Use a fresh session containing exactly the three [sample recipes](#sample-recipes).
 
-1. Enter `view-targets`. Expect `No daily targets saved. Use 'set-targets' to set them.`
-2. Enter `set-targets cal/1500 p/80`. Expect `Daily targets saved: 1500 kcal, 80 g protein.` and a reminder that the current plan is unchanged.
-3. Enter `set-targets f/37`. Expect `Daily targets saved: 1500 kcal, 80 g protein, 37 g fats.`, which shows that earlier targets are kept. Enter `view-targets` and expect Calories `1500 kcal`, Protein `80 g`, Carbs `not set`, and Fats `37 g`.
-4. Enter `generate-plan d/1`. Expect success followed by `Daily targets used: 1500 kcal, 80 g protein, 37 g fats.` Enter `view-plan` and expect all three recipes, daily totals of 1500 kcal, 80g protein, and 37g fats, and no warnings.
+1. Enter `view-targets`. Expect `[NOTE] No daily targets saved. Use 'set-targets' to set them.`
+2. Enter `set-targets cal/1500 p/80`. Expect `[DONE] Daily targets saved: 1500 kcal, 80 g protein.`
+   and a reminder that the current plan is unchanged.
+3. Enter `set-targets f/37`. Expect `[DONE] Daily targets saved: 1500 kcal, 80 g protein, 37 g fats.`,
+   which shows that earlier targets are kept. Enter `view-targets` and expect Calories `1500 kcal`,
+   Protein `80 g`, Carbs `not set`, and Fats `37 g`.
+4. Enter `generate-plan d/1`. Expect `[DONE]` followed by
+   `Daily targets used: 1500 kcal, 80 g protein, 37 g fats.` Enter `view-plan` and expect all three recipes,
+   daily totals of 1500 kcal, 80g protein, and 37g fats, and no warnings.
 5. Enter `generate-plan d/1 cal/1400`. Expect `Daily targets used: 1400 kcal, 80 g protein, 37 g fats.`, which shows that the typed calories replaced the saved 1500 while protein and fats still apply. Enter `view-plan` and expect `Warning: Calories exceed target by 100 kcal (1500 kcal actual; 1400 kcal target).` Enter `view-targets` and confirm that the saved calories are still `1500 kcal`.
-6. Enter `set-targets p/200`, then `generate-plan d/1`. Expect `Error: Could not find 3 recipes that meet your daily targets within 15%. ...` followed by `Daily targets applied: 1500 kcal, 200 g protein, 37 g fats (including your saved targets). Change those with 'set-targets'.` Enter `view-plan` and verify that the plan from step 5 is still available. Enter `generate-plan d/1 p/80`. Expect success with `Daily targets used: 1500 kcal, 80 g protein, 37 g fats.`
-7. Enter `set-targets cal/none c/none f/none p/none`. Expect `All daily targets cleared.` Enter `view-targets` and expect the `No daily targets saved` message. Enter `generate-plan d/1` and confirm that there is no `Daily targets used:` line.
+6. Enter `set-targets p/200`, then `generate-plan d/1`. Expect
+   `[ERROR] Error: Could not find 3 recipes that meet your daily targets within 15%. ...` followed by
+   `Daily targets applied: 1500 kcal, 200 g protein, 37 g fats (including your saved targets). Change those with 'set-targets'.`
+   Enter `view-plan` and verify that the plan from step 5 is still available. Enter `generate-plan d/1 p/80`.
+   Expect `[DONE]` with `Daily targets used: 1500 kcal, 80 g protein, 37 g fats.`
+7. Enter `set-targets cal/none c/none f/none p/none`. Expect `[DONE] All daily targets cleared.`
+   Enter `view-targets` and expect the `[NOTE] No daily targets saved` message. Enter `generate-plan d/1`
+   and confirm that there is no `Daily targets used:` line.
 8. Try `set-targets`, `set-targets cal/0`, `set-targets cal/-5`, `set-targets cal/abc`, `set-targets cal/1.5`, `set-targets cal/`, `set-targets x/5`, `set-targets 2000`, `set-targets cal/1 cal/2`, `set-targets p/5 f/oops`, and `view-targets now`. Each should produce a recoverable error that ends with the matching format line. After `set-targets p/5 f/oops`, enter `view-targets` and confirm that protein was not saved.
 9. Enter `set-targets cal/NONE`. Expect it to be accepted. Enter `set-targets CAL/5` and `Set-Targets cal/5`. Expect `Unrecognized parameter: CAL/5` and `Unknown command: Set-Targets`.
 10. Enter `set-targets cal/2000`, then `bye`, restart, and enter a name. `view-targets` should report that no targets are saved.
@@ -2408,8 +2435,8 @@ need no answer. Use [Confirming plan changes](#confirming-plan-changes) for canc
 2. Enter `set-diet diet/vegetarian avoid/peanut exclude/Olive Oil`, then `view-diet`. Check that all three restrictions appear.
 3. Enter `set-diet diet/invalid`. Expect an error listing supported diets; `view-diet` must still show the previous profile.
 4. Enter `clear-diet`, then `view-diet`. Check that the diet and both exclusion lists display `none`.
-5. Enter `clear-diet` again. Expect `Dietary preferences are already clear. Nothing was changed.`
-6. Enter `clear-diet diet/none`. Expect an argument error and `Format: clear-diet`; `view-diet`
+5. Enter `clear-diet` again. Expect `[NOTE] Dietary preferences are already clear. Nothing was changed.`
+6. Enter `clear-diet diet/none`. Expect `[ERROR]` argument feedback and `[TRY] Format: clear-diet`; `view-diet`
    must still show the unrestricted profile.
 7. Test plan repair and grocery refresh using the separate classified recipes below. The general sample recipes above are unclassified and cannot exercise successful dietary repair.
 

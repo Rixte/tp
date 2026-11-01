@@ -2,6 +2,7 @@ package mishmash.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,6 +80,27 @@ class PlannedMealTest {
 
         assertFalse(restored.hasCustomizedIngredients());
         assertEquals(recipe.getIngredients(), restored.getIngredients());
+    }
+
+    @Test
+    void withIngredients_reorderedAndRecasedValues_isNoOpWithDuplicateCountsPreserved() {
+        Recipe multiIngredientRecipe = new Recipe("Bowl", 500, 20, 80, 10, List.of(
+                new GroceryItem("Brown Rice", new BigDecimal("100"), "g"),
+                new GroceryItem("Tofu", new BigDecimal("50"), "G"),
+                new GroceryItem("Tofu", new BigDecimal("25"), "g")));
+        PlannedMeal meal = PlannedMeal.onePortionOf(multiIngredientRecipe);
+        List<GroceryItem> reordered = List.of(
+                new GroceryItem("tofu", new BigDecimal("25.0"), "G"),
+                new GroceryItem("  brown   RICE ", new BigDecimal("100.00"), "G"),
+                new GroceryItem("TOFU", new BigDecimal("50.0"), "g"));
+
+        assertSame(meal, meal.withIngredients(reordered));
+
+        List<GroceryItem> wrongDuplicateQuantity = List.of(
+                new GroceryItem("tofu", new BigDecimal("50"), "g"),
+                new GroceryItem("brown rice", new BigDecimal("100"), "g"),
+                new GroceryItem("tofu", new BigDecimal("50"), "g"));
+        assertNotSame(meal, meal.withIngredients(wrongDuplicateQuantity));
     }
 
     @Test

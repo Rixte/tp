@@ -1,32 +1,36 @@
 @startuml
 !include ../rixte/shortfall/style.iuml
-title generate-list: collect every ingredient occurrence
+title generateForPlan: collect scaled ingredients from every planned occurrence
 autonumber
 
-participant "command:GenerateListCommand" as Command
-participant "activePlan:ActiveMealPlan" as Active
+actor Caller
+participant "generator:GroceryListGenerator" as Generator
 participant "plan:MealPlan" as Plan
 participant "day:DayPlan" as Day
-participant "meal:Recipe" as Meal
+participant "meal:PlannedMeal" as Meal
 
-Command -> Active : get()
-activate Active
-Active --> Command : Optional.of(plan)
-deactivate Active
-Command -> Plan : getDays()
+Caller -> Generator : generateForPlan(plan)
+activate Generator
+Generator -> Plan : getDays()
 activate Plan
-Plan --> Command : days
+Plan --> Generator : days
 deactivate Plan
 loop each day
-  Command -> Day : getMeals()
+  Generator -> Day : getPlannedMeals()
   activate Day
-  Day --> Command : meals
+  Day --> Generator : plannedMeals
   deactivate Day
-  loop each meal occurrence
-    Command -> Meal : getIngredients()
+  loop each planned meal occurrence
+    Generator -> Meal : getScaledIngredients()
     activate Meal
-    Meal --> Command : ingredients
+    Meal --> Generator : scaledIngredients
     deactivate Meal
   end
 end
+Generator -> Generator : generate(ingredients)
+activate Generator
+Generator --> Generator : groceries
+deactivate Generator
+Generator --> Caller : groceries
+deactivate Generator
 @enduml

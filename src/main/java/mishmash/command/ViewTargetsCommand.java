@@ -36,10 +36,15 @@ public class ViewTargetsCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         Objects.requireNonNull(recipeBook, "recipeBook");
         NutritionTargets targets = settings.get();
         if (!targets.hasAnyTarget()) {
-            return "No daily targets saved. Use 'set-targets' to set them.";
+            return CommandResult.note("No daily targets saved. Use 'set-targets' to set them.");
         }
         StringBuilder text = new StringBuilder("Daily targets:");
         for (Nutrient nutrient : Nutrient.values()) {
@@ -47,7 +52,7 @@ public class ViewTargetsCommand implements Command {
             text.append(System.lineSeparator()).append(nutrient.getLabel()).append(": ")
                     .append(target == null ? "not set" : target + " " + nutrient.getUnit());
         }
-        return text.toString();
+        return CommandResult.info(text.toString());
     }
 }
 //@@author

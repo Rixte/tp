@@ -49,6 +49,12 @@ application dependencies.
 
 ## Modeling and maintenance
 
+- Follow the course UML notation: class members use `+`/`-` visibility, interfaces use
+  `<<interface>>`, associations use solid lines, dependencies use dashed arrows, and
+  interface realization uses a dashed line with a hollow triangle. `hide circle` removes
+  PlantUML's non-course `C`/`I` member icons.
+- Show a stored association as a line or an attribute, never both. These diagrams prefer
+  association lines so multiplicities and navigability remain visible.
 - Solid navigable associations represent stored references; dashed dependencies
   represent temporary use, creation, or supplier access. Interface realization
   uses a dashed line with an unfilled triangle. Plain associations avoid implying
@@ -64,7 +70,8 @@ application dependencies.
   dashed returns, activation bars, and explicit object creation. Each diagram
   focuses on one scenario so calls and returns have matching activations.
 - `DayPlan`'s combined API returns a new `NutritionTotals` after four separate
-  recipe sums. The viewer independently sums `MealSummary` values. Preserve this
+  `PlannedMeal` sums, including portion scaling. The viewer independently sums
+  `MealSummary` values. Preserve this
   distinction; there is no viewer-to-`DayPlan` call for warning calculation.
 - Keep strict target comparisons separate from the generator's tolerance. Resolve
   supplier values at execution time, check an invalid selected day before reading

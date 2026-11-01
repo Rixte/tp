@@ -17,6 +17,9 @@ public final class AdjustPortionCommand implements Command {
     /** Command word shared by parsing and user guidance. */
     public static final String COMMAND_WORD = "adjust-portion";
 
+    /** Describes every required field of a portion adjustment. */
+    public static final String USAGE = "Format: " + COMMAND_WORD + " d/DAY m/MEAL portions/COUNT";
+
     private static final Logger LOGGER = Logger.getLogger(AdjustPortionCommand.class.getName());
 
     private final PortionAdjustment adjustment;
@@ -43,11 +46,16 @@ public final class AdjustPortionCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) throws MishMashException {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
         Objects.requireNonNull(recipeBook, "recipeBook");
         MealPlan currentPlan = activeMealPlan.get().orElse(null);
         if (currentPlan == null || currentPlan.getNumberOfDays() == 0) {
             LOGGER.fine("Portion adjustment skipped: no active meal plan");
-            return "No active meal plan. Use 'generate-plan' first.";
+            return CommandResult.note("No active meal plan. Use 'generate-plan' first.");
         }
 
         validateDayNumber(currentPlan);
@@ -56,8 +64,8 @@ public final class AdjustPortionCommand implements Command {
         int mealIndex = adjustment.mealNumber() - 1;
         int currentPortionCount = selectedDay.getPlannedMeals().get(mealIndex).getPortionCount();
         if (currentPortionCount == adjustment.portionCount()) {
-            return "Meal " + adjustment.mealNumber() + " on Day " + adjustment.dayNumber()
-                    + " already has " + formatPortions(adjustment.portionCount()) + ". Nothing was changed.";
+            return CommandResult.note("Meal " + adjustment.mealNumber() + " on Day " + adjustment.dayNumber()
+                    + " already has " + formatPortions(adjustment.portionCount()) + ". Nothing was changed.");
         }
 
         MealPlan updatedPlan;
@@ -65,7 +73,8 @@ public final class AdjustPortionCommand implements Command {
             updatedPlan = currentPlan.withAdjustedPortion(
                     adjustment.dayNumber() - 1, mealIndex, adjustment.portionCount());
         } catch (ArithmeticException e) {
-            throw new MishMashException("That portion count makes the day's nutrition totals too large.", e);
+            throw new MishMashException("That portion count makes the day's nutrition totals too large.",
+                    USAGE, e);
         }
 
         boolean hadGroceryList = activeMealPlan.getGroceryList().isPresent();
@@ -75,10 +84,11 @@ public final class AdjustPortionCommand implements Command {
         String result = "Meal " + adjustment.mealNumber() + " on Day " + adjustment.dayNumber()
                 + " updated to " + formatPortions(adjustment.portionCount()) + ".";
         if (hadGroceryList) {
-            return result + System.lineSeparator()
-                    + "The previous grocery list was cleared. Run 'generate-list' to update it.";
+            return CommandResult.done(result + System.lineSeparator()
+                    + "The previous grocery list was cleared. Run 'generate-list' to update it.");
         }
-        return result + System.lineSeparator() + "Run 'generate-list' to create groceries for the updated plan.";
+        return CommandResult.done(result + System.lineSeparator()
+                + "Run 'generate-list' to create groceries for the updated plan.");
     }
 
     /**
@@ -86,7 +96,8 @@ public final class AdjustPortionCommand implements Command {
      */
     private void validateDayNumber(MealPlan plan) throws MishMashException {
         if (adjustment.dayNumber() > plan.getNumberOfDays()) {
-            throw new MishMashException("Day number must be between 1 and " + plan.getNumberOfDays() + ".");
+            throw new MishMashException("Day number must be between 1 and " + plan.getNumberOfDays() + ".",
+                    USAGE, null);
         }
     }
 
@@ -96,11 +107,12 @@ public final class AdjustPortionCommand implements Command {
     private void validateMealNumber(DayPlan day) throws MishMashException {
         int mealCount = day.getPlannedMeals().size();
         if (mealCount == 0) {
-            throw new MishMashException("Day " + adjustment.dayNumber() + " has no meals to adjust.");
+            throw new MishMashException("Day " + adjustment.dayNumber() + " has no meals to adjust.",
+                    USAGE, null);
         }
         if (adjustment.mealNumber() > mealCount) {
             throw new MishMashException("Meal number for Day " + adjustment.dayNumber()
-                    + " must be between 1 and " + mealCount + ".");
+                    + " must be between 1 and " + mealCount + ".", USAGE, null);
         }
     }
 

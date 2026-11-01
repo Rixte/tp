@@ -78,7 +78,9 @@ class ClearDietIntegrationTest {
     void invalidArguments_preserveDietAndAllPlanningState() throws MishMashException {
         Recipe recipe = recipe("Rice", "none");
         MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(recipe))));
-        activePlan.set(plan);
+        GeneratePlanRequest request = new GeneratePlanRequest(1, NutritionTargets.none());
+        activePlan.setGenerated(plan, request, Optional.of(List.of(recipe.getIngredients().get(0))));
+        List<GroceryItem> groceries = activePlan.getGroceryList().orElseThrow();
         execute("set-diet diet/vegetarian");
         String diet = execute("view-diet");
 
@@ -89,6 +91,8 @@ class ClearDietIntegrationTest {
         assertTrue(error.getMessage().contains(Parser.CLEAR_DIET_USAGE));
         assertEquals(diet, execute("view-diet"));
         assertSame(plan, activePlan.get().orElseThrow());
+        assertSame(request, activePlan.getRequest().orElseThrow());
+        assertSame(groceries, activePlan.getGroceryList().orElseThrow());
     }
 
     @Test
@@ -97,6 +101,10 @@ class ClearDietIntegrationTest {
         recipeBook.add(recipe("Egg", "egg"));
         recipeBook.add(recipe("Unknown", null));
         execute("set-diet diet/vegan");
+
+        assertThrows(MishMashException.class, () -> execute("generate-plan d/1"));
+        assertTrue(activePlan.get().isEmpty());
+
         execute("clear-diet");
 
         execute("generate-plan d/1");

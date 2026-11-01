@@ -220,17 +220,17 @@ The examples below modify the complete example command above; keep its other fie
 
 | Invalid input or change | Response | What to Do |
 | --- | --- | --- |
-| Omit `f/15` | `Error: Missing required field: f/` | Restore `f/15`. Supply all five required recipe fields. |
-| Leave `n/` blank | `Error: Value must not be blank: n/` | Use `n/Chicken and Rice`. Every supplied prefix needs a value. |
-| Use `p/-5` or `p/2.5` | `Error: Protein must be a non-negative integer.` | Use a whole number such as `p/50`. The same rule applies to all four nutrition fields. |
-| Use `cal/2147483648` | `Error: Calories must not exceed 2147483647.` | Use a value within the supported range, such as `cal/650`. |
-| Remove every `i/` field | `Error: At least one ingredient is required. Use i/INGREDIENT:QUANTITYUNIT, for example i/Rice:150g.` | Restore at least one complete ingredient, such as `i/White Rice:150g`. |
-| Use `i/White Rice:0g` | `Error: Ingredient quantity must be greater than zero.` | Use `i/White Rice:150g` or another positive quantity. |
-| Use `i/White Rice:150` without a unit | `Error: Invalid ingredient format. Use i/INGREDIENT:QUANTITYUNIT, for example i/Chicken Breast:200g.` | Include a unit containing only letters: `i/White Rice:150g`. Negative quantities also fail the ingredient format check. |
-| Use `i/:150g` | `Error: Ingredient name must not be blank.` | Include the name: `i/White Rice:150g`. |
-| Add a second `n/` field | `Error: Repeated field: n/` | Keep only `n/Chicken and Rice`. Only `i/` may be repeated. |
-| Use `protein/50` instead of `p/50` | `Error: Unknown field: protein/` | Use the supported prefix `p/50`. |
-| Use `food/poultry,poultry` | `Error: Repeated food tag: poultry.` | Declare each category once: `food/poultry`. Unsupported tags display an error followed by the valid food tags; choose the applicable supported tags. |
+| Omit `f/15` | `[ERROR] Error: Missing required field: f/` | Restore `f/15`. Supply all five required recipe fields. |
+| Leave `n/` blank | `[ERROR] Error: Value must not be blank: n/` | Use `n/Chicken and Rice`. Every supplied prefix needs a value. |
+| Use `p/-5` or `p/2.5` | `[ERROR] Error: Protein must be a non-negative integer.` | Use a whole number such as `p/50`. The same rule applies to all four nutrition fields. |
+| Use `cal/2147483648` | `[ERROR] Error: Calories must not exceed 2147483647.` | Use a value within the supported range, such as `cal/650`. |
+| Remove every `i/` field | `[ERROR] Error: At least one ingredient is required. Use i/INGREDIENT:QUANTITYUNIT, for example i/Rice:150g.` | Restore at least one complete ingredient, such as `i/White Rice:150g`. |
+| Use `i/White Rice:0g` | `[ERROR] Error: Ingredient quantity must be greater than zero.` | Use `i/White Rice:150g` or another positive quantity. |
+| Use `i/White Rice:150` without a unit | `[ERROR] Error: Invalid ingredient format. Use i/INGREDIENT:QUANTITYUNIT, for example i/Chicken Breast:200g.` | Include a unit containing only letters: `i/White Rice:150g`. Negative quantities also fail the ingredient format check. |
+| Use `i/:150g` | `[ERROR] Error: Ingredient name must not be blank.` | Include the name: `i/White Rice:150g`. |
+| Add a second `n/` field | `[ERROR] Error: Repeated field: n/` | Keep only `n/Chicken and Rice`. Only `i/` may be repeated. |
+| Use `protein/50` instead of `p/50` | `[ERROR] Error: Unknown field: protein/` | Use the supported prefix `p/50`. |
+| Use `food/poultry,poultry` | `[ERROR] Error: Repeated food tag: poultry.` | Declare each category once: `food/poultry`. Unsupported tags display an error followed by the valid food tags; choose the applicable supported tags. |
 
 Invalid input also displays the `add-recipe` format and an example. No recipe is added until the whole command is valid. Correct the command and enter it again at the next prompt.
 <!-- @@author -->
@@ -270,12 +270,13 @@ MishMash asks you to confirm. Enter `y` to delete the recipe.
 In this transcript, `delete-recipe 2` and `y` are the lines you type; the other lines are MishMash's replies.
 
 ```text
-delete-recipe 2
-Are you sure you want to delete recipe 2: Protein Oatmeal? (y/n)
+mishmash > delete-recipe 2
+[CONFIRM] Are you sure you want to delete recipe 2: Protein Oatmeal? [y/N]:
 y
-Recipe deleted!
+[DONE] Recipe deleted!
 Protein Oatmeal
 Recipes remaining: 2
+mishmash >
 ```
 
 `list-recipes` now shows that the later recipe has moved up one number:
@@ -289,10 +290,11 @@ Recipes:
 If you answer anything other than `y` or `yes`, nothing is deleted:
 
 ```text
-delete-recipe 2
-Are you sure you want to delete recipe 2: Salmon Salad? (y/n)
+mishmash > delete-recipe 2
+[CONFIRM] Are you sure you want to delete recipe 2: Salmon Salad? [y/N]:
 n
-Cancelled. Nothing was changed.
+[NOTE] Cancelled. Nothing was changed.
+mishmash >
 ```
 
 **Rules:**
@@ -307,12 +309,12 @@ Cancelled. Nothing was changed.
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| No recipes have been added | `Error: There are no recipes to delete.` | Add a recipe first. |
-| `delete-recipe 5` with only two recipes | `Error: Recipe index must be between 1 and 2.` | Enter `list-recipes` and choose a number shown. |
-| `delete-recipe` | `Error: Recipe index is required.` | Add a number, for example `delete-recipe 1`. |
-| `delete-recipe 0` | `Error: Recipe index must be at least 1.` | Recipe numbers start at 1. |
-| `delete-recipe abc`, `delete-recipe -1`, `delete-recipe 1.5`, or `delete-recipe 1 2` | `Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `delete-recipe 2`. |
-| You answer something other than `y` or `yes` | `Cancelled. Nothing was changed.` | Enter `delete-recipe` again and answer `y`. |
+| No recipes have been added | `[ERROR] Error: There are no recipes to delete.` | Add a recipe first. |
+| `delete-recipe 5` with only two recipes | `[ERROR] Error: Recipe index must be between 1 and 2.` | Enter `list-recipes` and choose a number shown. |
+| `delete-recipe` | `[ERROR] Error: Recipe index is required.` | Add a number, for example `delete-recipe 1`. |
+| `delete-recipe 0` | `[ERROR] Error: Recipe index must be at least 1.` | Recipe numbers start at 1. |
+| `delete-recipe abc`, `delete-recipe -1`, `delete-recipe 1.5`, or `delete-recipe 1 2` | `[ERROR] Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `delete-recipe 2`. |
+| You answer something other than `y` or `yes` | `[NOTE] Cancelled. Nothing was changed.` | Enter `delete-recipe` again and answer `y`. |
 
 An index problem is reported before MishMash asks you to confirm, so nothing is deleted. The "no recipes" and "between 1 and N" errors are followed by the list of all command formats. The other errors show only `Format: delete-recipe INDEX`. Enter the corrected command at the next prompt.
 <!-- @@author -->
@@ -377,16 +379,17 @@ Food tags: poultry
 - The numbers are positions in the current list, and they are the numbers other commands use. They change when a recipe is deleted, so run `list-recipes` again before using a number.
 - Calories are in kcal; protein, carbs, and fats are in grams.
 - `Food tags` shows `Unclassified` if the recipe was added without `food/`, `None declared` if it was added with `food/none`, and otherwise the declared tags.
-- With no recipes, `list-recipes` replies `No recipes yet. Use 'add-recipe' to add one.` This is a normal message, not an error.
+- With no recipes, `list-recipes` replies `[NOTE] No recipes yet. Use 'add-recipe' to add one.`
+  This is a normal message, not an error.
 
 **Errors and Recovery:**
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| `list-recipes 1` with no recipes | `Error: There are no recipes to show. Use 'add-recipe' to add one.` | Add a recipe, then try again. |
-| `list-recipes 4` with only three recipes | `Error: Recipe index must be between 1 and 3.` | Enter `list-recipes` and choose a number shown. |
-| `list-recipes 0` | `Error: Recipe index must be at least 1.` | Recipe numbers start at 1. |
-| `list-recipes abc`, `list-recipes -1`, `list-recipes 1.5`, or `list-recipes 1 2` | `Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `list-recipes 2`. |
+| `list-recipes 1` with no recipes | `[ERROR] Error: There are no recipes to show. Use 'add-recipe' to add one.` | Add a recipe, then try again. |
+| `list-recipes 4` with only three recipes | `[ERROR] Error: Recipe index must be between 1 and 3.` | Enter `list-recipes` and choose a number shown. |
+| `list-recipes 0` | `[ERROR] Error: Recipe index must be at least 1.` | Recipe numbers start at 1. |
+| `list-recipes abc`, `list-recipes -1`, `list-recipes 1.5`, or `list-recipes 1 2` | `[ERROR] Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `list-recipes 2`. |
 
 The "no recipes" and "between 1 and N" errors are followed by the list of all command formats. The other errors show only `Format: list-recipes [INDEX]`. Enter the corrected command at the next prompt; errors never change your recipes.
 <!-- @@author -->
@@ -397,7 +400,8 @@ The "no recipes" and "between 1 and N" errors are followed by the list of all co
 
 <!-- @@author -->
 <!-- @@author Rixte -->
-If a plan already exists, MishMash asks `Replace the current meal plan and clear its groceries? (y/n)`.
+If a plan already exists, MishMash asks
+`[CONFIRM] Replace the current meal plan and clear its groceries? [y/N]:`.
 Answer `y` or `yes` to generate its replacement. Any other answer cancels and keeps the plan, its targets,
 and groceries. If generation fails after you agree, the old plan and groceries remain available.
 See [Confirming Plan Changes](#confirming-plan-changes).
@@ -425,7 +429,7 @@ generate-plan d/2 cal/1700 p/85
 **Result, when matching recipes are available:**
 
 ```text
-Meal plan successfully generated for 2 day(s)!
+[DONE] Meal plan successfully generated for 2 day(s)!
 Use 'view-plan' to inspect your planned meals.
 ```
 
@@ -447,7 +451,7 @@ Use 'view-plan' to inspect your planned meals.
 **Example with saved targets:** After `set-targets cal/1500 p/80`, a plain `generate-plan d/1` builds a day within 15% of 1500 kcal and 80 g protein, and the confirmation names the targets it used:
 
 ```text
-Meal plan successfully generated for 1 day(s)!
+[DONE] Meal plan successfully generated for 1 day(s)!
 Daily targets used: 1500 kcal, 80 g protein.
 Use 'view-plan' to inspect your planned meals.
 ```
@@ -488,7 +492,7 @@ generate-list
 **Result:**
 
 ```text
-Grocery list generated. Use 'view-list' to view it.
+[DONE] Grocery list generated. Use 'view-list' to view it.
 ```
 
 **Rules:**
@@ -508,16 +512,15 @@ Grocery list generated. Use 'view-list' to view it.
 Without an active meal plan, the command displays:
 
 ```text
-No active meal plan. Use 'generate-plan' first.
+[NOTE] No active meal plan. Use 'generate-plan' first.
 ```
 
 Generate a plan and then retry `generate-list`. Unexpected arguments such as `generate-list d/1` display:
 
 ```text
-Error: generate-list does not accept arguments.
-Format: generate-list
-------------------------------------------------------------
-Enter a command, or type 'help' for all commands or 'bye' to exit.
+[ERROR] Error: generate-list does not accept arguments.
+[TRY] Format: generate-list
+mishmash >
 ```
 
 Retry without arguments. Invalid syntax does not change an existing grocery list.
@@ -600,8 +603,8 @@ Your items and their order depend on the generated list. The number at the botto
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| No generated grocery list | `No grocery list generated. Use 'generate-list' first.` | Generate a plan and grocery list, then enter `view-list`. |
-| Extra arguments, such as `view-list extra` | `Error: view-list does not accept arguments.` followed by `Format: view-list`. | Enter `view-list` on its own. |
+| No generated grocery list | `[NOTE] No grocery list generated. Use 'generate-list' first.` | Generate a plan and grocery list, then enter `view-list`. |
+| Extra arguments, such as `view-list extra` | `[ERROR] Error: view-list does not accept arguments.` followed by `[TRY] Format: view-list`. | Enter `view-list` on its own. |
 
 A generated list with no entries displays:
 
@@ -678,18 +681,17 @@ to fit a target, and large daily sums can exceed a single recipe's maximum value
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| No active plan | `No active meal plan. Use 'generate-plan' first.` | Generate a plan, then enter `view-plan` again. |
-| Day exceeds the plan's length | For a two-day plan: `Error: Day number must be between 1 and 2.` | Enter `view-plan d/1` or `view-plan d/2`. |
+| No active plan | `[NOTE] No active meal plan. Use 'generate-plan' first.` | Generate a plan, then enter `view-plan` again. |
+| Day exceeds the plan's length | For a two-day plan: `[ERROR] Error: Day number must be between 1 and 2.` | Enter `view-plan d/1` or `view-plan d/2`. |
 | Zero, negative, decimal, or overflowing day number | A day-number error and `Format: view-plan [d/DAY_NUMBER]`. | Use a positive whole number within the plan's length. |
 | Unexpected or repeated arguments | A format error and `Format: view-plan [d/DAY_NUMBER]`. | Use only `view-plan` or one `d/` argument. |
 
 For example, after generating a two-day plan, entering `view-plan d/3` displays:
 
 ```text
-Error: Day number must be between 1 and 2.
-Format: view-plan [d/DAY_NUMBER]
-------------------------------------------------------------
-Enter a command, or type 'help' for all commands or 'bye' to exit.
+[ERROR] Error: Day number must be between 1 and 2.
+[TRY] Format: view-plan [d/DAY_NUMBER]
+mishmash >
 ```
 
 The application remains open. Enter `view-plan d/2` to select a valid day. If there is no active plan, a syntactically valid command such as `view-plan d/2` shows the no-plan message instead.
@@ -745,7 +747,7 @@ adjust-portion d/1 m/2 portions/2
 **Example Output:**
 
 ```text
-Meal 2 on Day 1 updated to 2 portions.
+[DONE] Meal 2 on Day 1 updated to 2 portions.
 The previous grocery list was cleared. Run 'generate-list' to update it.
 ```
 
@@ -760,13 +762,14 @@ The same recipe on another day or at another meal number keeps its own portion c
   use the adjusted totals.
 - A successful change clears any generated grocery list because its quantities are stale. Run
   `generate-list` again before shopping.
-- Entering the portion count already assigned to the meal changes nothing and preserves the grocery list.
+- Entering the portion count already assigned to the meal changes nothing, preserves the grocery list,
+  and reports `[NOTE]` instead of `[DONE]`.
 
 **Errors and Recovery:**
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| No active plan | `No active meal plan. Use 'generate-plan' first.` | Generate a plan, then retry. |
+| No active plan | `[NOTE] No active meal plan. Use 'generate-plan' first.` | Generate a plan, then retry. |
 | Day or meal does not exist | An error states the valid one-based range. | Run `view-plan` and choose a displayed position. |
 | Missing, repeated, unknown, zero, negative, decimal, or overflowing value | A specific error followed by the command format. | Supply each required prefix once with a positive whole number. |
 | Nutrition would exceed the supported numeric range | The adjustment is rejected and existing plan data is preserved. | Use a smaller portion count. |
@@ -799,13 +802,21 @@ customize-meal d/1 m/2 i/Brown Rice:125.5g i/Tofu:200g
 **Example Output:**
 
 ```text
-Meal 2 on Day 1 ingredients customized.
+[DONE] Meal 2 on Day 1 ingredients customized.
 Its source recipe and nutrition values are unchanged.
 The previous grocery list was cleared. Run 'generate-list' to update it.
 ```
 
 The next `view-plan` marks the occurrence as `[custom ingredients]`. `generate-list` uses the replacement;
 `list-recipes` still shows the unchanged source recipe.
+
+With a named diet or avoided category active, the same successful change starts with `[WARN]` rather than
+`[DONE]` and adds:
+
+```text
+Customized ingredient names are not classified for named-diet or avoided-category rules.
+This meal keeps its source recipe's food categories; verify the replacement yourself.
+```
 
 **Rules:**
 
@@ -814,17 +825,20 @@ The next `view-plan` marks the occurrence as `[custom ingredients]`. `generate-l
   an alphabetic unit such as `g`, `kg`, or `ml`.
 - Nutrition remains the source recipe's entered nutrition. MishMash does not recalculate nutrition from
   ingredient names or quantities.
-- Named diets and avoided categories still use the source recipe's declared food tags. Current complete-name
-  ingredient exclusions are checked against the customized list before it is accepted.
-- Supplying ingredients equal to the source recipe restores that occurrence to the source list. Supplying its
-  current effective list changes nothing and preserves an existing grocery snapshot.
+- Named diets and avoided categories still use the source recipe's declared food tags because MishMash cannot
+  infer categories from ingredient names. When either rule is active, an accepted customization uses `[WARN]`
+  and asks you to verify the replacement. Current complete-name ingredient exclusions are checked against the
+  customized list before it is accepted.
+- Supplying ingredients equal to the source recipe restores that occurrence to the source list. Reordering or
+  recasing the current effective ingredients changes nothing, preserves an existing grocery snapshot, and
+  reports `[NOTE]`.
 - A successful change clears generated groceries because their quantities are stale. Run `generate-list` again.
 
 **Errors and Recovery:**
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| No active plan | `No active meal plan. Use 'generate-plan' first.` | Generate a plan, then retry. |
+| No active plan | `[NOTE] No active meal plan. Use 'generate-plan' first.` | Generate a plan, then retry. |
 | Day or meal does not exist | An error states the valid one-based range. | Run `view-plan` and select a displayed position. |
 | No `i/` field, malformed ingredient, or nonpositive quantity | A specific error followed by the command format. | Supply at least one valid replacement ingredient. |
 | Replacement contains an excluded ingredient | `Those ingredients conflict with your current dietary preferences.` | Choose permitted ingredients or update your dietary settings. |
@@ -855,7 +869,7 @@ set-diet diet/vegan avoid/peanut,soy exclude/mushroom,bell pepper
 With no active meal plan, the result is:
 
 ```text
-Dietary preferences saved. Future meal plans will use them.
+[DONE] Dietary preferences saved. Future meal plans will use them.
 ```
 
 **Rules:**
@@ -938,7 +952,7 @@ No confirmation is needed when there is no plan or every planned recipe is compa
 | Some days conflict and replacement succeeds | Preserve compatible days in their original positions; replace each conflicting day in full. |
 | A grocery list exists when repair succeeds | Rebuild it from every meal occurrence in the updated plan. |
 | No grocery list exists when repair succeeds | Keep groceries ungenerated; use `generate-list` when needed. |
-| Replacement fails | Save preferences and clear the previous plan and grocery list. |
+| Replacement fails | Save preferences, clear the previous plan and grocery list, and report `[WARN]`. |
 
 Replacement uses the original daily nutrition targets and the generator's +/-15% tolerance.
 All three meals in a conflicting day may change. At least three compatible, classified recipes
@@ -948,7 +962,7 @@ nutrition targets can be met. For large recipe pools, generation checks a bounde
 After successful repair with an existing grocery list:
 
 ```text
-Dietary preferences saved. Conflicting days were replaced.
+[DONE] Dietary preferences saved. Conflicting days were replaced.
 Your grocery list has also been updated.
 ```
 
@@ -1008,7 +1022,7 @@ clear-diet
 **Example Output:**
 
 ```text
-Dietary preferences and restrictions cleared.
+[DONE] Dietary preferences and restrictions cleared.
 Recipes, meal plans, groceries, targets, and recorded meals are unchanged.
 ```
 
@@ -1020,9 +1034,10 @@ Recipes, meal plans, groceries, targets, and recorded meals are unchanged.
   regenerate them only when you want unrestricted recipe choices reflected there.
 - No confirmation is needed because clearing the profile does not remove plan or recipe data.
 - When no restrictions are active, the command reports
-  `Dietary preferences are already clear. Nothing was changed.`
+  `[NOTE] Dietary preferences are already clear. Nothing was changed.`
 - The command accepts no arguments. For example, `clear-diet diet/none` is rejected with
-  `clear-diet does not accept arguments.` followed by `Format: clear-diet`; all session data remains unchanged.
+  `[ERROR] Error: clear-diet does not accept arguments.` followed by `[TRY] Format: clear-diet`;
+  all session data remains unchanged.
 
 Use `view-diet` afterwards to verify that the diet and both exclusion lists display `none`.
 
@@ -1092,21 +1107,21 @@ set-targets p/none
 **Example Output:**
 
 ```text
-Daily targets saved: 1500 kcal, 80 g protein.
+[DONE] Daily targets saved: 1500 kcal, 80 g protein.
 They apply to the next 'generate-plan'; your current meal plan is unchanged.
 ```
 
 `set-targets f/37` adds a third target and keeps the first two:
 
 ```text
-Daily targets saved: 1500 kcal, 80 g protein, 37 g fats.
+[DONE] Daily targets saved: 1500 kcal, 80 g protein, 37 g fats.
 They apply to the next 'generate-plan'; your current meal plan is unchanged.
 ```
 
 `set-targets p/none` removes the protein target only:
 
 ```text
-Daily targets saved: 1500 kcal, 37 g fats.
+[DONE] Daily targets saved: 1500 kcal, 37 g fats.
 They apply to the next 'generate-plan'; your current meal plan is unchanged.
 ```
 
@@ -1123,11 +1138,11 @@ They apply to the next 'generate-plan'; your current meal plan is unchanged.
 
 | Situation | Response | What to Do |
 | --- | --- | --- |
-| `set-targets` with nothing after it | `Error: Supply at least one daily target to set or clear.` | Add at least one target, for example `set-targets cal/2000`. |
-| `set-targets cal/0`, `cal/-5`, `cal/abc`, or `cal/1.5` | `Error: Calories target (cal/) must be a positive whole number from 1 to 2147483647, or 'none'.` | Enter a positive whole number, or `none` to remove the target. The message names the nutrient you mistyped. |
-| `set-targets cal/` | `Error: Missing value after cal/` | Add a number or `none` after the slash. |
-| `set-targets x/5` or `set-targets 2000` | `Error: Unrecognized parameter: x/5` | Use only `cal/`, `p/`, `c/`, and `f/`. |
-| `set-targets cal/1 cal/2` | `Error: Parameter cal/ was given more than once.` | Give each nutrient once. |
+| `set-targets` with nothing after it | `[ERROR] Error: Supply at least one daily target to set or clear.` | Add at least one target, for example `set-targets cal/2000`. |
+| `set-targets cal/0`, `cal/-5`, `cal/abc`, or `cal/1.5` | `[ERROR] Error: Calories target (cal/) must be a positive whole number from 1 to 2147483647, or 'none'.` | Enter a positive whole number, or `none` to remove the target. The message names the nutrient you mistyped. |
+| `set-targets cal/` | `[ERROR] Error: Missing value after cal/` | Add a number or `none` after the slash. |
+| `set-targets x/5` or `set-targets 2000` | `[ERROR] Error: Unrecognized parameter: x/5` | Use only `cal/`, `p/`, `c/`, and `f/`. |
+| `set-targets cal/1 cal/2` | `[ERROR] Error: Parameter cal/ was given more than once.` | Give each nutrient once. |
 
 Every error is followed by `Format: set-targets ...` and leaves your saved targets unchanged, because MishMash checks the whole command before saving anything. Enter the corrected command at the next prompt.
 
@@ -1157,12 +1172,13 @@ Fats: 37 g
 With no targets saved, `view-targets` replies:
 
 ```text
-No daily targets saved. Use 'set-targets' to set them.
+[NOTE] No daily targets saved. Use 'set-targets' to set them.
 ```
 
 **Rules:**
 
-- `view-targets` takes no arguments. `view-targets now` shows `Error: view-targets does not accept arguments.` and `Format: view-targets`.
+- `view-targets` takes no arguments. `view-targets now` shows
+  `[ERROR] Error: view-targets does not accept arguments.` and `[TRY] Format: view-targets`.
 - A nutrient shown as `not set` has no target, so `generate-plan` does not constrain it unless you type one in that command.
 <!-- @@author -->
 
@@ -1200,7 +1216,7 @@ record-meal 2
 After `record-meal 1`:
 
 ```text
-Meal recorded!
+[DONE] Meal recorded!
 Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)
 Total so far: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g
 ```
@@ -1208,7 +1224,7 @@ Total so far: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g
 After `record-meal 2`:
 
 ```text
-Meal recorded!
+[DONE] Meal recorded!
 Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)
 Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
 ```
@@ -1226,11 +1242,11 @@ Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
 
 | Situation or Input | Response | What to Do |
 | --- | --- | --- |
-| No recipes have been added | `Error: There are no recipes to record. Use 'add-recipe' to add one.` | Add a recipe, then enter `record-meal 1`. |
-| `record-meal` | `Error: Recipe index is required.` | Add an index, for example `record-meal 1`. |
-| `record-meal 5` with only three recipes | `Error: Recipe index must be between 1 and 3.` | Enter `list-recipes` to check the numbers, then use one within that range. |
-| `record-meal 0` | `Error: Recipe index must be at least 1.` | Recipe numbers start at 1, for example `record-meal 1`. |
-| `record-meal two`, `record-meal -1`, or `record-meal 1 2` | `Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `record-meal 2`. |
+| No recipes have been added | `[ERROR] Error: There are no recipes to record. Use 'add-recipe' to add one.` | Add a recipe, then enter `record-meal 1`. |
+| `record-meal` | `[ERROR] Error: Recipe index is required.` | Add an index, for example `record-meal 1`. |
+| `record-meal 5` with only three recipes | `[ERROR] Error: Recipe index must be between 1 and 3.` | Enter `list-recipes` to check the numbers, then use one within that range. |
+| `record-meal 0` | `[ERROR] Error: Recipe index must be at least 1.` | Recipe numbers start at 1, for example `record-meal 1`. |
+| `record-meal two`, `record-meal -1`, or `record-meal 1 2` | `[ERROR] Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `record-meal 2`. |
 
 Errors in the index also display `Format: record-meal INDEX`. The "no recipes" error and the "index too large" error display the list of all command formats instead. Enter the corrected command at the next prompt; errors leave your recorded meals unchanged.
 
@@ -1281,8 +1297,8 @@ Total: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g
 
 | Situation or Input | Response | What to Do |
 | --- | --- | --- |
-| No meals recorded yet | `No meals recorded yet.` | Enter `record-meal 1` (or another recipe number), then try `view-meals` again. |
-| Extra arguments, such as `view-meals 1` | `Error: view-meals does not accept arguments.` followed by `Format: view-meals`. | Enter `view-meals` on its own. |
+| No meals recorded yet | `[NOTE] No meals recorded yet.` | Enter `record-meal 1` (or another recipe number), then try `view-meals` again. |
+| Extra arguments, such as `view-meals 1` | `[ERROR] Error: view-meals does not accept arguments.` followed by `[TRY] Format: view-meals`. | Enter `view-meals` on its own. |
 
 
 <!-- @@author -->
@@ -1370,7 +1386,7 @@ Supply the targets each time; the check does not save them as personal settings 
 
 | Situation or Input | Response | What to Do |
 | --- | --- | --- |
-| No active plan, with valid targets | `No active meal plan. Use 'generate-plan' first.` | Add at least three recipes and run `generate-plan d/2`, then retry the check. |
+| No active plan, with valid targets | `[NOTE] No active meal plan. Use 'generate-plan' first.` | Add at least three recipes and run `generate-plan d/2`, then retry the check. |
 | `check-shortfall` | `Error: Supply at least one daily nutrition target.` | Add a target, for example `check-shortfall cal/2000`. |
 | `check-shortfall cal/` | `Error: Missing value after cal/.` | Add a value immediately after the slash, for example `check-shortfall cal/2000`. The same rule applies to `p/`, `c/`, and `f/`. |
 | `check-shortfall cal/0` | `Error: Target for cal/ must be a positive whole number from 1 to 2147483647.` | Enter a value within the supported range, for example `check-shortfall cal/2000`. The same rule applies to all four targets. |
@@ -1407,7 +1423,7 @@ edit-recipe 1 cal/700 p/55 i/Chicken:220g i/Rice:150g
 The edit produces:
 
 ```text
-Recipe updated!
+[DONE] Recipe updated!
 Chicken Rice
 700 kcal | Protein: 55g | Carbs: 70g | Fats: 15g
 Ingredients:
@@ -1466,11 +1482,11 @@ an attempt; it does not guarantee generation will find suitable meals.
 **Cancellation example, with an existing plan:**
 
 ```text
-generate-plan d/1
-Replace the current meal plan and clear its groceries? (y/n)
+mishmash > generate-plan d/1
+[CONFIRM] Replace the current meal plan and clear its groceries? [y/N]:
 n
-Cancelled. Nothing was changed.
-view-plan
+[NOTE] Cancelled. Nothing was changed.
+mishmash > view-plan
 ```
 
 The original plan remains available. There is no undo after an agreed change. Closing the application
@@ -1497,17 +1513,20 @@ existing plan or groceries. Answer `y` or `yes` to proceed; a confirmed reset ca
 **Example:**
 
 ```text
-generate-plan d/2 cal/1650
-generate-list
-reset-plan
-Reset the current meal plan and clear its groceries? (y/n)
+mishmash > generate-plan d/2 cal/1650
+[DONE] Meal plan successfully generated for 2 day(s)!
+Use 'view-plan' to inspect your planned meals.
+mishmash > generate-list
+[DONE] Grocery list generated. Use 'view-list' to view it.
+mishmash > reset-plan
+[CONFIRM] Reset the current meal plan and clear its groceries? Saved daily targets will be preserved. [y/N]:
 yes
 ```
 
 The first two commands require enough suitable recipes. After the reset, MishMash displays:
 
 ```text
-Meal plan reset. Recipes, dietary preferences, and recorded meals are unchanged.
+[DONE] Meal plan reset. Recipes, dietary preferences, saved daily targets, and recorded meals are unchanged.
 ```
 
 `view-plan` and `check-shortfall` will ask you to generate a plan first. `view-list` will ask you to generate
@@ -1516,7 +1535,8 @@ To start again, run `generate-plan d/1`, then `generate-list`. Your saved daily 
 nutrients you leave out of the generation command. Targets supplied only for the removed plan are not
 reused; supply those again if needed. Use `view-targets` to check your saved targets.
 
-If there is no current plan or groceries, no confirmation is needed. MishMash displays `No active meal plan to reset.` and lets you continue.
+If there is no current plan or groceries, no confirmation is needed. MishMash displays
+`[NOTE] No active meal plan to reset.` and lets you continue.
 Repeating the reset is safe. The command accepts no arguments: `reset-plan d/1` produces
 `reset-plan does not accept arguments.` followed by `Format: reset-plan`, and keeps the current plan unchanged.
 <!-- @@author -->
@@ -1620,10 +1640,10 @@ generate-plan d/0
 produces:
 
 ```text
-Error: DAYS must be a whole number from 1 to 7.
-Format: generate-plan d/DAYS [cal/DAILY_CALORIES] [p/DAILY_PROTEIN] [c/DAILY_CARBS] [f/DAILY_FATS]
+[ERROR] Error: DAYS must be a whole number from 1 to 7.
+[TRY] Format: generate-plan d/DAYS [cal/DAILY_CALORIES] [p/DAILY_PROTEIN] [c/DAILY_CARBS] [f/DAILY_FATS]
 ------------------------------------------------------------
-Enter a command, or type 'help' for all commands or 'bye' to exit.
+mishmash >
 ```
 
 Correct the value and retry, for example `generate-plan d/1` after adding enough eligible recipes.

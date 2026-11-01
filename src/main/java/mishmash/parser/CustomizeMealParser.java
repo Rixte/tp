@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import mishmash.command.CustomizeMealCommand;
 import mishmash.model.GroceryItem;
 import mishmash.model.IngredientCustomization;
 
@@ -15,8 +16,7 @@ import mishmash.model.IngredientCustomization;
  */
 public final class CustomizeMealParser {
     /** Describes the selected meal and repeated replacement ingredient fields. */
-    public static final String USAGE =
-            "Format: customize-meal d/DAY m/MEAL i/INGREDIENT:QUANTITYUNIT [i/INGREDIENT:QUANTITYUNIT ...]";
+    public static final String USAGE = CustomizeMealCommand.USAGE;
 
     private static final Pattern PREFIX_PATTERN = Pattern.compile("(?<!\\S)([^\\s/]+)/");
 

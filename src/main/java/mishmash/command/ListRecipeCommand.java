@@ -45,11 +45,17 @@ public class ListRecipeCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) throws MishMashException {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
         Objects.requireNonNull(recipeBook, "recipeBook");
         List<Recipe> recipes = recipeBook.getRecipes();
 
         if (index == null) {
-            return listAll(recipes);
+            String feedback = listAll(recipes);
+            return recipes.isEmpty() ? CommandResult.note(feedback) : CommandResult.info(feedback);
         }
         if (recipes.isEmpty()) {
             throw new MishMashException("There are no recipes to show. Use 'add-recipe' to add one.");
@@ -58,7 +64,7 @@ public class ListRecipeCommand implements Command {
             throw new MishMashException("Recipe index must be between 1 and " + recipes.size() + ".");
         }
         // The user counts from 1, but the list counts from 0.
-        return new RecipeViewer().view(recipes.get(index - 1));
+        return CommandResult.info(new RecipeViewer().view(recipes.get(index - 1)));
     }
 
     /**

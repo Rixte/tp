@@ -139,6 +139,11 @@ public class GeneratePlanCommand implements Command {
         return confirmation + System.lineSeparator() + "Use 'view-plan' to inspect your planned meals.";
     }
 
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
+        return CommandResult.done(execute(recipeBook));
+    }
+
     //@@author Rixte
     /**
      * Requests agreement before replacing an existing plan and discarding its groceries.

@@ -20,6 +20,10 @@ public final class CustomizeMealCommand implements Command {
     /** Command word shared by parsing and user guidance. */
     public static final String COMMAND_WORD = "customize-meal";
 
+    /** Describes the selected meal and repeated replacement ingredient fields. */
+    public static final String USAGE = "Format: " + COMMAND_WORD
+            + " d/DAY m/MEAL i/INGREDIENT:QUANTITYUNIT [i/INGREDIENT:QUANTITYUNIT ...]";
+
     private static final Logger LOGGER = Logger.getLogger(CustomizeMealCommand.class.getName());
 
     private final IngredientCustomization customization;
@@ -50,11 +54,16 @@ public final class CustomizeMealCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) throws MishMashException {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
         Objects.requireNonNull(recipeBook, "recipeBook");
         MealPlan currentPlan = activeMealPlan.get().orElse(null);
         if (currentPlan == null || currentPlan.getNumberOfDays() == 0) {
             LOGGER.fine("Meal customization skipped: no active meal plan");
-            return "No active meal plan. Use 'generate-plan' first.";
+            return CommandResult.note("No active meal plan. Use 'generate-plan' first.");
         }
 
         validateDayNumber(currentPlan);
@@ -64,15 +73,16 @@ public final class CustomizeMealCommand implements Command {
         MealPlan updatedPlan = currentPlan.withCustomizedIngredients(
                 customization.dayNumber() - 1, mealIndex, customization.ingredients());
         if (updatedPlan == currentPlan) {
-            return "Meal " + customization.mealNumber() + " on Day " + customization.dayNumber()
-                    + " already uses those ingredients. Nothing was changed.";
+            return CommandResult.note("Meal " + customization.mealNumber() + " on Day "
+                    + customization.dayNumber() + " already uses those ingredients. Nothing was changed.");
         }
 
         PlannedMeal updatedMeal = updatedPlan.getDays().get(customization.dayNumber() - 1)
                 .getPlannedMeals().get(mealIndex);
         DietaryPreferences preferences = dietarySettings.get();
         if (!preferences.isPlannedMealAllowed(updatedMeal)) {
-            throw new MishMashException("Those ingredients conflict with your current dietary preferences.");
+            throw new MishMashException("Those ingredients conflict with your current dietary preferences.",
+                    USAGE, null);
         }
 
         boolean hadGroceryList = activeMealPlan.getGroceryList().isPresent();
@@ -87,10 +97,18 @@ public final class CustomizeMealCommand implements Command {
                 + " " + action + "." + System.lineSeparator()
                 + "Its source recipe and nutrition values are unchanged.";
         if (hadGroceryList) {
-            return result + System.lineSeparator()
+            result += System.lineSeparator()
                     + "The previous grocery list was cleared. Run 'generate-list' to update it.";
+        } else {
+            result += System.lineSeparator() + "Run 'generate-list' to create groceries for the updated plan.";
         }
-        return result + System.lineSeparator() + "Run 'generate-list' to create groceries for the updated plan.";
+        if (preferences.hasCategoryRestrictions()) {
+            return CommandResult.warning(result + System.lineSeparator()
+                    + "Customized ingredient names are not classified for named-diet or avoided-category rules."
+                    + System.lineSeparator()
+                    + "This meal keeps its source recipe's food categories; verify the replacement yourself.");
+        }
+        return CommandResult.done(result);
     }
 
     /**
@@ -98,7 +116,8 @@ public final class CustomizeMealCommand implements Command {
      */
     private void validateDayNumber(MealPlan plan) throws MishMashException {
         if (customization.dayNumber() > plan.getNumberOfDays()) {
-            throw new MishMashException("Day number must be between 1 and " + plan.getNumberOfDays() + ".");
+            throw new MishMashException("Day number must be between 1 and " + plan.getNumberOfDays() + ".",
+                    USAGE, null);
         }
     }
 
@@ -108,11 +127,12 @@ public final class CustomizeMealCommand implements Command {
     private void validateMealNumber(DayPlan day) throws MishMashException {
         int mealCount = day.getPlannedMeals().size();
         if (mealCount == 0) {
-            throw new MishMashException("Day " + customization.dayNumber() + " has no meals to customize.");
+            throw new MishMashException("Day " + customization.dayNumber() + " has no meals to customize.",
+                    USAGE, null);
         }
         if (customization.mealNumber() > mealCount) {
             throw new MishMashException("Meal number for Day " + customization.dayNumber()
-                    + " must be between 1 and " + mealCount + ".");
+                    + " must be between 1 and " + mealCount + ".", USAGE, null);
         }
     }
 }

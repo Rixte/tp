@@ -2,9 +2,8 @@ package mishmash.ui;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
-import mishmash.command.Command;
+import mishmash.command.CommandResult;
 
 /**
  * Formats console messages with MishMash's ANSI kitchen theme.
@@ -23,13 +22,6 @@ public final class CliFormatter {
     private static final int COMMAND_CARD_WIDTH = 56;
     private static final int COMMAND_COLUMN_WIDTH = 20;
     private static final int DESCRIPTION_COLUMN_WIDTH = 31;
-
-    /** Commands whose ordinary feedback describes a completed state-changing action. */
-    private static final Set<String> SUCCESS_COMMANDS = Set.of(
-            "AddRecipeCommand", "AdjustPortionCommand", "ClearDietCommand", "CustomizeMealCommand",
-            "DeleteRecipeCommand", "EditRecipeCommand", "GenerateListCommand",
-            "GeneratePlanCommand", "RecordMealCommand", "ResetPlanCommand", "SetDietCommand",
-            "SetTargetsCommand");
 
     private CliFormatter() {
     }
@@ -96,26 +88,20 @@ public final class CliFormatter {
     }
 
     /**
-     * Formats feedback according to the command and message contents.
+     * Formats feedback according to the command's explicit semantic result.
      *
-     * @param command The command that produced the feedback.
-     * @param feedback The non-null feedback returned by the command.
+     * @param result The non-null feedback and presentation status returned by the command.
      * @return The styled feedback without a trailing line separator.
      */
-    public static String feedback(Command command, String feedback) {
-        Objects.requireNonNull(command, "command");
-        Objects.requireNonNull(feedback, "feedback");
-
-        if (command.getClass().getSimpleName().equals("HelpCommand")) {
-            return style(feedback, BOLD_YELLOW);
-        }
-        if (feedback.startsWith("No ")) {
-            return status("NOTE", BOLD_YELLOW) + " " + feedback;
-        }
-        if (SUCCESS_COMMANDS.contains(command.getClass().getSimpleName())) {
-            return addSuccessStatus(feedback);
-        }
-        return style(feedback, BOLD_CYAN);
+    public static String feedback(CommandResult result) {
+        Objects.requireNonNull(result, "result");
+        return switch (result.status()) {
+            case DONE -> addStatus("DONE", BOLD_GREEN, result.feedback());
+            case NOTE -> addStatus("NOTE", BOLD_YELLOW, result.feedback());
+            case WARNING -> addStatus("WARN", BOLD_YELLOW, result.feedback());
+            case INFO -> style(result.feedback(), BOLD_CYAN);
+            case HELP -> style(result.feedback(), BOLD_YELLOW);
+        };
     }
 
     /**
@@ -180,6 +166,7 @@ public final class CliFormatter {
                 commandRow("list-recipes", "Browse saved recipes"),
                 commandRow("generate-plan d/3", "Build a three-day plan"),
                 commandRow("view-plan", "Review the active plan"),
+                commandRow("bye", "Exit MishMash"),
                 style("+" + "-".repeat(COMMAND_CARD_WIDTH - 2) + "+", BOLD_MAGENTA));
     }
 
@@ -196,13 +183,13 @@ public final class CliFormatter {
         return "|  " + style(commandColumn, BOLD_CYAN) + " " + descriptionColumn + "|";
     }
 
-    /** Adds the success label to the first line of an already formatted response. */
-    private static String addSuccessStatus(String feedback) {
+    /** Adds one semantic status label to the first line of a multiline response. */
+    private static String addStatus(String label, String color, String feedback) {
         int lineEnd = feedback.indexOf(System.lineSeparator());
         if (lineEnd < 0) {
-            return status("DONE", BOLD_GREEN) + " " + feedback;
+            return status(label, color) + " " + feedback;
         }
-        return status("DONE", BOLD_GREEN) + " " + feedback.substring(0, lineEnd)
+        return status(label, color) + " " + feedback.substring(0, lineEnd)
                 + feedback.substring(lineEnd);
     }
 

@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import mishmash.command.Command;
+import mishmash.command.CommandResult;
 import mishmash.exception.MishMashException;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
@@ -241,11 +242,11 @@ public class MishMash {
      */
     private void executeAndDisplayFeedback(Command command) throws MishMashException {
         LOGGER.fine(() -> "Executing " + command.getClass().getSimpleName());
-        String feedback = command.execute(recipeBook);
-        if (feedback == null) {
-            throw new MishMashException("The command did not return feedback.");
+        CommandResult result = command.executeWithResult(recipeBook);
+        if (result == null) {
+            throw new MishMashException("The command did not return a result.");
         }
-        output.println(CliFormatter.feedback(command, feedback));
+        output.println(CliFormatter.feedback(result));
         LOGGER.fine(() -> "Completed " + command.getClass().getSimpleName());
     }
 

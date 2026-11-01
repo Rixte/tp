@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import mishmash.command.AdjustPortionCommand;
 import mishmash.model.PortionAdjustment;
 
 /**
@@ -12,7 +13,7 @@ import mishmash.model.PortionAdjustment;
  */
 public final class AdjustPortionParser {
     /** Describes every required field of a portion adjustment. */
-    public static final String USAGE = "Format: adjust-portion d/DAY m/MEAL portions/COUNT";
+    public static final String USAGE = AdjustPortionCommand.USAGE;
 
     private static final Pattern PREFIX_PATTERN = Pattern.compile("(?<!\\S)([^\\s/]+)/");
 

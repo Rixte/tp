@@ -3,6 +3,7 @@ package mishmash.model;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -184,21 +185,39 @@ public final class PlannedMeal {
     }
 
     /**
-     * Compares ingredient values exactly by order, name, numeric quantity, and unit.
+     * Compares ingredient multisets by normalized name, numeric quantity, and case-insensitive unit.
      */
     private static boolean sameIngredients(List<GroceryItem> first, List<GroceryItem> second) {
         if (first.size() != second.size()) {
             return false;
         }
-        for (int index = 0; index < first.size(); index++) {
-            GroceryItem firstItem = first.get(index);
-            GroceryItem secondItem = second.get(index);
-            if (!firstItem.getName().equals(secondItem.getName())
-                    || firstItem.getQuantity().compareTo(secondItem.getQuantity()) != 0
-                    || !firstItem.getUnit().equals(secondItem.getUnit())) {
+
+        boolean[] matched = new boolean[second.size()];
+        for (GroceryItem firstItem : first) {
+            boolean foundMatch = false;
+            for (int index = 0; index < second.size(); index++) {
+                if (!matched[index] && sameIngredient(firstItem, second.get(index))) {
+                    matched[index] = true;
+                    foundMatch = true;
+                    break;
+                }
+            }
+            if (!foundMatch) {
                 return false;
             }
         }
         return true;
+    }
+
+    /** Compares one ingredient without treating name or unit letter case as meaningful. */
+    private static boolean sameIngredient(GroceryItem first, GroceryItem second) {
+        return normalizeName(first.getName()).equals(normalizeName(second.getName()))
+                && first.getQuantity().compareTo(second.getQuantity()) == 0
+                && first.getUnit().equalsIgnoreCase(second.getUnit());
+    }
+
+    /** Normalizes an ingredient name consistently with complete-name dietary matching. */
+    private static String normalizeName(String name) {
+        return name.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
     }
 }

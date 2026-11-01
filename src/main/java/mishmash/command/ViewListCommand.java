@@ -51,17 +51,22 @@ public class ViewListCommand implements Command {
      */
     @Override
     public String execute(RecipeBook recipeBook) {
+        return executeWithResult(recipeBook).feedback();
+    }
+
+    @Override
+    public CommandResult executeWithResult(RecipeBook recipeBook) {
         Optional<List<GroceryItem>> groceries = groceryListSource.get();
         if (groceries == null) {
             throw new IllegalStateException("Grocery list source returned null; use Optional.empty() for no list.");
         }
         if (groceries.isEmpty()) {
             LOGGER.fine("view-list requested before a grocery list was generated");
-            return NO_LIST_MESSAGE;
+            return CommandResult.note(NO_LIST_MESSAGE);
         }
         String result = new GroceryListViewer().view(groceries.get());
         LOGGER.fine(() -> "view-list displayed " + groceries.get().size() + " items");
-        return result;
+        return CommandResult.info(result);
     }
 }
 //@@author

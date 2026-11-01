@@ -7,19 +7,24 @@ participant "mishMash:MishMash" as App
 participant "command:GenerateListCommand" as Command
 participant "generator:GroceryListGenerator" as Generator
 participant "activePlan:ActiveMealPlan" as Active
+participant "plan:MealPlan" as Plan
 
 App -> Command : execute(recipeBook)
 activate Command
-ref over Command
-  Collect ingredients from the active plan
-end ref
+Command -> Active : get()
+activate Active
+Active --> Command : Optional.of(plan)
+deactivate Active
 create Generator
 Command -> Generator : new GroceryListGenerator()
 activate Generator
 Generator --> Command : generator
 deactivate Generator
-Command -> Generator : generate(ingredients)
+Command -> Generator : generateForPlan(plan)
 activate Generator
+ref over Generator, Plan
+  Collect scaled ingredients from each PlannedMeal
+end ref
 Generator --> Command : groceries
 deactivate Generator
 Command -> Active : setGroceryList(groceries)
