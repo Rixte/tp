@@ -74,6 +74,22 @@ class CommandCompleterTest {
         assertEquals(List.of("cal/"), candidates.stream().map(Candidate::value).toList());
     }
 
+    @Test
+    void complete_addRecipe_suggestsExactCommandAndAllPrefixes() {
+        assertEquals(List.of("add-recipe"), values("add-r"));
+        assertEquals(List.of("n/", "cal/", "p/", "c/", "f/", "i/", "food/"), values("add-recipe "));
+        assertTrue(candidates("add-recipe ").stream().noneMatch(Candidate::complete));
+    }
+
+    @Test
+    void complete_addRecipeWithAllScalars_keepsOnlyRepeatableIngredients() {
+        String line = "add-recipe n/Soup cal/100 p/1 c/2 f/3 food/none i/Rice:10g i/Water:20ml ";
+
+        assertEquals(List.of("i/"), values(line));
+        assertEquals(List.of(), values(line + "fo"));
+        assertFalse(candidates(line).getFirst().complete());
+    }
+
     /**
      * Returns candidate text for a cursor positioned at the end of the supplied line.
      */
