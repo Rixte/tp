@@ -58,6 +58,7 @@ class DietaryPlannerTest {
 
         assertEquals(7, plan.getNumberOfDays());
         for (DayPlan day : plan.getDays()) {
+            assertEquals(3, day.getMeals().size());
             assertEquals(3, Set.copyOf(day.getMeals()).size());
             assertTrue(targets.isSatisfiedBy(day));
             assertTrue(day.getMeals().stream().allMatch(suitableRecipes::contains));
@@ -224,6 +225,7 @@ class DietaryPlannerTest {
         assertTrue(planner.isCompatible(repaired, vegan));
         assertTrue(repaired.getDays().stream().allMatch(targets::isSatisfiedBy));
         for (DayPlan day : repaired.getDays()) {
+            assertEquals(3, day.getMeals().size());
             assertEquals(Set.copyOf(recipes), Set.copyOf(day.getMeals()));
         }
         assertSame(conflicting, original.getDays().get(0));
