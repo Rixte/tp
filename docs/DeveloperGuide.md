@@ -2013,13 +2013,15 @@ The actor in each use case is the user. A command session has already started an
 
 1. The user enters `generate-plan d/DAYS`, optionally including daily nutrition targets.
 2. MishMash validates the requested days and targets.
-3. MishMash generates exactly three different recipe entries per day, meeting every supplied target within 15%.
-4. MishMash makes the new plan active, clears the previous groceries, and displays a confirmation.
+3. If a plan is already active, MishMash asks whether to replace it and clear its groceries; the user confirms.
+4. MishMash generates exactly three different recipe entries per day, meeting every applied target within 15%.
+5. MishMash makes the new plan active, clears the previous groceries, and displays a confirmation.
 
 **Extensions**
 
 - 2a. Days are outside 1 to 7, a target is not a positive integer, or arguments are malformed: MishMash rejects the command.
-- 3a. Fewer than three recipe entries are available, or no acceptable plan is found: MishMash displays an error, the likely cause, and what to try next. The previous plan and groceries remain available.
+- 3a. The user declines, submits a blank or unrecognised answer, or input ends: cancel replacement and preserve the plan and groceries.
+- 4a. Fewer than three recipe entries are available, or no acceptable plan is found: MishMash displays an error, the likely cause, and what to try next. The previous plan and groceries remain available.
 
 Recipes may be repeated on different days. With no targets, there are no nutrition constraints on the selection. Targets saved with `set-targets` (UC13) apply to every nutrient that the command leaves out, and a target typed in the command replaces the saved one for that plan.
 
@@ -2277,6 +2279,72 @@ Viewing never changes the profile or generated data.
 - 3a. The user does not confirm: MishMash reports that nothing was changed. The use case ends.
 
 <!-- @@author -->
+
+#### UC21 Reset the active plan
+
+**MSS**
+
+1. The user enters `reset-plan`.
+2. MishMash asks for confirmation when plan state exists.
+3. The user confirms with `y` or `yes`.
+4. MishMash clears the plan, retained generation request, and groceries, preserving recipes, dietary settings, saved targets, and recorded meals.
+
+**Extensions**
+
+- 1a. Arguments are supplied: reject the command without changing data.
+- 2a. No plan state exists: report that there is no active plan to reset.
+- 3a. Any other answer, a blank answer, or EOF: cancel and preserve all data. Confirmation accepts case-insensitive answers with surrounding whitespace.
+
+#### UC22 Adjust a planned meal's portions
+
+**MSS**
+
+1. The user enters `adjust-portion d/DAY m/MEAL portions/COUNT`.
+2. MishMash validates the positions and positive whole-recipe portion count.
+3. MishMash updates only that occurrence, scales its nutrition and ingredient quantities, and clears existing groceries.
+
+**Extensions**
+
+- 2a. No plan exists: ask the user to generate one first.
+- 2b. Syntax, positions, count, or resulting totals are invalid: reject without changing the plan or groceries.
+- 3a. The count is unchanged: report a no-op and preserve groceries.
+
+The source recipe, other occurrences, saved targets, dietary profile, and recorded meals are unchanged. Run `generate-list` to obtain updated groceries.
+
+#### UC23 Customise a planned meal's ingredients
+
+**MSS**
+
+1. The user enters `customize-meal d/DAY m/MEAL i/INGREDIENT:QUANTITYUNIT`, repeating `i/` for the complete replacement list.
+2. MishMash validates the selected occurrence, positive quantities, and current dietary compatibility.
+3. MishMash replaces that occurrence's one-portion ingredients and clears existing groceries.
+
+**Extensions**
+
+- 2a. No plan exists: ask the user to generate one first.
+- 2b. Arguments, positions, quantities, or dietary compatibility are invalid: reject and preserve all data.
+- 3a. The effective ingredients are unchanged: report a no-op and preserve groceries.
+- 3b. Ingredients match the source recipe again: remove the customization.
+- 3c. Named-diet or avoided-category rules are active: warn that replacement names are not reclassified; the occurrence keeps its source food categories.
+
+Nutrition and portion count remain unchanged. Grocery generation scales the replacement quantities by the portion count. The source recipe and other occurrences remain unchanged.
+
+#### UC24 Replace a planned meal
+
+**MSS**
+
+1. The user enters `replace-meal d/DAY m/MEAL r/RECIPE_INDEX`.
+2. MishMash validates the positions, recipe index, current dietary compatibility, and resulting totals.
+3. MishMash replaces only that occurrence with the chosen recipe at one portion and its source ingredients, then clears existing groceries.
+
+**Extensions**
+
+- 2a. No plan exists: ask the user to generate one first.
+- 2b. Arguments, positions, recipe selection, compatibility, or totals are invalid: reject and preserve all data.
+- 3a. The occurrence already uses that exact recipe at one portion without customization: report a no-op and preserve groceries.
+
+Other occurrences, source recipes, recorded meals, and settings remain unchanged. Replacement does not enforce generation's distinct-recipe rule or target tolerance; displayed totals and warnings reflect the changed plan.
+
 ## Appendix C: Non-Functional Requirements
 
 - The application requires Java 25 and provides a command-line interface.
