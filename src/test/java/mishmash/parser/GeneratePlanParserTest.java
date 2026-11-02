@@ -53,7 +53,7 @@ class GeneratePlanParserTest {
 
     @Test
     void parse_invalidDays_throwsDaysMessage() {
-        for (String args : new String[] {"d/0", "d/8", "d/-1", "d/abc", "d/2.5", "d/99999999999"}) {
+        for (String args : new String[] {"d/0", "d/8", "d/-1", "d/+2", "d/abc", "d/2.5", "d/99999999999"}) {
             IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> parser.parse(args));
             assertEquals("DAYS must be a whole number from 1 to 7.", e.getMessage());
         }
@@ -94,7 +94,7 @@ class GeneratePlanParserTest {
 
     @Test
     void parse_invalidTarget_throwsIllegalArgumentException() {
-        for (String args : new String[] {"d/3 cal/0", "d/3 p/-5", "d/3 c/abc", "d/3 f/1.5"}) {
+        for (String args : new String[] {"d/3 cal/0", "d/3 p/-5", "d/3 c/abc", "d/3 f/1.5", "d/3 cal/+1700"}) {
             IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> parser.parse(args));
             assertTrue(e.getMessage().endsWith("must be a positive whole number."));
         }
