@@ -12,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.TestFactory;
 
 import mishmash.logic.MealPlanGenerator;
 import mishmash.model.ActiveMealPlan;
+import mishmash.model.MealLog;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
 import mishmash.testutil.TestRecipes;
@@ -73,6 +75,60 @@ class JLineSessionTest {
 
         assertEquals(name, recipes.getRecipes().getFirst().getName());
         assertInOrder(output, "Error:", "New recipe added!", name, "Goodbye!");
+    }
+
+    @Test
+    void run_mealCorrectionsAndConfirmedDeletion_keepsFilteredNumbersAndRecalculatesTotals() throws IOException {
+        MealLog log = new MealLog();
+        RecipeBook recipes = TestRecipes.recipeBook(500, 20, 50, 10);
+
+        String output = run(new Parser(log), recipes, "Tester", "record-meal 1 date/2026-03-02 s/2",
+                "record-meal 2 date/2026-03-03", "edit-meal 1 date/2026-03-03 s/3",
+                "view-meals date/2026-03-03", "delete-meal 1", "no", "delete-meal 1", "YES",
+                "view-meals", "bye");
+
+        assertInOrder(output, "Meal recorded!", "Meal updated!", "Meal 2:",
+                "Cancelled. Nothing was changed.", "Meal deleted!", "Meal 1:", "Goodbye!");
+        assertEquals(1, log.getEntries().size());
+        assertEquals(recipes.getRecipes().get(1), log.getEntries().getFirst().recipe());
+        assertEquals(LocalDate.of(2026, 3, 3), log.getEntries().getFirst().date());
+        assertEquals(1, log.getEntries().getFirst().servings());
+        assertEquals(500, log.getTotals().calories());
+        assertFalse(output.contains("Error:"), output);
+    }
+
+    @Test
+    void run_eofDuringMealDeletion_cancelsWithoutRemovingTheEntry() throws IOException {
+        MealLog log = new MealLog();
+        RecipeBook recipes = TestRecipes.recipeBook(500, 20, 50, 10);
+
+        String output = run(new Parser(log), recipes, "Tester", "record-meal 1 date/2026-03-02", "delete-meal 1");
+
+        assertInOrder(output, "Meal recorded!", "Are you sure you want to delete meal 1:",
+                "Cancelled. Nothing was changed.");
+        assertEquals(1, log.getEntries().size());
+        assertEquals(500, log.getTotals().calories());
+    }
+
+    @Test
+    void run_replaceMealAfterCustomization_resetsTheOccurrenceAndRegeneratesGroceries() throws IOException {
+        ActiveMealPlan active = new ActiveMealPlan();
+        RecipeBook recipes = TestRecipes.recipeBook(500, 20, 50, 10);
+        Parser parser = new Parser(new MealPlanGenerator(new Random(1)), active);
+
+        String output = run(parser, recipes, "Tester", "generate-plan d/1",
+                "adjust-portion d/1 m/1 portions/2", "customize-meal d/1 m/1 i/Water:10ml",
+                "generate-list", "replace-meal d/1 m/1 r/1", "view-list", "generate-list", "bye");
+
+        var meal = active.get().orElseThrow().getDays().getFirst().getPlannedMeals().getFirst();
+        assertEquals(recipes.getRecipes().getFirst(), meal.getRecipe());
+        assertEquals(1, meal.getPortionCount());
+        assertFalse(meal.hasCustomizedIngredients());
+        assertTrue(active.getGroceryList().isPresent());
+        assertInOrder(output, "Grocery list generated.", "Meal 1 on Day 1 replaced with",
+                "The previous grocery list was cleared.", "No grocery list generated.",
+                "Grocery list generated.", "Goodbye!");
+        assertFalse(output.contains("Error:"), output);
     }
 
     @Test

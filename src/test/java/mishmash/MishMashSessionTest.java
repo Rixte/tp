@@ -140,7 +140,7 @@ class MishMashSessionTest {
     Stream<DynamicTest> run_recoverableError_choosesHelpFromMetadataAndContinuesInOrder() {
         return Stream.of(false, true).map(hasSpecificUsage -> DynamicTest.dynamicTest(
                 hasSpecificUsage ? "Specific usage without Format marker" : "Format marker inside explanation", () -> {
-                    String explanation = hasSpecificUsage ? "Invalid day." : "Unrecognized input: Format: fake";
+                    String explanation = hasSpecificUsage ? "Invalid day." : "Unrecognised input: Format: fake";
                     String usage = hasSpecificUsage ? "Use view-plan with an optional day." : null;
                     Parser parser = new Parser() {
                         @Override

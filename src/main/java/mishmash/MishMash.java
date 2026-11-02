@@ -120,7 +120,9 @@ public class MishMash {
         runMain(logPattern, new Parser(), new RecipeBook(), null);
     }
 
-    /** Runs the launcher with explicit state; legacy test launchers remain isolated from disk. */
+    /**
+     * Runs the launcher with explicit state; legacy test launchers remain isolated from disk.
+     */
     private static void runMain(String logPattern, Parser parser, RecipeBook recipes,
             SessionPersistence persistence) {
         Level originalLogLevel = APP_LOGGER.getLevel();
@@ -237,7 +239,9 @@ public class MishMash {
         }
     }
 
-    /** Retries unsaved changes before either normal exit route completes. */
+    /**
+     * Retries unsaved changes before either normal exit route completes.
+     */
     private void flushPendingChanges() {
         if (persistence != null) {
             persistence.flush().ifPresent(message -> output.println(CliFormatter.feedback(

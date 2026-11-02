@@ -158,7 +158,9 @@ public final class CliFormatter {
         return style("[KITCHEN CLOSED]", BOLD_MAGENTA) + " Goodbye!";
     }
 
-    /** Returns a bordered list of useful commands for a new session. */
+    /**
+     * Returns a bordered list of useful commands for a new session.
+     */
     private static String commandCard() {
         return String.join(System.lineSeparator(),
                 cardHeading("QUICK COMMANDS"),
@@ -170,20 +172,26 @@ public final class CliFormatter {
                 style("+" + "-".repeat(COMMAND_CARD_WIDTH - 2) + "+", BOLD_MAGENTA));
     }
 
-    /** Builds the top border of the common-command card. */
+    /**
+     * Builds the top border of the common-command card.
+     */
     private static String cardHeading(String heading) {
         String prefix = "+-- " + heading + " ";
         return style(prefix + "-".repeat(COMMAND_CARD_WIDTH - prefix.length() - 1) + "+", BOLD_MAGENTA);
     }
 
-    /** Builds one aligned command-description row without counting ANSI codes as visible width. */
+    /**
+     * Builds one aligned command-description row without counting ANSI codes as visible width.
+     */
     private static String commandRow(String command, String description) {
         String commandColumn = String.format(Locale.ROOT, "%-" + COMMAND_COLUMN_WIDTH + "s", command);
         String descriptionColumn = String.format(Locale.ROOT, "%-" + DESCRIPTION_COLUMN_WIDTH + "s", description);
         return "|  " + style(commandColumn, BOLD_CYAN) + " " + descriptionColumn + "|";
     }
 
-    /** Adds one semantic status label to the first line of a multiline response. */
+    /**
+     * Adds one semantic status label to the first line of a multiline response.
+     */
     private static String addStatus(String label, String color, String feedback) {
         int lineEnd = feedback.indexOf(System.lineSeparator());
         if (lineEnd < 0) {
@@ -193,12 +201,16 @@ public final class CliFormatter {
                 + feedback.substring(lineEnd);
     }
 
-    /** Builds a colored square-bracketed status label. */
+    /**
+     * Builds a coloured square-bracketed status label.
+     */
     private static String status(String label, String color) {
         return style("[" + label + "]", color);
     }
 
-    /** Wraps text in one ANSI style and resets the terminal immediately afterward. */
+    /**
+     * Wraps text in one ANSI style and resets the terminal immediately afterward.
+     */
     private static String style(String text, String style) {
         return style + text + RESET;
     }

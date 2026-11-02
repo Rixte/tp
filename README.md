@@ -32,6 +32,13 @@ and recorded meals. Keep the whole `data` folder when moving or backing up your 
 * Tests live under `src/test/java/mishmash` and mirror the production packages. Run them with `./gradlew test` (`.\gradlew.bat test` on Windows).
 * If you are new to JUnit, refer to the [JUnit Tutorial at se-education.org/guides](https://se-education.org/guides/tutorials/junit.html).
 
+JLine is part of the console UI, and its automated tests run with JUnit. `ui/JLineConsoleInputTest`
+checks editing, completion, history, interruption, and EOF using in-memory terminals or a scripted reader;
+`ui/CommandCompleterTest` checks suggestions; `ui/ConsoleInputsTest` checks terminal selection and fallback;
+and `JLineSessionTest` runs application workflows through the real JLine adapter. No native terminal is
+required for these tests. The User Guide describes [interactive command entry](docs/UserGuide.md#interactive-command-entry).
+Check actual terminal keys, display, and native-provider behaviour manually before release.
+
 ## Checkstyle
 
 * A sample CheckStyle rule configuration is provided in this project.

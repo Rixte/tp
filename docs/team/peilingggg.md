@@ -21,7 +21,7 @@ MishMash is a Java command-line meal-prep planner. Users can manage recipes, gen
 - **New feature: Dietary preferences and plan repair (`set-diet`).**
   - **What it does:** Saves a named diet, avoided food categories, and excluded ingredients; filters generation, repairs conflicting days, and refreshes existing groceries.
   - **Justification:** Users can change dietary requirements while retaining compatible planned days.
-  - **Highlights:** Added immutable preferences, recipe classification, and normalized exclusions. Repair preserves compatible days and original nutrition targets. Failed repair saves the preferences and clears incompatible plans and groceries. Coordinating these states required explicit failure handling.
+  - **Highlights:** Added immutable preferences, recipe classification, and normalised exclusions. Repair preserves compatible days and original nutrition targets. Failed repair saves the preferences and clears incompatible plans and groceries. Coordinating these states required explicit failure handling.
   - **Credits:** Reused the team's meal-plan and grocery generators.
   - **Evidence:** [#73](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/73).
 

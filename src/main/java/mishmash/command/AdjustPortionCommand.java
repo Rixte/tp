@@ -68,15 +68,27 @@ public final class AdjustPortionCommand implements Command {
                     + " already has " + formatPortions(adjustment.portionCount()) + ". Nothing was changed.");
         }
 
-        MealPlan updatedPlan;
+        MealPlan updatedPlan = adjustPortion(currentPlan, mealIndex);
+        return publishAdjustment(updatedPlan);
+    }
+
+    /**
+     * Builds the replacement plan without changing shared state if its totals overflow.
+     */
+    private MealPlan adjustPortion(MealPlan currentPlan, int mealIndex) throws MishMashException {
         try {
-            updatedPlan = currentPlan.withAdjustedPortion(
+            return currentPlan.withAdjustedPortion(
                     adjustment.dayNumber() - 1, mealIndex, adjustment.portionCount());
         } catch (ArithmeticException e) {
             throw new MishMashException("That portion count makes the day's nutrition totals too large.",
                     USAGE, e);
         }
+    }
 
+    /**
+     * Publishes the validated adjustment and explains whether groceries must be regenerated.
+     */
+    private CommandResult publishAdjustment(MealPlan updatedPlan) {
         boolean hadGroceryList = activeMealPlan.getGroceryList().isPresent();
         activeMealPlan.update(updatedPlan);
         LOGGER.fine(() -> "Adjusted Day " + adjustment.dayNumber() + ", Meal "

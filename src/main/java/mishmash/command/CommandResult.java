@@ -9,7 +9,9 @@ import java.util.Objects;
  * @param status The semantic outcome used by the console formatter.
  */
 public record CommandResult(String feedback, Status status) {
-    /** Describes how command feedback should be presented without inspecting its text or command class. */
+    /**
+     * Describes how command feedback should be presented without inspecting its text or command class.
+     */
     public enum Status {
         /** Marks a completed state-changing action. */
         DONE,
@@ -33,27 +35,37 @@ public record CommandResult(String feedback, Status status) {
         Objects.requireNonNull(status, "status");
     }
 
-    /** Returns a successful state-changing result. */
+    /**
+     * Returns a successful state-changing result.
+     */
     public static CommandResult done(String feedback) {
         return new CommandResult(feedback, Status.DONE);
     }
 
-    /** Returns an expected no-op or empty-state result. */
+    /**
+     * Returns an expected no-op or empty-state result.
+     */
     public static CommandResult note(String feedback) {
         return new CommandResult(feedback, Status.NOTE);
     }
 
-    /** Returns a completed result that needs attention. */
+    /**
+     * Returns a completed result that needs attention.
+     */
     public static CommandResult warning(String feedback) {
         return new CommandResult(feedback, Status.WARNING);
     }
 
-    /** Returns ordinary read-only information. */
+    /**
+     * Returns ordinary read-only information.
+     */
     public static CommandResult info(String feedback) {
         return new CommandResult(feedback, Status.INFO);
     }
 
-    /** Returns the application help manual. */
+    /**
+     * Returns the application help manual.
+     */
     public static CommandResult help(String feedback) {
         return new CommandResult(feedback, Status.HELP);
     }

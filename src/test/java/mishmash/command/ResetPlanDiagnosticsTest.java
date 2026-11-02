@@ -120,7 +120,7 @@ class ResetPlanDiagnosticsTest {
         private final List<LogRecord> records = new ArrayList<>();
         private final Logger logger;
         private final Level originalLevel;
-        private final boolean originalUseParentHandlers;
+        private final boolean wereParentHandlersEnabled;
 
         /**
          * Attaches a temporary handler without replacing other registered handlers.
@@ -128,7 +128,7 @@ class ResetPlanDiagnosticsTest {
         private RecordingHandler(Class<?> source) {
             logger = Logger.getLogger(source.getName());
             originalLevel = logger.getLevel();
-            originalUseParentHandlers = logger.getUseParentHandlers();
+            wereParentHandlersEnabled = logger.getUseParentHandlers();
             setLevel(Level.ALL);
             logger.addHandler(this);
             logger.setLevel(Level.FINE);
@@ -156,7 +156,7 @@ class ResetPlanDiagnosticsTest {
         public void close() {
             logger.removeHandler(this);
             logger.setLevel(originalLevel);
-            logger.setUseParentHandlers(originalUseParentHandlers);
+            logger.setUseParentHandlers(wereParentHandlersEnabled);
         }
     }
 }

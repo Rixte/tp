@@ -24,7 +24,7 @@ public final class CustomizeMealParser {
      * Parses required day and meal positions plus a complete nonempty ingredient replacement.
      *
      * @param arguments The text following the command word.
-     * @return The validated immutable customization request.
+     * @return The validated immutable customisation request.
      * @throws IllegalArgumentException If syntax, positions, or an ingredient is invalid.
      */
     public IngredientCustomization parse(String arguments) {

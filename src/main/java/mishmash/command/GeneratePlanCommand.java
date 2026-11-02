@@ -113,33 +113,53 @@ public class GeneratePlanCommand implements Command {
         boolean usesSavedTargets = usesSavedTarget(saved);
         //@@author
 
-        MealPlan plan;
-        try {
-            plan = new DietaryPlanner(generator).generate(recipeBook.getRecipes(), effective, dietarySettings.get());
-        } catch (IllegalArgumentException e) {
-            // The generator reports user-fixable problems this way; show them like any other input error.
-            LOGGER.fine(() -> "Meal-plan generation rejected for " + request.days() + " days");
-            String message = e.getMessage();
-            //@@author neil0618
-            if (usesSavedTargets) {
-                message += System.lineSeparator() + "Daily targets applied: " + effective.targets().summarise()
-                        + " (including your saved targets). Change those with 'set-targets'.";
-            }
-            //@@author
-            //@@author GauthamNandi
-            // The advice is specific to this failure, so show the short usage rather than every command.
-            List<String> advice = new PlanFailureAdvisor().explain(recipeBook.getRecipes(), effective.targets(),
-                    dietarySettings.get());
-            if (message != null && !advice.isEmpty()) {
-                message += System.lineSeparator() + String.join(System.lineSeparator(), advice);
-            }
-            throw new MishMashException(message, GeneratePlanParser.USAGE, e);
-            //@@author
-        }
-
+        MealPlan plan = generatePlan(recipeBook, effective, usesSavedTargets);
         // Store the effective request, so view-plan and set-diet repair use the targets actually applied.
         activePlan.setGenerated(plan, effective, Optional.empty());
         LOGGER.fine(() -> "Stored generated meal plan for " + plan.getNumberOfDays() + " days");
+        return describeGeneratedPlan(plan, effective, usesSavedTargets);
+    }
+
+    /**
+     * Generates without publishing state and translates generation failures into recoverable command errors.
+     */
+    private MealPlan generatePlan(RecipeBook recipeBook, GeneratePlanRequest effective, boolean usesSavedTargets)
+            throws MishMashException {
+        try {
+            return new DietaryPlanner(generator).generate(recipeBook.getRecipes(), effective, dietarySettings.get());
+        } catch (IllegalArgumentException e) {
+            // The generator reports user-fixable problems this way; show them like any other input error.
+            LOGGER.fine(() -> "Meal-plan generation rejected for " + request.days() + " days");
+            throw describeGenerationFailure(e, recipeBook, effective, usesSavedTargets);
+        }
+    }
+
+    /**
+     * Preserves the original failure and appends advice for the targets and recipes actually used.
+     */
+    private MishMashException describeGenerationFailure(IllegalArgumentException failure, RecipeBook recipeBook,
+            GeneratePlanRequest effective, boolean usesSavedTargets) {
+        String message = failure.getMessage();
+        //@@author neil0618
+        if (usesSavedTargets) {
+            message += System.lineSeparator() + "Daily targets applied: " + effective.targets().summarise()
+                    + " (including your saved targets). Change those with 'set-targets'.";
+        }
+        //@@author
+        //@@author GauthamNandi
+        List<String> advice = new PlanFailureAdvisor().explain(recipeBook.getRecipes(), effective.targets(),
+                dietarySettings.get());
+        if (message != null && !advice.isEmpty()) {
+            message += System.lineSeparator() + String.join(System.lineSeparator(), advice);
+        }
+        return new MishMashException(message, GeneratePlanParser.USAGE, failure);
+        //@@author
+    }
+
+    /**
+     * Describes a published plan and identifies saved targets when they supplied omitted nutrients.
+     */
+    private String describeGeneratedPlan(MealPlan plan, GeneratePlanRequest effective, boolean usesSavedTargets) {
         String confirmation = "Meal plan successfully generated for " + plan.getNumberOfDays() + " day(s)!";
         //@@author neil0618
         if (usesSavedTargets) {

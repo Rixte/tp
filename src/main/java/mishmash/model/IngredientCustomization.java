@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 public record IngredientCustomization(int dayNumber, int mealNumber, List<GroceryItem> ingredients) {
     /**
-     * Creates a customization with positive positions and an independent ingredient snapshot.
+     * Creates a customisation with positive positions and an independent ingredient snapshot.
      *
      * @throws NullPointerException If the list or any ingredient is null.
      * @throws IllegalArgumentException If a position is not positive, the list is empty, or a quantity is not
@@ -27,11 +27,11 @@ public record IngredientCustomization(int dayNumber, int mealNumber, List<Grocer
         }
         ingredients = List.copyOf(Objects.requireNonNull(ingredients, "ingredients"));
         if (ingredients.isEmpty()) {
-            throw new IllegalArgumentException("At least one customized ingredient is required.");
+            throw new IllegalArgumentException("At least one customised ingredient is required.");
         }
         for (GroceryItem ingredient : ingredients) {
             if (ingredient.getQuantity().signum() <= 0) {
-                throw new IllegalArgumentException("Customized ingredient quantities must be positive.");
+                throw new IllegalArgumentException("Customised ingredient quantities must be positive.");
             }
         }
     }

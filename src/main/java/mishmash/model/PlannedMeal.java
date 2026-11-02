@@ -65,7 +65,7 @@ public final class PlannedMeal {
     /**
      * Returns the one-portion ingredients effective for this planned occurrence.
      *
-     * @return Customized ingredients when present, otherwise the source recipe's ingredients.
+     * @return Customised ingredients when present, otherwise the source recipe's ingredients.
      */
     public List<GroceryItem> getIngredients() {
         return customizedIngredients == null ? recipe.getIngredients() : customizedIngredients;
@@ -137,7 +137,7 @@ public final class PlannedMeal {
 
     /**
      * Returns an otherwise identical meal using a complete one-portion ingredient replacement.
-     * Supplying values equal to the source recipe removes an existing customization.
+     * Supplying values equal to the source recipe removes an existing customisation.
      *
      * @param newIngredients The nonempty replacement containing strictly positive quantities.
      * @return A new planned meal, or this instance when its effective ingredients are unchanged.
@@ -165,7 +165,7 @@ public final class PlannedMeal {
     }
 
     /**
-     * Copies and validates a customization, while preserving null as the no-customization marker.
+     * Copies and validates a customisation, while preserving null as the no-customisation marker.
      */
     private static List<GroceryItem> copyCustomizedIngredients(List<GroceryItem> ingredients) {
         if (ingredients == null) {
@@ -173,11 +173,11 @@ public final class PlannedMeal {
         }
         List<GroceryItem> snapshot = List.copyOf(ingredients);
         if (snapshot.isEmpty()) {
-            throw new IllegalArgumentException("At least one customized ingredient is required.");
+            throw new IllegalArgumentException("At least one customised ingredient is required.");
         }
         for (GroceryItem ingredient : snapshot) {
             if (ingredient.getQuantity().signum() <= 0) {
-                throw new IllegalArgumentException("Customized ingredient quantities must be positive.");
+                throw new IllegalArgumentException("Customised ingredient quantities must be positive.");
             }
         }
         return snapshot;

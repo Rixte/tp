@@ -122,7 +122,7 @@ class StorageJarTest {
                 "customize-meal d/1 m/1 i/rice:12.500g", "generate-list", "record-meal 1",
                 "edit-recipe 1 n/Edited", "set-targets cal/2000", "bye", "");
         String first = runJar(setup);
-        assertTrue(first.contains("[WARN] Meal 1 on Day 1 ingredients customized."), first);
+        assertTrue(first.contains("[WARN] Meal 1 on Day 1 ingredients customised."), first);
         assertTrue(Files.exists(directory.resolve("data/mishmash.json")));
         String second = runJar("Tester\nlist-recipes\nview-diet\nview-targets\nview-plan\nview-list\nview-meals\n");
         assertTrue(second.contains("Edited"), second);

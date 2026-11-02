@@ -49,12 +49,12 @@ public class CheckShortfallParser {
     private void readTarget(String token, Map<String, Integer> values) {
         int separator = token.indexOf('/');
         if (separator < 1) {
-            throw new IllegalArgumentException("Unrecognized parameter: " + token);
+            throw new IllegalArgumentException("Unrecognised parameter: " + token);
         }
 
         String prefix = token.substring(0, separator);
         if (!SUPPORTED_PREFIXES.contains(prefix)) {
-            throw new IllegalArgumentException("Unrecognized parameter: " + token);
+            throw new IllegalArgumentException("Unrecognised parameter: " + token);
         }
         if (values.containsKey(prefix)) {
             throw new IllegalArgumentException("Parameter " + prefix + "/ was given more than once.");

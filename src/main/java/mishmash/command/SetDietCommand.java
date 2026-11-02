@@ -39,7 +39,7 @@ public final class SetDietCommand implements Command {
         this.preferences = Objects.requireNonNull(preferences, "preferences");
         this.settings = Objects.requireNonNull(settings, "settings");
         this.activePlan = Objects.requireNonNull(activePlan, "activePlan");
-        this.planner = new DietaryPlanner(generator);
+        planner = new DietaryPlanner(generator);
     }
 
     //@@author
@@ -89,10 +89,17 @@ public final class SetDietCommand implements Command {
             settings.set(preferences);
             return CommandResult.done("Dietary preferences saved. Your existing meal plan already matches.");
         }
+        return repairPlan(recipeBook, currentPlan.get());
+    }
+
+    /**
+     * Attempts to repair conflicting days before publishing the new plan and dietary profile.
+     */
+    private CommandResult repairPlan(RecipeBook recipeBook, MealPlan currentPlan) {
         try {
             GeneratePlanRequest request = activePlan.getRequest().orElseThrow(
                     () -> new IllegalArgumentException("The original meal-plan settings are unavailable."));
-            MealPlan updatedPlan = planner.repair(recipeBook.getRecipes(), currentPlan.get(), request, preferences);
+            MealPlan updatedPlan = planner.repair(recipeBook.getRecipes(), currentPlan, request, preferences);
             Optional<List<GroceryItem>> groceries = Optional.empty();
             if (activePlan.getGroceryList().isPresent()) {
                 groceries = Optional.of(new GroceryListGenerator().generateForPlan(updatedPlan));
@@ -105,15 +112,21 @@ public final class SetDietCommand implements Command {
             return CommandResult.done("Dietary preferences saved. Conflicting days were replaced."
                     + System.lineSeparator() + groceryMessage);
         } catch (IllegalArgumentException e) {
-            // Never leave an incompatible plan visible under newly saved restrictions.
-            settings.set(preferences);
-            activePlan.clear();
-            return CommandResult.warning("Dietary preferences saved, but a replacement plan could not be generated."
-                    + System.lineSeparator() + e.getMessage() + System.lineSeparator()
-                    + "The previous meal plan and grocery list have been cleared."
-                    + System.lineSeparator()
-                    + "Add suitable recipes or adjust your targets, then use 'generate-plan'.");
+            return clearConflictingPlan(e);
         }
+    }
+
+    /**
+     * Saves the requested profile while removing a plan that could not be repaired to satisfy it.
+     */
+    private CommandResult clearConflictingPlan(IllegalArgumentException failure) {
+        settings.set(preferences);
+        activePlan.clear();
+        return CommandResult.warning("Dietary preferences saved, but a replacement plan could not be generated."
+                + System.lineSeparator() + failure.getMessage() + System.lineSeparator()
+                + "The previous meal plan and grocery list have been cleared."
+                + System.lineSeparator()
+                + "Add suitable recipes or adjust your targets, then use 'generate-plan'.");
     }
 }
 //@@author
