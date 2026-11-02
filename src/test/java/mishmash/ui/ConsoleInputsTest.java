@@ -73,6 +73,19 @@ class ConsoleInputsTest {
     }
 
     @Test
+    void open_nativeProviderUnavailable_fallsBackAndPreservesTheCause() {
+        IllegalStateException failure = new IllegalStateException("Native provider unavailable");
+        try (LogCapture logs = new LogCapture(ConsoleInputs.class);
+                ConsoleInput input = ConsoleInputs.open(true, stream("bye\n"), System.out, () -> {
+                    throw failure;
+                })) {
+            assertInstanceOf(ScannerConsoleInput.class, input);
+            assertSame(failure, logs.getRecords().getFirst().getThrown());
+            assertEquals(Optional.of("bye"), input.readCommand("Command?"));
+        }
+    }
+
+    @Test
     void open_editorInitializationFailure_closesTerminalBeforeFallingBack() {
         AtomicInteger closeCount = new AtomicInteger();
         IllegalStateException failure = new IllegalStateException("Unsupported terminal");

@@ -70,7 +70,7 @@ jacocoTestReport {
     }
 }
 
-// Guard plan-changing commands and application startup against gaps in statements and decisions.
+// Guard plan-changing commands, application startup and terminal selection against coverage gaps.
 jacocoTestCoverageVerification {
     dependsOn test
     executionData fileTree(layout.buildDirectory.dir('jacoco/launcher')) { include '*.exec' }
@@ -78,7 +78,7 @@ jacocoTestCoverageVerification {
         rule {
             element = 'CLASS'
             includes = ['mishmash.command.ResetPlanCommand', 'mishmash.command.GeneratePlanCommand',
-                        'mishmash.command.SetDietCommand', 'mishmash.MishMash']
+                        'mishmash.command.SetDietCommand', 'mishmash.MishMash', 'mishmash.ui.ConsoleInputs']
             limit {
                 counter = 'LINE'
                 minimum = 1.0
