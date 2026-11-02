@@ -1,8 +1,8 @@
 # Grocery and nutrition contribution UML
 
 These fourteen diagrams document oilybikechain's implementation contributions in the
-[Developer Guide](../../DeveloperGuide.md#contribution-history-oilybikechain).
-The guide's commit table links each contribution to its original non-merge commit.
+[Developer Guide](../../DeveloperGuide.md#generating-a-grocery-list) and its nutrition and diagnostic sections.
+The table below maps each diagram to its contribution and original non-merge commit.
 Diagrams describe the current implementation; teammates' classes appear only as
 integration context. Earlier implementations on other branches are not additional features.
 
