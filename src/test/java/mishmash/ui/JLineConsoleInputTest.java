@@ -16,14 +16,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.UserInterruptException;
+import org.jline.terminal.Attributes;
+import org.jline.terminal.Attributes.ControlChar;
 import org.jline.terminal.Size;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.impl.DumbTerminal;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import mishmash.testutil.LogCapture;
 
@@ -48,6 +53,21 @@ class JLineConsoleInputTest {
         }
     }
 
+    @TestFactory
+    Stream<DynamicTest> readCommand_realEditor_completesNewMealCommandsAndPrefixes() {
+        return Stream.of(
+                new String[]{"record-m\t1 da\t2026-03-02 s\t2\n", "record-meal 1 date/2026-03-02 s/2"},
+                new String[]{"edit-m\t1 s\t2\n", "edit-meal 1 s/2"},
+                new String[]{"delete-m\t1\n", "delete-meal 1"},
+                new String[]{"view-m\tda\t2026-03-02\n", "view-meals date/2026-03-02"},
+                new String[]{"replace-m\td\t1 m\t2 r\t3\n", "replace-meal d/1 m/2 r/3"})
+                .map(example -> DynamicTest.dynamicTest(example[1], () -> {
+                    try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal(example[0]))) {
+                        assertEquals(Optional.of(example[1]), input.readCommand("Command?"));
+                    }
+                }));
+    }
+
     @Test
     void readCommand_realHistory_recallsCommandsInsteadOfNamesAndConfirmationAnswers() throws IOException {
         // Ctrl+P recalls history independently of a terminal's platform-specific Up-arrow escape sequence.
@@ -63,6 +83,81 @@ class JLineConsoleInputTest {
     void readCommand_realEditor_correctsTextBeforeSubmittingIt() throws IOException {
         try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("view-plax\u007Fn\n"))) {
             assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
+        }
+    }
+
+    @TestFactory
+    Stream<DynamicTest> readCommand_navigationKeys_editsAtTheCursorBeforeSubmission() {
+        // xterm sends application-mode cursor keys after JLine enables the terminal's keypad mode.
+        return Stream.of(
+                new String[]{"Left and Right", "view-pa\u001BODl\u001BOCn\n"},
+                new String[]{"Home and End", "pla\u001BOHview-\u001BOFn\n"},
+                new String[]{"Delete", "view-plaxn\u001BOD\u001BOD\u001B[3~\n"})
+                .map(example -> DynamicTest.dynamicTest(example[0], () -> {
+                    try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal(example[1]))) {
+                        assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
+                    }
+                }));
+    }
+
+    @Test
+    void readCommand_upThenDown_restoresTheUnsubmittedDraft() throws IOException {
+        String keys = "view-plan\ncheck-shortfall p/100\u001BOA\u001BOB\n";
+        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal(keys))) {
+            assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
+            assertEquals(Optional.of("check-shortfall p/100"), input.readCommand("Command?"));
+        }
+    }
+
+    @Test
+    void readAnswer_tab_doesNotCompleteACommandAndNextCommandCanCompleteAgain() throws IOException {
+        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("check-sh\t\ncheck-sh\t\n"))) {
+            // In answer mode Tab is ignored instead of expanding a command or offering prefixes.
+            assertEquals(Optional.of("check-sh"), input.readAnswer("Name?"));
+            assertEquals(Optional.of("check-shortfall "), input.readCommand("Command?"));
+        }
+    }
+
+    @Test
+    void readCommand_newSession_doesNotRecallAnotherSessionsHistory() throws IOException {
+        try (JLineConsoleInput first = new JLineConsoleInput(editingTerminal("view-plan\n"))) {
+            assertEquals(Optional.of("view-plan"), first.readCommand("Command?"));
+        }
+        try (JLineConsoleInput second = new JLineConsoleInput(editingTerminal("\u001BOAbye\n"))) {
+            assertEquals(Optional.of("bye"), second.readCommand("Command?"));
+        }
+    }
+
+    @Test
+    void readCommand_repeatedInterruptsThenEof_neverSubmitsPartialCommands() throws IOException {
+        ScriptedReader script = new ScriptedReader(new UserInterruptException("reset-plan"),
+                new UserInterruptException("delete-recipe 1"), new EndOfFileException());
+        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+            assertEquals(Optional.empty(), input.readCommand("Command?"));
+            assertEquals(List.of("Command? ", "Command? ", "Command? "), script.prompts);
+        }
+    }
+
+    @Test
+    void readCommand_realCtrlC_discardsPartialCommandAndReadsTheNextOne() throws IOException {
+        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("reset-plan\u0003view-plan\n"))) {
+            assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
+        }
+    }
+
+    @Test
+    void readAnswer_realCtrlC_discardsPartialAgreementAndAllowsTheNextCommand() throws IOException {
+        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("yes\u0003bye\n"))) {
+            assertEquals(Optional.of(""), input.readAnswer("Delete?"));
+            assertEquals(Optional.of("bye"), input.readCommand("Command?"));
+        }
+    }
+
+    @Test
+    void readAnswer_realCtrlD_cancelsWithoutConsumingTheNextCommand() throws IOException {
+        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("\u0004bye\n"))) {
+            assertEquals(Optional.empty(), input.readAnswer("Delete?"));
+            assertEquals(Optional.of("bye"), input.readCommand("Command?"));
         }
     }
 
@@ -157,6 +252,11 @@ class JLineConsoleInputTest {
         Terminal terminal = new DumbTerminal("test", "xterm-256color",
                 new ByteArrayInputStream(keys.getBytes(StandardCharsets.UTF_8)), new ByteArrayOutputStream(),
                 StandardCharsets.UTF_8);
+        // DumbTerminal omits these bindings; a normal terminal declares Ctrl+C and Ctrl+D explicitly.
+        Attributes attributes = terminal.getAttributes();
+        attributes.setControlChar(ControlChar.VINTR, 3);
+        attributes.setControlChar(ControlChar.VEOF, 4);
+        terminal.setAttributes(attributes);
         terminal.setSize(new Size(80, 24));
         return terminal;
     }

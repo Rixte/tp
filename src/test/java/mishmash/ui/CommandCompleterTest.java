@@ -92,6 +92,37 @@ class CommandCompleterTest {
     }
 
     //@@author Rixte
+    @Test
+    void complete_mealTrackingCommands_suggestsMergedCommandsAndTheirExactPrefixes() {
+        assertEquals(List.of("record-meal"), values("record-m"));
+        assertEquals(List.of("edit-recipe", "edit-meal"), values("edit-"));
+        assertEquals(List.of("delete-recipe", "delete-meal"), values("delete-"));
+        assertEquals(List.of("date/", "s/"), values("record-meal 1 "));
+        assertEquals(List.of("date/", "s/"), values("edit-meal 1 "));
+        assertEquals(List.of("date/"), values("view-meals "));
+        assertEquals(List.of(), values("delete-meal 1 "));
+    }
+
+    @Test
+    void complete_mealTrackingValues_suppressesUsedFieldsWithoutCompletingValues() {
+        assertEquals(List.of("s/"), values("record-meal 1 date/2026-03-02 "));
+        assertEquals(List.of("date/"), values("edit-meal 1 s/2 "));
+        assertEquals(List.of(), values("edit-meal 1 s/2 date/2026-03-02 "));
+        assertEquals(List.of(), values("record-meal 1 date/2026-"));
+        assertEquals(List.of(), values("record-meal 1 s/2"));
+        assertFalse(candidates("record-meal 1 da").getFirst().complete());
+    }
+
+    @Test
+    void complete_replaceMeal_suggestsOnlyUnusedPositionPrefixes() {
+        assertEquals(List.of("replace-meal"), values("replace-m"));
+        assertEquals(List.of("d/", "m/", "r/"), values("replace-meal "));
+        assertEquals(List.of("m/", "r/"), values("replace-meal d/1 "));
+        assertEquals(List.of("r/"), values("replace-meal m/2 d/1 r"));
+        assertEquals(List.of(), values("replace-meal d/1 m/2 r/3 "));
+        assertEquals(List.of(), values("replace-meal d/1 m/2 r/3"));
+    }
+
     /**
      * Returns candidate text for a cursor positioned at the end of the supplied line.
      */
