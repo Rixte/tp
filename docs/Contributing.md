@@ -21,28 +21,4 @@ Do not add an end tag without a corresponding start tag; it can leave subsequent
 
 Reference: [RepoSense authorship-tag guide](https://reposense.org/ug/usingAuthorTags.html).
 
-<!-- @@author oilybikechain -->
-### Contribution history: oilybikechain
-
-*Section author: oilybikechain*
-
-The following non-merge commits reachable from the current branch establish the scope of these
-contributions. Merge authorship does not imply ownership of the merged feature; the original
-meal-plan generator, plan viewer, grocery formatter, dietary repair, and shortfall command have
-separate contributors. The sections below describe the current integration with those components.
-
-| Commit | Contribution documented here |
-| --- | --- |
-| `667d642` | Ingredient quantity model and grocery aggregation by exact name and unit. |
-| `c3f6e95` | Grocery aggregation regression tests and API documentation. |
-| `6b960ad` | `generate-list` parsing, command execution, and shared grocery snapshot integration. |
-| `ba80853` | Preserved exception causes, generator assertions, and generation diagnostics. |
-| `4c82e81` | Combined daily nutrition totals through `DayPlan` and `NutritionTotals`. |
-| `f81dc10` | Daily warnings when planned nutrition exceeds exact generation targets. |
-
-Earlier implementations on other branches are not additional features: `5ff6c3f` is the earlier
-grocery integration, and `b814afb` is the pre-update nutrition-warning implementation. The current
-guide describes their integrated replacements above. Profile and README edits are not product features.
-
-<!-- @@author -->
 
