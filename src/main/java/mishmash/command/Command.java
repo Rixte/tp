@@ -34,7 +34,7 @@ public interface Command {
     /**
      * Executes the action and reports its presentation status explicitly.
      *
-     * <p>The safe default is unlabelled information. State-changing commands override this method to report
+     * <p>The safe default is unlabeled information. State-changing commands override this method to report
      * success, no-op, or warning outcomes without requiring the formatter to inspect class names or message text.
      *
      * @param recipeBook The recipe book available to the command.

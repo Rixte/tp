@@ -113,10 +113,9 @@ public class MishMash {
     /**
      * Runs the entry point with a supplied log location for testing startup and shutdown failures.
      *
-     * @param args Unused command-line arguments.
      * @param logPattern The rotating log destination.
      */
-    static void main(String[] args, String logPattern) {
+    static void runMain(String logPattern) {
         runMain(logPattern, new Parser(), new RecipeBook(), null);
     }
 

@@ -14,14 +14,14 @@ import org.junit.jupiter.api.Test;
  * Checks recipe fields, constraints, and protection against external changes.
  */
 class RecipeTest {
-    private GroceryItem rice() {
+    private GroceryItem createRiceRecipe() {
         return new GroceryItem("Rice", new BigDecimal("150"), "g");
     }
 
     @Test
     void constructor_validData_preservesFields() {
         Recipe recipe = new Recipe(" Chicken and Rice ", 650, 50, 70, 15,
-                List.of(rice()));
+                List.of(createRiceRecipe()));
 
         assertEquals("Chicken and Rice", recipe.getName());
         assertEquals(650, recipe.getCalories());
@@ -34,7 +34,7 @@ class RecipeTest {
     @Test
     void constructor_invalidFields_throwsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Recipe(" ", 650, 50, 70, 15, List.of(rice())));
+                () -> new Recipe(" ", 650, 50, 70, 15, List.of(createRiceRecipe())));
         assertThrows(IllegalArgumentException.class,
                 () -> new Recipe("Rice", 650, 50, 70, 15, List.of()));
 
@@ -47,7 +47,7 @@ class RecipeTest {
         for (int[] values : invalidNutrition) {
             assertThrows(IllegalArgumentException.class,
                     () -> new Recipe("Rice", values[0], values[1], values[2],
-                            values[3], List.of(rice())));
+                            values[3], List.of(createRiceRecipe())));
         }
 
         GroceryItem zeroQuantity = new GroceryItem("Rice", BigDecimal.ZERO, "g");
@@ -65,7 +65,7 @@ class RecipeTest {
 
     @Test
     void getIngredients_externalChanges_doNotChangeRecipe() {
-        List<GroceryItem> ingredients = new ArrayList<>(List.of(rice()));
+        List<GroceryItem> ingredients = new ArrayList<>(List.of(createRiceRecipe()));
         Recipe recipe = new Recipe("Rice", 200, 4, 45, 1, ingredients);
 
         ingredients.clear();
@@ -78,12 +78,12 @@ class RecipeTest {
     @Test
     void constructor_nullInputs_throwsNullPointerException() {
         assertThrows(NullPointerException.class,
-                () -> new Recipe(null, 200, 4, 45, 1, List.of(rice())));
+                () -> new Recipe(null, 200, 4, 45, 1, List.of(createRiceRecipe())));
         assertThrows(NullPointerException.class,
                 () -> new Recipe("Rice", 200, 4, 45, 1, null));
         assertThrows(NullPointerException.class,
                 () -> new Recipe("Rice", 200, 4, 45, 1,
-                        Arrays.asList(rice(), null)));
+                        Arrays.asList(createRiceRecipe(), null)));
     }
 }
 

@@ -162,11 +162,11 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
     }
 
     /**
-     * Stores normalised dietary settings using stable public labels.
+     * Stores normalized dietary settings using stable public labels.
      */
     record DietaryData(String diet, List<String> avoidedTags, List<String> excludedIngredients) {
         /**
-         * Copies the normalised dietary profile.
+         * Copies the normalized dietary profile.
          */
         static DietaryData fromPreferences(DietaryPreferences preferences) {
             return new DietaryData(preferences.diet().getLabel(),

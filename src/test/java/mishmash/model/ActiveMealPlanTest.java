@@ -55,7 +55,7 @@ class ActiveMealPlanTest {
 
     @Test
     void update_validReplacement_preservesRequestAndClearsGroceries() {
-        MealPlan original = new MealPlan(List.of(new DayPlan(List.of(recipe()))));
+        MealPlan original = new MealPlan(List.of(new DayPlan(List.of(createRecipe()))));
         GeneratePlanRequest request = new GeneratePlanRequest(1, NutritionTargets.none());
         activePlan.setGenerated(original, request, Optional.of(List.of(rice)));
         MealPlan replacement = original.withAdjustedPortion(0, 0, 2);
@@ -69,7 +69,7 @@ class ActiveMealPlanTest {
 
     @Test
     void update_invalidReplacement_preservesAllState() {
-        MealPlan original = new MealPlan(List.of(new DayPlan(List.of(recipe()))));
+        MealPlan original = new MealPlan(List.of(new DayPlan(List.of(createRecipe()))));
         GeneratePlanRequest request = new GeneratePlanRequest(1, NutritionTargets.none());
         activePlan.setGenerated(original, request, Optional.of(List.of(rice)));
 
@@ -82,7 +82,7 @@ class ActiveMealPlanTest {
 
     @Test
     void update_samePlan_preservesExistingGroceries() {
-        MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(recipe()))));
+        MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(createRecipe()))));
         activePlan.set(plan);
         activePlan.setGroceryList(List.of(rice));
 
@@ -94,7 +94,7 @@ class ActiveMealPlanTest {
     /**
      * Creates a minimal recipe using the shared grocery item.
      */
-    private Recipe recipe() {
+    private Recipe createRecipe() {
         return new Recipe("Rice", 100, 2, 20, 1, List.of(rice));
     }
 }

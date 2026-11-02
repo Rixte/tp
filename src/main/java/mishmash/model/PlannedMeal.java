@@ -65,7 +65,7 @@ public final class PlannedMeal {
     /**
      * Returns the one-portion ingredients effective for this planned occurrence.
      *
-     * @return Customised ingredients when present, otherwise the source recipe's ingredients.
+     * @return Customized ingredients when present, otherwise the source recipe's ingredients.
      */
     public List<GroceryItem> getIngredients() {
         return customizedIngredients == null ? recipe.getIngredients() : customizedIngredients;
@@ -137,7 +137,7 @@ public final class PlannedMeal {
 
     /**
      * Returns an otherwise identical meal using a complete one-portion ingredient replacement.
-     * Supplying values equal to the source recipe removes an existing customisation.
+     * Supplying values equal to the source recipe removes an existing customization.
      *
      * @param newIngredients The nonempty replacement containing strictly positive quantities.
      * @return A new planned meal, or this instance when its effective ingredients are unchanged.
@@ -165,7 +165,7 @@ public final class PlannedMeal {
     }
 
     /**
-     * Copies and validates a customisation, while preserving null as the no-customisation marker.
+     * Copies and validates a customization, while preserving null as the no-customization marker.
      */
     private static List<GroceryItem> copyCustomizedIngredients(List<GroceryItem> ingredients) {
         if (ingredients == null) {
