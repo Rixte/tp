@@ -63,7 +63,7 @@ terminals, scripted interruptions, and injected terminal factories; native termi
 separately using the packaged JAR.
 <!-- @@author -->
 
-This guide describes the current source checkout. For a published build, consult the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) and its release notes; milestone assignment alone does not establish what a release JAR contains. Build the current checkout when testing the features described here. [User Stories](#appendix-b-user-stories) distinguish milestone assignment, source support, and issue status.
+This guide describes the current source checkout. For a published build, consult the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) and its release notes; milestone assignment alone does not establish what a release JAR contains. Build the current checkout when testing the features described here. [User Stories](#appendix-b-user-stories) show milestone assignments and current source support.
 
 ## Design
 
@@ -1910,7 +1910,7 @@ The Gradle build packages the application as `build/libs/MishMash.jar`. Release 
 
 ## Appendix B: User Stories
 
-Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional. Grey rows are the v1.0 MVP; green rows are the v2.0 MVP. Text labels retain that meaning when colour is unavailable. Owners record the team's planned responsibility, rather than attributing every later integration change.
+Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional. Grey rows are the v1.0 MVP; green rows are the v2.0 MVP. Text labels retain that meaning when colour is unavailable. Owners record the team's planned responsibility, rather than attributing every later integration change. Uncoloured rows cover implemented v2.0b and v2.1 stories, with owners left blank for assignment. Release labels follow the [team milestones](https://github.com/AY2627S1-CS2113-W13-4/tp/milestones).
 
 <table>
 <thead><tr><th>Release</th><th>Priority</th><th>As a ...</th><th>I want to ...</th><th>So that I can ...</th><th>Owner</th><th>Current support</th></tr></thead>
@@ -1932,36 +1932,20 @@ Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Detect meal plans that exceed nutrition targets</td><td>Identify days above my exact generation targets</td><td>Justin</td><td><code>view-plan</code> warnings</td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Detect meal plans that fall short of nutrition targets</td><td>Identify deficits against the targets I supply</td><td>Samantha</td><td><code>check-shortfall</code></td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User managing recipes</td><td>Edit an existing recipe</td><td>Keep its details consistent with how I prepare it</td><td>Samantha</td><td><code>edit-recipe</code></td></tr>
+<tr><td>v2.0b</td><td>**</td><td>Returning user</td><td>Reset my active plan and groceries</td><td>Start again while keeping recipes, settings, and intake records</td><td></td><td><code>reset-plan</code></td></tr>
+<tr><td>v2.0b</td><td>**</td><td>Meal prep user</td><td>Customise one planned meal's ingredients</td><td>Adapt one occurrence without editing its source recipe</td><td></td><td><code>customize-meal</code>; nutrition is not recalculated from ingredients</td></tr>
+<tr><td>v2.0b</td><td>**</td><td>Returning user</td><td>Confirm plan removal or replacement</td><td>Avoid accidentally losing my plan</td><td></td><td>confirmation before reset, replacement generation, and incompatible dietary changes</td></tr>
+<tr><td>v2.0b</td><td>**</td><td>User with dietary requirements</td><td>View my dietary settings</td><td>Check which restrictions apply</td><td></td><td><code>view-diet</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>Returning user</td><td>Retain my data between sessions</td><td>Continue planning after restarting</td><td></td><td>local JSON autosave, restoration, backup recovery, and process locking</td></tr>
+<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Replace an individual planned meal</td><td>Adapt the plan to what I want to eat</td><td></td><td><code>replace-meal</code>; one portion, source ingredients, and current dietary checks</td></tr>
+<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Adjust a planned meal's portion</td><td>Scale nutrition and groceries to my intended quantity</td><td></td><td><code>adjust-portion</code>; positive whole-recipe portions only</td></tr>
+<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Understand unsuccessful plan generation</td><td>Know what to change before retrying</td><td></td><td>generation failure advice for eligible recipes and nutrition targets</td></tr>
+<tr><td>v2.1</td><td>**</td><td>User tracking intake</td><td>Review recorded meals by date</td><td>Understand intake for a selected day</td><td></td><td>dated records, servings, and <code>view-meals date/YYYY-MM-DD</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>User tracking intake</td><td>Correct or remove recorded meals</td><td>Keep intake records accurate</td><td></td><td><code>edit-meal</code> and confirmed <code>delete-meal</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>User with dietary requirements</td><td>Clear my dietary restrictions</td><td>Generate without restrictions</td><td></td><td><code>clear-diet</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>CLI user</td><td>Edit commands and use completion and history</td><td>Enter long commands more easily</td><td></td><td>JLine editing, Tab completion, in-memory history, and plain-input fallback</td></tr>
 </tbody>
 </table>
-
-### Follow-up Stories by Milestone
-
-Milestone assignments below follow the [team repository](https://github.com/AY2627S1-CS2113-W13-4/tp/milestones) as checked on 2 November 2026. Source support describes this checkout; an open issue does not necessarily mean its feature is absent, and an implemented feature is not a claim that a published JAR contains it.
-
-#### v2.0b
-
-| Priority | As a ... | I want to ... | So that I can ... | Issue | Source support and issue status |
-| --- | --- | --- | --- | --- | --- |
-| `**` | Returning user | Reset my active plan and groceries | Start again while keeping recipes, settings, and intake records | [#53](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/53) (closed) | Implemented: `reset-plan`. |
-| `**` | Meal prep user | Customise one planned meal's ingredients | Adapt one occurrence without editing its source recipe | [#60](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/60) (closed) | Implemented: `customize-meal`; nutrition is not recalculated from ingredients. |
-| `**` | Returning user | Confirm plan removal or replacement | Avoid accidentally losing my plan | [#61](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/61) (closed) | Implemented: confirmation before reset, replacement generation, and incompatible dietary changes. |
-| `**` | User with dietary requirements | View my dietary settings | Check which restrictions apply | [#71](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/71) (closed) | Implemented: `view-diet`. |
-
-#### v2.1
-
-| Priority | As a ... | I want to ... | So that I can ... | Issue | Source support and issue status |
-| --- | --- | --- | --- | --- | --- |
-| `**` | Returning user | Retain my data between sessions | Continue planning after restarting | [#51](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/51) (closed) | Implemented: local JSON autosave, restoration, backup recovery, and process locking. |
-| `**` | Meal prep user | Replace an individual planned meal | Adapt the plan to what I want to eat | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) (closed) | Implemented: `replace-meal`; one portion, source ingredients, and current dietary checks. |
-| `**` | Meal prep user | Adjust a planned meal's portion | Scale nutrition and groceries to my intended quantity | [#58](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/58) (closed) | Implemented: `adjust-portion`; positive whole-recipe portions only. |
-| `**` | Meal prep user | Understand unsuccessful plan generation | Know what to change before retrying | [#59](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/59) (open) | Implemented: generation failure advice for eligible recipes and nutrition targets; issue remains open. |
-| `**` | User tracking intake | Review recorded meals by date | Understand intake for a selected day | [#62](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/62) (open) | Implemented: dated records, servings, and `view-meals date/YYYY-MM-DD`; issue remains open. |
-| `**` | User tracking intake | Correct or remove recorded meals | Keep intake records accurate | [#63](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/63) (open) | Implemented: `edit-meal` and confirmed `delete-meal`; issue remains open. |
-| `**` | User with dietary requirements | Clear my dietary restrictions | Generate without restrictions | [#72](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/72) (closed) | Implemented: `clear-diet`. |
-| `**` | CLI user | Edit commands and use completion and history | Enter long commands more easily | [#115](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/115) (open) | Implemented: JLine editing, Tab completion, in-memory history, and plain-input fallback; issue remains open. |
-
-The v2.1 milestone also includes CLI presentation (#106), defensive handling and coverage (#111, #113, #122), and documentation/UML work (#102). These improve existing features rather than introduce separate product workflows. The v2.0b PPP issue #77 is a team deliverable, not a product user story.
 
 ### Use Cases
 
