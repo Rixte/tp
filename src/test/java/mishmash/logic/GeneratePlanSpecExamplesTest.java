@@ -36,7 +36,10 @@ class GeneratePlanSpecExamplesTest {
     private final Parser parser = new Parser(new MealPlanGenerator(new Random(7)), new ActiveMealPlan(),
             () -> Optional.empty());
 
-    private static RecipeBook specRecipeBook() {
+    /**
+     * Creates the specification's three recipes so every generated day has known nutrition totals.
+     */
+    private static RecipeBook createSpecRecipeBook() {
         RecipeBook recipeBook = new RecipeBook();
         recipeBook.add(TestRecipes.recipe("Protein Oatmeal", 450, 35, 60, 8));
         recipeBook.add(TestRecipes.recipe("Chicken and Rice", 650, 50, 70, 15));
@@ -48,7 +51,9 @@ class GeneratePlanSpecExamplesTest {
         return parser.parseCommand(command).execute(recipeBook);
     }
 
-    /** Asserts that a day block has the specification's layout; meal order is random, so meals are unordered. */
+    /**
+     * Checks the specification's day layout while allowing the generator to choose meal order.
+     */
     private static void assertSpecDayBlock(String block, int dayNumber) {
         List<String> lines = block.lines().toList();
         assertEquals(7, lines.size(), block);
@@ -68,7 +73,7 @@ class GeneratePlanSpecExamplesTest {
 
     @Test
     void generatePlan_twoDays_printsSpecConfirmation() throws MishMashException {
-        String output = run("generate-plan d/2", specRecipeBook());
+        String output = run("generate-plan d/2", createSpecRecipeBook());
 
         assertEquals("Meal plan successfully generated for 2 day(s)!" + LINE
                 + "Use 'view-plan' to inspect your planned meals.", output);
@@ -76,7 +81,7 @@ class GeneratePlanSpecExamplesTest {
 
     @Test
     void viewPlan_afterGenerating_matchesSpecLayoutForEveryDay() throws MishMashException {
-        RecipeBook recipeBook = specRecipeBook();
+        RecipeBook recipeBook = createSpecRecipeBook();
         run("generate-plan d/2", recipeBook);
 
         String[] blocks = run("view-plan", recipeBook).split(LINE + LINE);
@@ -88,7 +93,7 @@ class GeneratePlanSpecExamplesTest {
 
     @Test
     void viewPlanDayOne_afterGenerating_showsOnlyDayOneAsInSpec() throws MishMashException {
-        RecipeBook recipeBook = specRecipeBook();
+        RecipeBook recipeBook = createSpecRecipeBook();
         run("generate-plan d/2", recipeBook);
 
         String dayOne = run("view-plan d/1", recipeBook);
@@ -99,7 +104,7 @@ class GeneratePlanSpecExamplesTest {
 
     @Test
     void generatePlan_firstSpecExample_threeDaysWithoutTargets() throws MishMashException {
-        RecipeBook recipeBook = specRecipeBook();
+        RecipeBook recipeBook = createSpecRecipeBook();
         recipeBook.add(TestRecipes.recipe("Beef Stir Fry", 720, 55, 45, 28));
 
         String output = run("generate-plan d/3", recipeBook);
@@ -125,7 +130,7 @@ class GeneratePlanSpecExamplesTest {
 
         // ...but with only the specification's four sample recipes no 3-recipe day is within +/-15% of
         // 2200 kcal / 160 g protein / 220 g carbs / 65 g fats, so the command reports that clearly.
-        RecipeBook fourRecipes = specRecipeBook();
+        RecipeBook fourRecipes = createSpecRecipeBook();
         fourRecipes.add(TestRecipes.recipe("Beef Stir Fry", 720, 55, 45, 28));
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> run("generate-plan d/2 cal/2200 p/160 c/220 f/65", fourRecipes));
@@ -145,7 +150,7 @@ class GeneratePlanSpecExamplesTest {
 
     @Test
     void generatePlan_daysConstraint_acceptsOneToSevenOnly() throws MishMashException {
-        RecipeBook recipeBook = specRecipeBook();
+        RecipeBook recipeBook = createSpecRecipeBook();
 
         for (String days : List.of("d/1", "d/7")) {
             assertTrue(run("generate-plan " + days, recipeBook).startsWith("Meal plan successfully generated"));
@@ -157,7 +162,7 @@ class GeneratePlanSpecExamplesTest {
 
     @Test
     void viewPlan_dayNotInGeneratedPlan_isRejected() throws MishMashException {
-        RecipeBook recipeBook = specRecipeBook();
+        RecipeBook recipeBook = createSpecRecipeBook();
         run("generate-plan d/2", recipeBook);
 
         assertThrows(MishMashException.class, () -> run("view-plan d/3", recipeBook));

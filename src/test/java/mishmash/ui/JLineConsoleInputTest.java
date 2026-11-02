@@ -40,7 +40,7 @@ class JLineConsoleInputTest {
     @Test
     void readAnswer_percentInRecipeName_remainsLiteralInThePrompt() throws IOException {
         ScriptedReader script = new ScriptedReader("no");
-        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createTerminal(), script.reader)) {
             assertEquals(Optional.of("no"), input.readAnswer("Delete 100%N Soup?"));
             assertEquals(List.of("Delete 100%%N Soup? "), script.prompts);
         }
@@ -48,7 +48,7 @@ class JLineConsoleInputTest {
 
     @Test
     void readCommand_realEditor_completesCommandsAndPrefixesWithoutAddingASpaceBeforeTheValue() throws IOException {
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("check-sh\tca\t1500\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal("check-sh\tca\t1500\n"))) {
             assertEquals(Optional.of("check-shortfall cal/1500"), input.readCommand("Command?"));
         }
     }
@@ -62,7 +62,7 @@ class JLineConsoleInputTest {
                 new String[]{"view-m\tda\t2026-03-02\n", "view-meals date/2026-03-02"},
                 new String[]{"replace-m\td\t1 m\t2 r\t3\n", "replace-meal d/1 m/2 r/3"})
                 .map(example -> DynamicTest.dynamicTest(example[1], () -> {
-                    try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal(example[0]))) {
+                    try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal(example[0]))) {
                         assertEquals(Optional.of(example[1]), input.readCommand("Command?"));
                     }
                 }));
@@ -71,7 +71,8 @@ class JLineConsoleInputTest {
     @Test
     void readCommand_realHistory_recallsCommandsInsteadOfNamesAndConfirmationAnswers() throws IOException {
         // Ctrl+P recalls history independently of a terminal's platform-specific Up-arrow escape sequence.
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("Tester\nview-plan\nyes\n\u0010\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(
+                createEditingTerminal("Tester\nview-plan\nyes\n\u0010\n"))) {
             assertEquals(Optional.of("Tester"), input.readAnswer("Name?"));
             assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
             assertEquals(Optional.of("yes"), input.readAnswer("Reset?"));
@@ -81,7 +82,7 @@ class JLineConsoleInputTest {
 
     @Test
     void readCommand_realEditor_correctsTextBeforeSubmittingIt() throws IOException {
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("view-plax\u007Fn\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal("view-plax\u007Fn\n"))) {
             assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
         }
     }
@@ -94,7 +95,7 @@ class JLineConsoleInputTest {
                 new String[]{"Home and End", "pla\u001BOHview-\u001BOFn\n"},
                 new String[]{"Delete", "view-plaxn\u001BOD\u001BOD\u001B[3~\n"})
                 .map(example -> DynamicTest.dynamicTest(example[0], () -> {
-                    try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal(example[1]))) {
+                    try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal(example[1]))) {
                         assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
                     }
                 }));
@@ -103,7 +104,7 @@ class JLineConsoleInputTest {
     @Test
     void readCommand_upThenDown_restoresTheUnsubmittedDraft() throws IOException {
         String keys = "view-plan\ncheck-shortfall p/100\u001BOA\u001BOB\n";
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal(keys))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal(keys))) {
             assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
             assertEquals(Optional.of("check-shortfall p/100"), input.readCommand("Command?"));
         }
@@ -111,7 +112,7 @@ class JLineConsoleInputTest {
 
     @Test
     void readAnswer_tab_doesNotCompleteACommandAndNextCommandCanCompleteAgain() throws IOException {
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("check-sh\t\ncheck-sh\t\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal("check-sh\t\ncheck-sh\t\n"))) {
             // In answer mode Tab is ignored instead of expanding a command or offering prefixes.
             assertEquals(Optional.of("check-sh"), input.readAnswer("Name?"));
             assertEquals(Optional.of("check-shortfall "), input.readCommand("Command?"));
@@ -120,10 +121,10 @@ class JLineConsoleInputTest {
 
     @Test
     void readCommand_newSession_doesNotRecallAnotherSessionsHistory() throws IOException {
-        try (JLineConsoleInput first = new JLineConsoleInput(editingTerminal("view-plan\n"))) {
+        try (JLineConsoleInput first = new JLineConsoleInput(createEditingTerminal("view-plan\n"))) {
             assertEquals(Optional.of("view-plan"), first.readCommand("Command?"));
         }
-        try (JLineConsoleInput second = new JLineConsoleInput(editingTerminal("\u001BOAbye\n"))) {
+        try (JLineConsoleInput second = new JLineConsoleInput(createEditingTerminal("\u001BOAbye\n"))) {
             assertEquals(Optional.of("bye"), second.readCommand("Command?"));
         }
     }
@@ -132,7 +133,7 @@ class JLineConsoleInputTest {
     void readCommand_repeatedInterruptsThenEof_neverSubmitsPartialCommands() throws IOException {
         ScriptedReader script = new ScriptedReader(new UserInterruptException("reset-plan"),
                 new UserInterruptException("delete-recipe 1"), new EndOfFileException());
-        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createTerminal(), script.reader)) {
             assertEquals(Optional.empty(), input.readCommand("Command?"));
             assertEquals(List.of("Command? ", "Command? ", "Command? "), script.prompts);
         }
@@ -140,14 +141,14 @@ class JLineConsoleInputTest {
 
     @Test
     void readCommand_realCtrlC_discardsPartialCommandAndReadsTheNextOne() throws IOException {
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("reset-plan\u0003view-plan\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal("reset-plan\u0003view-plan\n"))) {
             assertEquals(Optional.of("view-plan"), input.readCommand("Command?"));
         }
     }
 
     @Test
     void readAnswer_realCtrlC_discardsPartialAgreementAndAllowsTheNextCommand() throws IOException {
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("yes\u0003bye\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal("yes\u0003bye\n"))) {
             assertEquals(Optional.of(""), input.readAnswer("Delete?"));
             assertEquals(Optional.of("bye"), input.readCommand("Command?"));
         }
@@ -155,7 +156,7 @@ class JLineConsoleInputTest {
 
     @Test
     void readAnswer_realCtrlD_cancelsWithoutConsumingTheNextCommand() throws IOException {
-        try (JLineConsoleInput input = new JLineConsoleInput(editingTerminal("\u0004bye\n"))) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createEditingTerminal("\u0004bye\n"))) {
             assertEquals(Optional.empty(), input.readAnswer("Delete?"));
             assertEquals(Optional.of("bye"), input.readCommand("Command?"));
         }
@@ -164,7 +165,7 @@ class JLineConsoleInputTest {
     @Test
     void readCommand_interruptThenCommand_repromptsWithoutSubmittingThePartialCommand() throws IOException {
         ScriptedReader script = new ScriptedReader(new UserInterruptException("reset-plan"), "view-plan");
-        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createTerminal(), script.reader)) {
             assertEquals(Optional.of("view-plan"), input.readCommand("mishmash >"));
             assertEquals(List.of("mishmash > ", "mishmash > "), script.prompts);
             assertEquals(false, script.variables.get(LineReader.DISABLE_HISTORY));
@@ -175,7 +176,7 @@ class JLineConsoleInputTest {
     @Test
     void readAnswer_interrupt_returnsBlankCancellationAndExcludesAnswersFromHistory() throws IOException {
         ScriptedReader script = new ScriptedReader(new UserInterruptException("yes"), "bye");
-        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createTerminal(), script.reader)) {
             assertEquals(Optional.of(""), input.readAnswer("Reset? (y/n)"));
             assertEquals(true, script.variables.get(LineReader.DISABLE_HISTORY));
             assertEquals(true, script.variables.get(LineReader.DISABLE_COMPLETION));
@@ -187,7 +188,7 @@ class JLineConsoleInputTest {
     @Test
     void readLine_endOfInput_remainsDistinctFromABlankAnswer() throws IOException {
         ScriptedReader script = new ScriptedReader("", new EndOfFileException(), new EndOfFileException());
-        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createTerminal(), script.reader)) {
             assertEquals(Optional.of(""), input.readAnswer("Name?"));
             assertEquals(Optional.empty(), input.readAnswer("Confirm?"));
             assertEquals(Optional.empty(), input.readCommand("mishmash >"));
@@ -198,7 +199,7 @@ class JLineConsoleInputTest {
     void readCommand_unexpectedReaderFailure_propagatesTheOriginalCause() throws IOException {
         IllegalStateException failure = new IllegalStateException("Reader unavailable");
         ScriptedReader script = new ScriptedReader(failure);
-        try (JLineConsoleInput input = new JLineConsoleInput(terminal(), script.reader)) {
+        try (JLineConsoleInput input = new JLineConsoleInput(createTerminal(), script.reader)) {
             assertSame(failure, assertThrows(IllegalStateException.class, () -> input.readCommand("Command?")));
         }
     }
@@ -233,7 +234,7 @@ class JLineConsoleInputTest {
     @Test
     void constructor_missingDependencies_rejectsBeforeReading() throws IOException {
         assertThrows(NullPointerException.class, () -> new JLineConsoleInput(null));
-        try (Terminal terminal = terminal()) {
+        try (Terminal terminal = createTerminal()) {
             assertThrows(NullPointerException.class, () -> new JLineConsoleInput(terminal, null));
         }
     }
@@ -241,14 +242,14 @@ class JLineConsoleInputTest {
     /**
      * Returns a non-native terminal whose streams contain no input and collect no visible output.
      */
-    private Terminal terminal() throws IOException {
+    private Terminal createTerminal() throws IOException {
         return new DumbTerminal(new ByteArrayInputStream(new byte[0]), new ByteArrayOutputStream());
     }
 
     /**
      * Simulates a terminal with editing capabilities while keeping input and output entirely in memory.
      */
-    private Terminal editingTerminal(String keys) throws IOException {
+    private Terminal createEditingTerminal(String keys) throws IOException {
         Terminal terminal = new DumbTerminal("test", "xterm-256color",
                 new ByteArrayInputStream(keys.getBytes(StandardCharsets.UTF_8)), new ByteArrayOutputStream(),
                 StandardCharsets.UTF_8);

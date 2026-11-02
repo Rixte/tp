@@ -155,7 +155,7 @@ public class Parser {
     private static final String COMMAND_VIEW_LIST = "view-list";
     private static final List<String> REQUIRED_FIELDS = List.of("n", "cal", "p", "c", "f");
 
-    // Recognise unknown prefixes too, so they cannot become part of a name.
+    // Recognize unknown prefixes too, so they cannot become part of a name.
     private static final Pattern PREFIX_PATTERN =
             Pattern.compile("(?<!\\S)([^\\s/]+)/");
 
@@ -168,7 +168,9 @@ public class Parser {
      */
     private final Supplier<List<List<MealSummary>>> mealPlanSource;
 
-    /** Supplies targets corresponding to the meals returned by the viewing source. */
+    /**
+     * Supplies targets corresponding to the meals returned by the viewing source.
+     */
     private final Supplier<NutritionTargets> targetsSource;
 
     /**
@@ -186,11 +188,15 @@ public class Parser {
      * constructors that share it.
      */
     private final ActiveMealPlan activeMealPlan;
-    /** Shares session preferences without changing them during command parsing. */
+    /**
+     * Shares session preferences without changing them during command parsing.
+     */
     private DietarySettings dietarySettings = new DietarySettings();
 
     //@@author neil0618
-    /** Shares the saved daily targets between set-targets, view-targets and generate-plan. */
+    /**
+     * Shares the saved daily targets between set-targets, view-targets and generate-plan.
+     */
     private TargetSettings targetSettings = new TargetSettings();
     //@@author
 
@@ -296,7 +302,7 @@ public class Parser {
     }
 
     /**
-     * Initialises generation, viewing, and meal-recording dependencies shared by the public constructors.
+     * Initializes generation, viewing, and meal-recording dependencies shared by the public constructors.
      *
      * @param mealPlanGenerator The generator used by generate-plan commands.
      * @param activeMealPlan The destination for newly generated plans and groceries.

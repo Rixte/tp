@@ -65,8 +65,8 @@ class GenerateListCommandTest {
 
     @Test
     void execute_repeatedMeals_combinesDecimalsAndKeepsUnitsAndCaseSeparate() {
-        Recipe rice = recipe(new GroceryItem("Rice", new BigDecimal("0.1"), "g"));
-        Recipe other = recipe(new GroceryItem("Rice", new BigDecimal("0.2"), "g"),
+        Recipe rice = createRecipe(new GroceryItem("Rice", new BigDecimal("0.1"), "g"));
+        Recipe other = createRecipe(new GroceryItem("Rice", new BigDecimal("0.2"), "g"),
                 new GroceryItem("Rice", BigDecimal.ONE, "kg"),
                 new GroceryItem("rice", BigDecimal.ONE, "g"));
         MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(rice, other)), new DayPlan(List.of(rice))));
@@ -100,7 +100,7 @@ class GenerateListCommandTest {
     @Test
     void execute_planChangedAfterConstruction_readsLatestMeals() {
         activePlan.set(new MealPlan(List.of(new DayPlan(List.of(
-                recipe(new GroceryItem("Beans", BigDecimal.ONE, "g")))))));
+                createRecipe(new GroceryItem("Beans", BigDecimal.ONE, "g")))))));
         command.execute(book);
 
         assertEquals("Beans", activePlan.getGroceryList().orElseThrow().get(0).getName());
@@ -108,7 +108,7 @@ class GenerateListCommandTest {
 
     @Test
     void execute_adjustedPortions_scalesBeforeCombiningIngredients() {
-        Recipe meal = recipe(new GroceryItem("Rice", new BigDecimal("12.5"), "g"));
+        Recipe meal = createRecipe(new GroceryItem("Rice", new BigDecimal("12.5"), "g"));
         DayPlan day = DayPlan.fromPlannedMeals(List.of(new PlannedMeal(meal, 4)));
         activePlan.set(new MealPlan(List.of(day)));
 
@@ -120,7 +120,7 @@ class GenerateListCommandTest {
 
     @Test
     void execute_customizedIngredients_usesOverrideWithoutChangingRecipe() {
-        Recipe meal = recipe(new GroceryItem("Rice", new BigDecimal("100"), "g"));
+        Recipe meal = createRecipe(new GroceryItem("Rice", new BigDecimal("100"), "g"));
         PlannedMeal customized = new PlannedMeal(meal, 2).withIngredients(
                 List.of(new GroceryItem("Tofu", new BigDecimal("75.5"), "g")));
         activePlan.set(new MealPlan(List.of(DayPlan.fromPlannedMeals(List.of(customized)))));
@@ -140,7 +140,7 @@ class GenerateListCommandTest {
     /**
      * Creates a recipe with the supplied ingredients for aggregation tests.
      */
-    private Recipe recipe(GroceryItem... ingredients) {
+    private Recipe createRecipe(GroceryItem... ingredients) {
         return new Recipe("Meal", 0, 0, 0, 0, List.of(ingredients));
     }
 }

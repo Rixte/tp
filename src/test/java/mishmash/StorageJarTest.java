@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,8 +18,14 @@ import org.junit.jupiter.api.io.TempDir;
 
 import mishmash.storage.JsonSessionStorage;
 
-/** Exercises autosave, EOF, and restart using only the packaged JAR from an independent working directory. */
+/**
+ * Exercises autosave, EOF, and restart using only the packaged JAR from an independent working directory.
+ */
 class StorageJarTest {
+    private static final int PROCESS_TIMEOUT_SECONDS = 30;
+    private static final int TERMINATION_TIMEOUT_SECONDS = 10;
+    private static final int CLEANUP_TIMEOUT_SECONDS = 5;
+    private static final int OUTPUT_POLL_INTERVAL_MILLIS = 20;
     private static final String ADD_RECIPE =
             "add-recipe n/A cal/100 p/10 c/10 f/1 i/Rice:100.001g food/none";
     @TempDir
@@ -41,15 +48,15 @@ class StorageJarTest {
         try {
             process.getOutputStream().write(("Tester\n" + ADD_RECIPE + "\n").getBytes(StandardCharsets.UTF_8));
             process.getOutputStream().flush();
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(PROCESS_TIMEOUT_SECONDS);
             while (!Files.readString(output).contains("New recipe added!") && System.nanoTime() < deadline) {
                 assertTrue(process.isAlive(), Files.readString(output));
-                Thread.sleep(20);
+                Thread.sleep(OUTPUT_POLL_INTERVAL_MILLIS);
             }
             assertTrue(Files.readString(output).contains("New recipe added!"), "Autosave did not finish");
         } finally {
             process.destroyForcibly();
-            assertTrue(process.waitFor(10, TimeUnit.SECONDS), "JAR did not terminate");
+            assertTrue(process.waitFor(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS), "JAR did not terminate");
         }
         String restored = runJar("Tester\nlist-recipes\nbye\n");
         assertTrue(restored.contains("1. A (100 kcal)"), restored);
@@ -66,7 +73,9 @@ class StorageJarTest {
         assertFalse(output.contains("Goodbye!"), output);
     }
 
-    /** Checks that both exit routes retry unsaved changes without replacing the last recoverable snapshot. */
+    /**
+     * Checks that both exit routes retry unsaved changes without replacing the last recoverable snapshot.
+     */
     private String assertFailedSavePreservesLastGoodFile(String exitCommand) throws Exception {
         runJar("Tester\n" + ADD_RECIPE + "\nbye\n");
         Path primary = directory.resolve("data/mishmash.json");
@@ -165,7 +174,9 @@ class StorageJarTest {
         assertTrue(runJar("Tester\nview-meals\nbye\n").contains("No meals recorded yet."));
     }
 
-    /** Runs with bounded time and redirected output to avoid pipe deadlocks and native-terminal dependencies. */
+    /**
+     * Runs with bounded time and redirected output to avoid pipe deadlocks and native-terminal dependencies.
+     */
     private String runJar(String input) throws Exception {
         Path output = Files.createTempFile(directory, "output-", ".txt");
         Process process = startJar(output);
@@ -173,20 +184,22 @@ class StorageJarTest {
             try (var stdin = process.getOutputStream()) {
                 stdin.write(input.getBytes(StandardCharsets.UTF_8));
             }
-            assertTrue(process.waitFor(30, TimeUnit.SECONDS), "JAR process timed out");
+            assertTrue(process.waitFor(PROCESS_TIMEOUT_SECONDS, TimeUnit.SECONDS), "JAR process timed out");
             String transcript = Files.readString(output).replaceAll("\u001B\\[[;\\d]*m", "");
             assertEquals(0, process.exitValue(), transcript);
             return transcript;
         } finally {
             if (process.isAlive()) {
                 process.destroyForcibly();
-                process.waitFor(5, TimeUnit.SECONDS);
+                process.waitFor(CLEANUP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             }
         }
     }
 
-    /** Starts the production launcher using Java 25 and an external working directory. */
-    private Process startJar(Path output) throws Exception {
+    /**
+     * Starts the production launcher using Java 25 and an external working directory.
+     */
+    private Process startJar(Path output) throws IOException {
         Path java = Path.of(System.getProperty("java.home"), "bin",
                 System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java");
         Path jar = Path.of(System.getProperty("mishmash.test.jar")).toAbsolutePath();
@@ -199,8 +212,10 @@ class StorageJarTest {
                 .directory(directory.toFile()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
     }
 
-    /** Records each normally exiting child JVM separately so parallel runs cannot overwrite coverage data. */
-    private void addCoverageAgent(List<String> arguments) throws Exception {
+    /**
+     * Records each normally exiting child JVM separately so parallel runs cannot overwrite coverage data.
+     */
+    private void addCoverageAgent(List<String> arguments) throws IOException {
         String agent = System.getProperty("mishmash.test.coverage.agent");
         if (agent == null) {
             return;

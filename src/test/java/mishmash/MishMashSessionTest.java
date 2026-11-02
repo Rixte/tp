@@ -62,7 +62,7 @@ class MishMashSessionTest {
             try (PrintStream output = new PrintStream(bytes)) {
                 System.setIn(new ByteArrayInputStream("Tester\nbye\n".getBytes(StandardCharsets.UTF_8)));
                 System.setOut(output);
-                MishMash.main(new String[0], directory.resolve("missing/app.%g.log").toString());
+                MishMash.runMain(directory.resolve("missing/app.%g.log").toString());
             } finally {
                 System.setIn(originalInput);
                 System.setOut(originalOutput);
@@ -189,13 +189,8 @@ class MishMashSessionTest {
     Stream<DynamicTest> run_brokenCommandContract_displaysErrorAndKeepsRecipesForNextCommand() {
         return Stream.of("command", "confirmationPrompt", "command feedback", "blank command feedback")
                 .map(contract -> DynamicTest.dynamicTest(contract, () -> {
-                    Command command = brokenCommand(contract);
-                    Parser parser = new Parser() {
-                        @Override
-                        public Command parseCommand(String input) throws MishMashException {
-                            return input.equals("bad") ? command : super.parseCommand(input);
-                        }
-                    };
+                    Command command = createBrokenCommand(contract);
+                    Parser parser = createParserWithBadCommand(command);
                     try (LogCapture logs = new LogCapture(MishMash.class)) {
                         RecipeBook book = new RecipeBook();
                         String output = runSession("Tester\n" + AddRecipeTestData.VALID_COMMAND
@@ -218,9 +213,21 @@ class MishMashSessionTest {
     }
 
     /**
+     * Substitutes one command for bad input while preserving normal parsing for the rest of a session.
+     */
+    private Parser createParserWithBadCommand(Command command) {
+        return new Parser() {
+            @Override
+            public Command parseCommand(String input) throws MishMashException {
+                return input.equals("bad") ? command : super.parseCommand(input);
+            }
+        };
+    }
+
+    /**
      * Returns a broken command, or null, to simulate an internal dependency violating its documented contract.
      */
-    private Command brokenCommand(String contract) {
+    private Command createBrokenCommand(String contract) {
         if (contract.equals("command")) {
             return null;
         }
@@ -239,25 +246,18 @@ class MishMashSessionTest {
 
     @Test
     void run_blankConfirmation_rejectsWithoutExecutingAndPreservesNextInput() {
-        Parser parser = new Parser() {
+        Command command = new Command() {
             @Override
-            public Command parseCommand(String input) throws MishMashException {
-                if (!input.equals("bad")) {
-                    return super.parseCommand(input);
-                }
-                return new Command() {
-                    @Override
-                    public Optional<String> confirmationPrompt(RecipeBook recipeBook) {
-                        return Optional.of(" ");
-                    }
+            public Optional<String> confirmationPrompt(RecipeBook recipeBook) {
+                return Optional.of(" ");
+            }
 
-                    @Override
-                    public String execute(RecipeBook recipeBook) {
-                        throw new AssertionError("Command must not execute.");
-                    }
-                };
+            @Override
+            public String execute(RecipeBook recipeBook) {
+                throw new AssertionError("Command must not execute.");
             }
         };
+        Parser parser = createParserWithBadCommand(command);
         try (LogCapture logs = new LogCapture(MishMash.class)) {
             RecipeBook book = new RecipeBook();
             String output = runSession("Tester\n" + AddRecipeTestData.VALID_COMMAND

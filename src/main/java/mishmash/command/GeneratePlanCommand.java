@@ -105,7 +105,7 @@ public class GeneratePlanCommand implements Command {
 
         //@@author neil0618
         // Typed targets win; nutrients left out of the command fall back on the saved ones.
-        // With nothing saved the request is used as typed, so behaviour is unchanged.
+        // With nothing saved the request is used as typed, so behavior is unchanged.
         NutritionTargets saved = targetSettings.get();
         GeneratePlanRequest effective = saved.hasAnyTarget()
                 ? new GeneratePlanRequest(request.days(), saved.overriddenBy(request.targets()))

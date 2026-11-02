@@ -6,7 +6,7 @@ import java.net.URLClassLoader;
 //@@author Rixte
 /**
  * Loads one production class with assertions disabled while sharing its dependencies with the test suite.
- * A separate copy is necessary because Java fixes a class's assertion mode when it is initialised.
+ * A separate copy is necessary because Java fixes a class's assertion mode when it is initialized.
  */
 public final class AssertionDisabledClassLoader extends URLClassLoader {
     private final String targetClassName;
@@ -14,7 +14,7 @@ public final class AssertionDisabledClassLoader extends URLClassLoader {
     /**
      * Creates an isolated loader without changing assertion settings for any existing class.
      *
-     * @param targetClass The production class whose assertion-disabled behaviour is being checked.
+     * @param targetClass The production class whose assertion-disabled behavior is being checked.
      */
     public AssertionDisabledClassLoader(Class<?> targetClass) {
         super(new URL[]{targetClass.getProtectionDomain().getCodeSource().getLocation()},
@@ -27,15 +27,15 @@ public final class AssertionDisabledClassLoader extends URLClassLoader {
      * Loads the selected class locally; delegates all dependencies to the existing application loader.
      */
     @Override
-    protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    protected synchronized Class<?> loadClass(String name, boolean shouldResolve) throws ClassNotFoundException {
         if (!name.equals(targetClassName)) {
-            return super.loadClass(name, resolve);
+            return super.loadClass(name, shouldResolve);
         }
         Class<?> loadedClass = findLoadedClass(name);
         if (loadedClass == null) {
             loadedClass = findClass(name);
         }
-        if (resolve) {
+        if (shouldResolve) {
             resolveClass(loadedClass);
         }
         return loadedClass;
