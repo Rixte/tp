@@ -84,7 +84,14 @@ public final class CustomizeMealCommand implements Command {
             throw new MishMashException("Those ingredients conflict with your current dietary preferences.",
                     USAGE, null);
         }
+        return publishCustomization(updatedPlan, updatedMeal, preferences);
+    }
 
+    /**
+     * Publishes the compatible occurrence and warns when ingredient names cannot verify its food categories.
+     */
+    private CommandResult publishCustomization(MealPlan updatedPlan, PlannedMeal updatedMeal,
+            DietaryPreferences preferences) {
         boolean hadGroceryList = activeMealPlan.getGroceryList().isPresent();
         activeMealPlan.update(updatedPlan);
         LOGGER.fine(() -> "Customized ingredients for Day " + customization.dayNumber()

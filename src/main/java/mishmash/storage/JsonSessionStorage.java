@@ -18,6 +18,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import mishmash.model.ApplicationState;
 
@@ -38,6 +40,7 @@ public final class JsonSessionStorage implements SessionStorage {
     /** Default data file relative to the process working directory. */
     public static final Path DEFAULT_DATA_FILE = Path.of("data", "mishmash.json");
 
+    private static final Logger LOGGER = Logger.getLogger(JsonSessionStorage.class.getName());
     private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
     private static final int MAX_NESTING_DEPTH = 100;
     private static final int MAX_STRING_LENGTH = 1_000_000;
@@ -56,11 +59,11 @@ public final class JsonSessionStorage implements SessionStorage {
     /** Creates storage after its caller has acquired the process lock. */
     private JsonSessionStorage(Path dataFile, Clock clock, FileChannel lockChannel, FileLock lock) {
         this.dataFile = dataFile;
-        this.backupFile = siblingWithSuffix(dataFile, ".backup.json");
+        backupFile = siblingWithSuffix(dataFile, ".backup.json");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.lockChannel = Objects.requireNonNull(lockChannel, "lockChannel");
         this.lock = Objects.requireNonNull(lock, "lock");
-        this.mapper = createMapper();
+        mapper = createMapper();
     }
 
     /**
@@ -122,23 +125,7 @@ public final class JsonSessionStorage implements SessionStorage {
             bytes = readBytes(dataFile);
             state = decodeSnapshot(bytes, dataFile);
         } catch (InvalidSnapshotException primaryFailure) {
-            if (!Files.notExists(backupFile)) {
-                ApplicationState backupState = null;
-                try {
-                    backupState = readState(backupFile);
-                } catch (InvalidSnapshotException backupFailure) {
-                    primaryFailure.addSuppressed(backupFailure);
-                }
-                if (backupState != null) {
-                    Path quarantined = quarantine(dataFile, "corrupt");
-                    save(backupState);
-                    return LoadResult.recovered(backupState,
-                            "Saved data was damaged, so MishMash recovered the last valid backup."
-                                    + System.lineSeparator() + "The damaged file was preserved as "
-                                    + quarantined.getFileName() + ".");
-                }
-            }
-            return quarantineAndStartEmpty(primaryFailure);
+            return recoverInvalidPrimary(primaryFailure);
         }
         // Upgrade failures are filesystem failures, not evidence that the validated primary is corrupt.
         if (hasLegacySchema(bytes)) {
@@ -147,6 +134,28 @@ public final class JsonSessionStorage implements SessionStorage {
                     + "Previously undated meals were assigned today's date and one serving.");
         }
         return LoadResult.normal(state);
+    }
+
+    /**
+     * Recovers a damaged primary while keeping filesystem failures distinct from invalid snapshot data.
+     */
+    private LoadResult recoverInvalidPrimary(InvalidSnapshotException primaryFailure) throws StorageException {
+        if (Files.notExists(backupFile)) {
+            return quarantineAndStartEmpty(primaryFailure);
+        }
+        ApplicationState backupState;
+        try {
+            backupState = readState(backupFile);
+        } catch (InvalidSnapshotException backupFailure) {
+            primaryFailure.addSuppressed(backupFailure);
+            return quarantineAndStartEmpty(primaryFailure);
+        }
+        Path quarantined = quarantine(dataFile, "corrupt");
+        save(backupState);
+        return LoadResult.recovered(backupState,
+                "Saved data was damaged, so MishMash recovered the last valid backup."
+                        + System.lineSeparator() + "The damaged file was preserved as "
+                        + quarantined.getFileName() + ".");
     }
 
     @Override
@@ -239,6 +248,7 @@ public final class JsonSessionStorage implements SessionStorage {
 
     /** Preserves all unreadable candidates before starting with a new empty state. */
     private LoadResult quarantineAndStartEmpty(Exception cause) throws StorageException {
+        LOGGER.log(Level.FINE, "No valid saved snapshot could be recovered", cause);
         StringBuilder preserved = new StringBuilder();
         if (Files.exists(dataFile)) {
             preserved.append(quarantine(dataFile, "corrupt").getFileName());
@@ -374,14 +384,7 @@ public final class JsonSessionStorage implements SessionStorage {
         try {
             validateBytes(bytes);
             temporary = Files.createTempFile(target.getParent(), stem(target) + "-", ".tmp");
-            try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE,
-                    StandardOpenOption.TRUNCATE_EXISTING)) {
-                ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                while (buffer.hasRemaining()) {
-                    channel.write(buffer);
-                }
-                channel.force(true);
-            }
+            writeAndFlush(temporary, bytes);
             // Read back the flushed file before publishing it, rather than trusting only the input bytes.
             readState(temporary);
             try {
@@ -401,6 +404,20 @@ public final class JsonSessionStorage implements SessionStorage {
                     // The save failure remains primary; a later startup can safely ignore an unreferenced temp file.
                 }
             }
+        }
+    }
+
+    /**
+     * Writes all snapshot bytes and flushes the temporary file before validation and publication.
+     */
+    private void writeAndFlush(Path temporary, byte[] bytes) throws IOException {
+        try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING)) {
+            ByteBuffer buffer = ByteBuffer.wrap(bytes);
+            while (buffer.hasRemaining()) {
+                channel.write(buffer);
+            }
+            channel.force(true);
         }
     }
 
