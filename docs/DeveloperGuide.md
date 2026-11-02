@@ -337,6 +337,8 @@ are in [diagrams/add-recipe](diagrams/peilingggg/add-recipe/README.md).
 <!-- @@author neil0618 -->
 ### Deleting a recipe
 
+*Section author: neil0618*
+
 #### Purpose and command contract
 
 This feature implements the story: **As a user managing recipes, I want to confirm the deletion of a selected recipe so that I can check that I am removing the intended entry.**
@@ -404,6 +406,8 @@ For manual verification, follow [Delete a Recipe](#delete-a-recipe) in the manua
 <!-- @@author neil0618 -->
 ### Listing recipes
 
+*Section author: neil0618*
+
 #### Purpose and command contract
 
 This feature implements the story: **As a user managing recipes, I want to list my recipes and inspect a selected recipe so that I can find and check its stored details.**
@@ -466,6 +470,8 @@ For manual verification, follow [List Recipes](#list-recipes) in the manual-test
 <!-- @@author GauthamNandi -->
 ### Generating a meal plan
 
+*Section author: GauthamNandi*
+
 `GeneratePlanCommand` combines command-specific targets with saved `TargetSettings`, filters recipes through the current dietary profile, and delegates selection to `MealPlanGenerator`. Each day contains three distinct recipes; recipes can recur on other days. With no targets, selection is random. With targets, the generator checks combinations against a 15% tolerance for every supplied nutrient. It examines all combinations when there are at most 5,000, otherwise a bounded random sample. Sampling bounds runtime but can miss a valid combination in a large recipe book.
 
 `ActiveMealPlan` stores the successful plan and its generation request. Replacement generation requires confirmation when a plan exists. Success invalidates previous groceries; failure preserves the prior plan.
@@ -475,6 +481,8 @@ For manual verification, follow [List Recipes](#list-recipes) in the manual-test
 
 <!-- @@author oilybikechain -->
 ### Grocery command integration
+
+*Section author: oilybikechain*
 
 The grocery structure is divided by responsibility: command integration, source and snapshot state,
 and aggregation values.
@@ -697,6 +705,8 @@ the second view should report missing data.
 
 ### Adjusting planned meal portions
 
+*Section author: oilybikechain*
+
 `adjust-portion d/DAY m/MEAL portions/COUNT` changes one recipe occurrence without editing the recipe book.
 `AdjustPortionParser` accepts the three required prefixes in any order, rejects duplicates and unknown fields,
 and creates an immutable `PortionAdjustment`. Bounds against the current plan are deferred until
@@ -725,6 +735,8 @@ generation. Existing model, viewer, and grocery tests provide regression coverag
 <!-- @@author -->
 
 ### Customizing planned meal ingredients
+
+*Section author: oilybikechain*
 
 `customize-meal d/DAY m/MEAL i/INGREDIENT:QUANTITYUNIT [...]` replaces the effective one-portion ingredients
 of one occurrence. It does not edit `RecipeBook`, the source `Recipe`, nutrition, or other occurrences.
@@ -764,6 +776,8 @@ protect the shared `IngredientParser` behavior.
 <!-- @@author neil0618 -->
 ### Replacing a planned meal
 
+*Section author: neil0618*
+
 `replace-meal d/DAY m/MEAL r/RECIPE_INDEX` swaps one planned meal for a recipe chosen from the recipe book.
 `ReplaceMealParser` mirrors `AdjustPortionParser`: it accepts the three required prefixes in any order, rejects
 duplicates, unknown prefixes, and non-positive or overflowing numbers, and creates an immutable
@@ -793,6 +807,8 @@ generation.
 <!-- @@author -->
 
 ### Clearing dietary preferences and restrictions
+
+*Section author: oilybikechain*
 
 `clear-diet` accepts no arguments. `Parser` constructs `ClearDietCommand` without changing
 state, and execution calls `DietarySettings.clear` to install a fresh unrestricted profile.
@@ -1019,6 +1035,8 @@ argument rejection. Run the existing Java 25 test suite when changing this behav
 <!-- @@author peilingggg -->
 ### Command help
 
+*Section author: peilingggg*
+
 `HelpCommand` returns the supported command names, purposes, and formats to the application loop. Syntax constants are shared with parsers where available, reducing duplication when a command changes. The command does not read console input or change application data. Invalid commands are handled by the loop, which displays an error and allows another command. See the [User Guide help instructions](UserGuide.md#viewing-available-commands-help).
 
 
@@ -1026,6 +1044,8 @@ argument rejection. Run the existing Java 25 test suite when changing this behav
 
 <!-- @@author neil0618 -->
 ### Setting and viewing daily targets
+
+*Section author: neil0618*
 
 #### Purpose and command contract
 
@@ -1126,6 +1146,8 @@ For manual verification, follow [Set and View Daily Targets](#set-and-view-daily
 
 <!-- @@author GauthamNandi -->
 ### Recording meals and tracking nutrition
+
+*Section author: GauthamNandi*
 
 #### Purpose and scope
 
@@ -1326,6 +1348,8 @@ update the sources and images together.
 <!-- @@author oilybikechain -->
 ### Combined daily nutrition totals
 
+*Section author: oilybikechain*
+
 The structural view focuses on the combined totals API and the recipe values it sums.
 
 ![Nutrition class diagram showing daily totals, targets, generation requests, and viewing suppliers.](images/oilybikechain/nutrition-classes.svg)
@@ -1361,6 +1385,8 @@ independent days and repeated calls, unchanged meals, and totals above the integ
 
 <!-- @@author oilybikechain -->
 ### Detecting exceeded nutrition targets
+
+*Section author: oilybikechain*
 
 The target-aware viewing structure is kept separate from the combined-totals model so both class
 diagrams remain legible at guide width. The supplier interfaces are bindings of Java's existing
@@ -1738,6 +1764,8 @@ groceries, confirm both views report missing data, and generate again using the 
 <!-- @@author oilybikechain -->
 ### Defensive checks and generation diagnostics
 
+*Section author: oilybikechain*
+
 `GeneratePlanCommand` retains an `IllegalArgumentException` as the cause when wrapping a generation
 failure in `MishMashException`. Parser validation for `generate-plan`, `delete-recipe`, and
 `list-recipes` likewise preserves the cause while adding the relevant command usage. Users receive
@@ -1782,6 +1810,8 @@ error, and prompts for another command.
 
 <!-- @@author oilybikechain -->
 ### Contribution history: oilybikechain
+
+*Section author: oilybikechain*
 
 The following non-merge commits reachable from the current branch establish the scope of these
 contributions. Merge authorship does not imply ownership of the merged feature; the original
