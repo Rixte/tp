@@ -48,7 +48,7 @@ public class SetTargetsParser {
         int separator = token.indexOf('/');
         Nutrient nutrient = separator < 1 ? null : findNutrient(token.substring(0, separator));
         if (nutrient == null) {
-            throw new IllegalArgumentException("Unrecognized parameter: " + token);
+            throw new IllegalArgumentException("Unrecognised parameter: " + token);
         }
         if (changes.containsKey(nutrient)) {
             throw new IllegalArgumentException("Parameter " + nutrient.getPrefix() + "/ was given more than once.");

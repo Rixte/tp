@@ -172,7 +172,7 @@ class CheckShortfallParserTest {
     void parse_unknownPrefixWithoutValue_reportsUnknownParameter() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> parser.parse("d/"));
 
-        assertEquals("Unrecognized parameter: d/", error.getMessage());
+        assertEquals("Unrecognised parameter: d/", error.getMessage());
     }
 
     @Test

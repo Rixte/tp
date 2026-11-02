@@ -37,7 +37,7 @@ checks editing, completion, history, interruption, and EOF using in-memory termi
 `ui/CommandCompleterTest` checks suggestions; `ui/ConsoleInputsTest` checks terminal selection and fallback;
 and `JLineSessionTest` runs application workflows through the real JLine adapter. No native terminal is
 required for these tests. The User Guide describes [interactive command entry](docs/UserGuide.md#interactive-command-entry).
-Check actual terminal keys, display, and native-provider behavior manually before release.
+Check actual terminal keys, display, and native-provider behaviour manually before release.
 
 ## Checkstyle
 

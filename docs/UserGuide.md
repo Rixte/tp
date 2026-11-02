@@ -88,8 +88,8 @@ prefixes are omitted from later suggestions; repeatable `i/` fields remain avail
 Quotes, backslashes, and exclamation marks retain their existing literal meaning in commands.
 In IDE Run consoles, redirected input, or terminals declaring `TERM=dumb`, MishMash uses ordinary
 line-based input automatically. It also falls back to ordinary input if terminal editing cannot start.
-Use your terminal application for completion and history shortcuts. The Ctrl+C and Ctrl+D behavior above
-applies to interactive editing; plain input follows your terminal's normal behavior.
+Use your terminal application for completion and history shortcuts. The Ctrl+C and Ctrl+D behaviour above
+applies to interactive editing; plain input follows your terminal's normal behaviour.
 <!-- @@author -->
 
 ### Try Your First Command
@@ -115,7 +115,7 @@ from a new empty working directory; see [Data Retention](#data-retention) before
 The opening screen includes a quick-command card for `help`, `list-recipes`, `generate-plan d/3`, and
 `view-plan`. These are examples you can enter directly after the `mishmash >` prompt.
 
-MishMash uses color throughout the interface: green marks completed actions, yellow highlights notes and
+MishMash uses colour throughout the interface: green marks completed actions, yellow highlights notes and
 warnings, red identifies errors and confirmations, cyan highlights commands, and magenta separates sections.
 ANSI styling is always enabled, including when output is redirected to a file.
 
@@ -815,7 +815,7 @@ The same recipe on another day or at another meal number keeps its own portion c
 
 Failed adjustments preserve the plan, its original generation settings, and any grocery snapshot.
 
-### Customizing a Planned Meal's Ingredients
+### Customising a Planned Meal's Ingredients
 
 Replaces the complete ingredient list of one planned meal occurrence without editing its source recipe.
 Other occurrences of that recipe keep their own ingredients. Quantities describe one portion and are multiplied
@@ -841,7 +841,7 @@ customize-meal d/1 m/2 i/Brown Rice:125.5g i/Tofu:200g
 **Example Output:**
 
 ```text
-[DONE] Meal 2 on Day 1 ingredients customized.
+[DONE] Meal 2 on Day 1 ingredients customised.
 Its source recipe and nutrition values are unchanged.
 The previous grocery list was cleared. Run 'generate-list' to update it.
 ```
@@ -853,7 +853,7 @@ With a named diet or avoided category active, a successful change that leaves cu
 `[WARN]` rather than `[DONE]` and adds:
 
 ```text
-Customized ingredient names are not classified for named-diet or avoided-category rules.
+Customised ingredient names are not classified for named-diet or avoided-category rules.
 This meal keeps its source recipe's food categories; verify the replacement yourself.
 ```
 
@@ -867,11 +867,11 @@ This meal keeps its source recipe's food categories; verify the replacement your
 - Named diets and avoided categories still use the source recipe's declared food tags because MishMash cannot
   infer categories from ingredient names. When either rule is active, an accepted custom ingredient list uses
   `[WARN]` and asks you to verify the replacement. Restoring the exact source list uses `[DONE]` because no
-  unclassified customization remains. Current complete-name ingredient exclusions are checked before a change
+  unclassified customisation remains. Current complete-name ingredient exclusions are checked before a change
   is accepted.
 - Supplying ingredients exactly equal to the source recipe restores that occurrence to the source list.
   Ingredient order, name capitalization, and unit capitalization are significant because grocery aggregation
-  also treats those values as distinct. Reordering or recasing therefore creates a customization and clears
+  also treats those values as distinct. Reordering or recasing therefore creates a customisation and clears
   stale groceries. Decimal quantities that differ only in scale, such as `100` and `100.0`, remain equal.
 - A successful change clears generated groceries because their quantities are stale. Run `generate-list` again.
 
@@ -884,13 +884,13 @@ This meal keeps its source recipe's food categories; verify the replacement your
 | No `i/` field, malformed ingredient, or nonpositive quantity | A specific error followed by the command format. | Supply at least one valid replacement ingredient. |
 | Replacement contains an excluded ingredient | `Those ingredients conflict with your current dietary preferences.` | Choose permitted ingredients or update your dietary settings. |
 
-Every rejected customization preserves the plan, generation settings, and grocery snapshot.
+Every rejected customisation preserves the plan, generation settings, and grocery snapshot.
 
 <!-- @@author neil0618 -->
 ### Replacing a Planned Meal
 
 Swaps one meal in the active plan for a recipe from your recipe book. The new meal starts at one portion with
-the recipe's own ingredients, so any portion count or ingredient customization on the old meal is discarded.
+the recipe's own ingredients, so any portion count or ingredient customisation on the old meal is discarded.
 Other meals and days are untouched, and the recipe book is unchanged.
 
 **Before You Start:** Generate a plan and use `view-plan` to find its day and meal numbers. Use `list-recipes`
@@ -930,12 +930,12 @@ The next `view-plan d/1` shows the new recipe at that position, and daily totals
   food-category declaration are rejected, as in `generate-plan`.
 - The same recipe may appear several times in a day.
 - The command applies immediately without confirmation. Check the day, meal, and recipe numbers before
-  submitting it; any portion or ingredient customization on that occurrence is replaced.
+  submitting it; any portion or ingredient customisation on that occurrence is replaced.
 - A successful change clears any generated grocery list because its quantities are stale. Run
   `generate-list` again before shopping.
 - Choosing the unedited recipe that is already there, at one portion and with its original ingredients, changes
   nothing, preserves the grocery list, and reports `[NOTE]` instead of `[DONE]`. If that meal has extra portions
-  or customized ingredients, or the recipe was changed with `edit-recipe` after the plan was generated, the
+  or customised ingredients, or the recipe was changed with `edit-recipe` after the plan was generated, the
   command replaces the meal with the current recipe at one portion.
 
 **Errors and Recovery:**
@@ -989,7 +989,7 @@ With no active meal plan, the result is:
 - Command names and prefixes are case-sensitive. Diet and food-tag values ignore case and
   surrounding spaces; hyphens and underscores are accepted in multiword values.
 - Separate categories and ingredient exclusions with commas. Blank entries and duplicates are rejected,
-  including aliases of the same tag and ingredient names equal after normalization.
+  including aliases of the same tag and ingredient names equal after normalisation.
 - `diet/none` removes the named diet only; any `avoid/` and `exclude/` fields in the same command still apply.
 - To clear the complete profile explicitly, use [`clear-diet`](#clearing-dietary-preferences-and-restrictions).
   `set-diet diet/none` without `avoid/` or `exclude/` remains supported because omitted fields are cleared.
@@ -1103,7 +1103,7 @@ of Rice, Beans, and Tofu; item order may vary. The nutrition values are example 
 | `set-diet avoid/milk,dairy` | `Repeated food tag: milk.` and format. | Use `set-diet avoid/milk`. |
 | `set-diet avoid/peanut,` | Blank food-tag error, valid tags, and format. | Remove the trailing comma. |
 | `set-diet diet/vegan diet/vegetarian` | `Repeated field: diet/` and format. | Supply the intended diet once. |
-| `set-diet exclude/Chicken, chicken` | Repeated excluded ingredient error and format. | Supply each normalized name once. |
+| `set-diet exclude/Chicken, chicken` | Repeated excluded ingredient error and format. | Supply each normalised name once. |
 | Fewer than three compatible recipes, or no acceptable replacement found | Preferences are saved; a failed-repair explanation is shown and the old plan and groceries are cleared. | Add suitable classified recipes or adjust targets, then use `generate-plan`. |
 
 Malformed commands preserve preferences, plans, and groceries. A **valid update with failed
@@ -1137,7 +1137,7 @@ Recipes, meal plans, groceries, targets, and recorded meals are unchanged.
 **Rules:**
 
 - The command clears the named diet, avoided food categories, and excluded ingredient names together.
-- It does not change recipes, the active meal plan or its portion and ingredient customizations, generated
+- It does not change recipes, the active meal plan or its portion and ingredient customisations, generated
   groceries, saved daily targets, or recorded meals. Existing plan and grocery snapshots remain as they were;
   regenerate them only when you want unrestricted recipe choices reflected there.
 - No confirmation is needed because clearing the profile does not remove plan or recipe data.
@@ -1249,7 +1249,7 @@ They apply to the next 'generate-plan'; your current meal plan is unchanged.
 | `set-targets` with nothing after it | `[ERROR] Error: Supply at least one daily target to set or clear.` | Add at least one target, for example `set-targets cal/2000`. |
 | `set-targets cal/0`, `cal/-5`, `cal/abc`, or `cal/1.5` | `[ERROR] Error: Calories target (cal/) must be a positive whole number from 1 to 2147483647, or 'none'.` | Enter a positive whole number, or `none` to remove the target. The message names the nutrient you mistyped. |
 | `set-targets cal/` | `[ERROR] Error: Missing value after cal/` | Add a number or `none` after the slash. |
-| `set-targets x/5` or `set-targets 2000` | `[ERROR] Error: Unrecognized parameter: x/5` | Use only `cal/`, `p/`, `c/`, and `f/`. |
+| `set-targets x/5` or `set-targets 2000` | `[ERROR] Error: Unrecognised parameter: x/5` | Use only `cal/`, `p/`, `c/`, and `f/`. |
 | `set-targets cal/1 cal/2` | `[ERROR] Error: Parameter cal/ was given more than once.` | Give each nutrient once. |
 
 Every error is followed by `Format: set-targets ...` and leaves your saved targets unchanged, because MishMash checks the whole command before saving anything. Enter the corrected command at the next prompt.
@@ -1593,7 +1593,7 @@ Supply the targets each time; the check does not save them as personal settings 
 | `check-shortfall cal/` | `Error: Missing value after cal/.` | Add a value immediately after the slash, for example `check-shortfall cal/2000`. The same rule applies to `p/`, `c/`, and `f/`. |
 | `check-shortfall cal/0` | `Error: Target for cal/ must be a positive whole number from 1 to 2147483647.` | Enter a value within the supported range, for example `check-shortfall cal/2000`. The same rule applies to all four targets. |
 | `check-shortfall p/100 p/120` | `Error: Parameter p/ was given more than once.` | Supply the intended target once: `check-shortfall p/120`. |
-| `check-shortfall d/1` | `Error: Unrecognized parameter: d/1` | Use only `cal/`, `p/`, `c/`, or `f/`, for example `check-shortfall cal/2000`. |
+| `check-shortfall d/1` | `Error: Unrecognised parameter: d/1` | Use only `cal/`, `p/`, `c/`, or `f/`, for example `check-shortfall cal/2000`. |
 | `check-shortfall cal/ 2000` | `Error: Missing value after cal/.` | Remove the space after the prefix: `check-shortfall cal/2000`. |
 
 Invalid input also displays the command format. Enter the corrected command at the next prompt; errors leave your existing data unchanged.
@@ -1824,7 +1824,7 @@ Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or 
 
 ## Known Issues
 
-- **Local data:** Autosave uses the current working directory. Cloud synchronization and import/export commands are unavailable.
+- **Local data:** Autosave uses the current working directory. Cloud synchronisation and import/export commands are unavailable.
 - **Meal-log limitations:** Servings must be whole numbers from 1 to 100, and recorded dates cannot be in the future. `edit-meal` changes the date or servings; to change the recipe, delete the entry and record the correct recipe.
 - **Planning limitations:** Use `replace-meal` to swap a whole planned meal, `adjust-portion` for whole-recipe portion counts, and `customize-meal` for occurrence-specific ingredients. Edit the source recipe and regenerate the plan and groceries for other changes; existing snapshots keep their earlier values.
 - **Grocery limitations:** Units are not converted and `[ ]` markers cannot be ticked off.
@@ -1839,7 +1839,7 @@ See [Troubleshooting](#troubleshooting) for recovery steps.
 | Java reports an incompatible class version | Run `java -version` in the same terminal used to launch the JAR, and select Java 25. |
 | `Unable to access jarfile` | Check the filename and the terminal's current folder. Put quotes around filenames or paths containing spaces. |
 | The application greets me instead of running my first command | Enter your name first. The next line is your first command. |
-| Tab or command history does not work | Use a terminal application and a build of the current source. IDE Run consoles, redirected input, `TERM=dumb`, and terminal initialization failures use ordinary input. Completion is disabled at name and confirmation prompts. |
+| Tab or command history does not work | Use a terminal application and a build of the current source. IDE Run consoles, redirected input, `TERM=dumb`, and terminal initialisation failures use ordinary input. Completion is disabled at name and confirmation prompts. |
 | My data is missing after restarting | Check the terminal's working directory. Data is read from its `data` folder, which may be different from the JAR's folder. Read any recovery warnings; see [Data Retention](#data-retention). |
 | Startup says another instance is using the data folder | Close that MishMash instance before retrying. A leftover lock filename alone does not mean an instance is running. |
 | A warning says changes could not be saved | Keep MishMash open, free disk space or restore write access to the data folder, then make the next intended change or enter `bye` to retry. If an exit warning remains, those changes may be lost. |
@@ -1902,7 +1902,7 @@ Click a task to jump directly to its instructions. The commands below are suppor
 | [View every day](#viewing-a-meal-plan) | `view-plan` | Generate a meal plan first. |
 | [View one day](#viewing-a-meal-plan) | `view-plan d/1` | Choose a day in the active plan. |
 | [Adjust planned portions](#adjusting-a-planned-meals-portions) | `adjust-portion d/1 m/2 portions/2` | Use day and meal numbers from `view-plan`. |
-| [Customize planned ingredients](#customizing-a-planned-meals-ingredients) | `customize-meal d/1 m/2 i/Tofu:200g` | Supply the complete replacement list for that occurrence. |
+| [Customise planned ingredients](#customising-a-planned-meals-ingredients) | `customize-meal d/1 m/2 i/Tofu:200g` | Supply the complete replacement list for that occurrence. |
 | [Replace a planned meal](#replacing-a-planned-meal) | `replace-meal d/1 m/2 r/3` | Use day and meal numbers from `view-plan` and a recipe number from `list-recipes`. |
 | [Check nutrition shortfalls](#checking-nutrition-shortfalls) | `check-shortfall cal/2000 p/100` | Generate a plan first; supply at least one daily target. |
 | [Generate groceries](#generating-a-grocery-list) | `generate-list` | Generate a meal plan first. |

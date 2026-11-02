@@ -53,7 +53,7 @@ public final class ConsoleInputs {
     }
 
     /**
-     * Releases a newly opened terminal if its editor cannot be initialized.
+     * Releases a newly opened terminal if its editor cannot be initialised.
      */
     private static ConsoleInput createInteractive(TerminalFactory factory) throws IOException {
         Terminal terminal = factory.open();
@@ -70,7 +70,7 @@ public final class ConsoleInputs {
     }
 
     /**
-     * Opens a terminal, allowing initialization failures to be reproduced without native console access.
+     * Opens a terminal, allowing initialisation failures to be reproduced without native console access.
      */
     @FunctionalInterface
     interface TerminalFactory {

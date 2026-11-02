@@ -114,12 +114,12 @@ class SetTargetsParserTest {
 
     @Test
     void parse_unknownOrMalformedParameter_rejected() {
-        assertEquals("Unrecognized parameter: x/5", errorOf("x/5"));
-        assertEquals("Unrecognized parameter: 2000", errorOf("2000"));
-        assertEquals("Unrecognized parameter: cal2000", errorOf("cal2000"));
-        assertEquals("Unrecognized parameter: /5", errorOf("/5"));
-        assertEquals("Unrecognized parameter: d/3", errorOf("d/3"));
-        assertEquals("Unrecognized parameter: CAL/5", errorOf("CAL/5"));
+        assertEquals("Unrecognised parameter: x/5", errorOf("x/5"));
+        assertEquals("Unrecognised parameter: 2000", errorOf("2000"));
+        assertEquals("Unrecognised parameter: cal2000", errorOf("cal2000"));
+        assertEquals("Unrecognised parameter: /5", errorOf("/5"));
+        assertEquals("Unrecognised parameter: d/3", errorOf("d/3"));
+        assertEquals("Unrecognised parameter: CAL/5", errorOf("CAL/5"));
     }
 
     @Test

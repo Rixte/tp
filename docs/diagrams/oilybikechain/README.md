@@ -41,7 +41,7 @@ java "-Djava.awt.headless=true" -jar $env:PLANTUML_JAR -tsvg -o ../../images/oil
 
 Class diagrams select PlantUML's built-in Smetana layout engine, so Graphviz is
 not required. All sources include `../rixte/shortfall/style.iuml` for the existing
-font, colors, and sequence styling; keep that relative path when copying sources.
+font, colours, and sequence styling; keep that relative path when copying sources.
 Output directories are relative to the source files. Commit SVGs alongside their
 sources so the guide renders without a PlantUML plugin or remote service.
 The renderer belongs in a local tooling or ignored build directory, not in the

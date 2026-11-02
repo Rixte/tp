@@ -155,7 +155,7 @@ public class Parser {
     private static final String COMMAND_VIEW_LIST = "view-list";
     private static final List<String> REQUIRED_FIELDS = List.of("n", "cal", "p", "c", "f");
 
-    // Recognize unknown prefixes too, so they cannot become part of a name.
+    // Recognise unknown prefixes too, so they cannot become part of a name.
     private static final Pattern PREFIX_PATTERN =
             Pattern.compile("(?<!\\S)([^\\s/]+)/");
 
@@ -296,7 +296,7 @@ public class Parser {
     }
 
     /**
-     * Initializes generation, viewing, and meal-recording dependencies shared by the public constructors.
+     * Initialises generation, viewing, and meal-recording dependencies shared by the public constructors.
      *
      * @param mealPlanGenerator The generator used by generate-plan commands.
      * @param activeMealPlan The destination for newly generated plans and groceries.

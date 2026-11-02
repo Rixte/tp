@@ -10,4 +10,4 @@ Generate SVGs with Java 25 and PlantUML 1.2026.9:
 java -jar plantuml-1.2026.9.jar -tsvg -o ../../images/storage docs/diagrams/storage/classes.puml docs/diagrams/storage/autosave.puml
 ```
 
-Keep both generated SVGs synchronized with these sources.
+Keep both generated SVGs synchronised with these sources.

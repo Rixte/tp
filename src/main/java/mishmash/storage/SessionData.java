@@ -162,11 +162,11 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
     }
 
     /**
-     * Stores normalized dietary settings using stable public labels.
+     * Stores normalised dietary settings using stable public labels.
      */
     record DietaryData(String diet, List<String> avoidedTags, List<String> excludedIngredients) {
         /**
-         * Copies the normalized dietary profile.
+         * Copies the normalised dietary profile.
          */
         static DietaryData fromPreferences(DietaryPreferences preferences) {
             return new DietaryData(preferences.diet().getLabel(),
@@ -257,7 +257,7 @@ record SessionData(int schemaVersion, List<RecipeData> recipes, DietaryData diet
                     .stream().map(GroceryData::toItem).toList();
             PlannedMeal customized = restored.withIngredients(customization);
             if (!customized.hasCustomizedIngredients()) {
-                throw new IllegalArgumentException("A saved customization must differ from its source recipe.");
+                throw new IllegalArgumentException("A saved customisation must differ from its source recipe.");
             }
             return customized;
         }

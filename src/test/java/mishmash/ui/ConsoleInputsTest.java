@@ -42,7 +42,7 @@ class ConsoleInputsTest {
         ByteArrayInputStream stream = stream("Name\nbye\n");
         try (PrintStream output = new PrintStream(new ByteArrayOutputStream());
                 ConsoleInput input = ConsoleInputs.open(false, stream, output, () -> {
-                    throw new AssertionError("Plain input must not initialize native terminal access");
+                    throw new AssertionError("Plain input must not initialise native terminal access");
                 })) {
             assertInstanceOf(ScannerConsoleInput.class, input);
             assertEquals(Optional.of("Name"), input.readAnswer("Name?"));

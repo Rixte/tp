@@ -223,7 +223,7 @@ public class MealPlanViewer {
     public record MealSummary(String name, int portionCount, boolean hasCustomizedIngredients,
             long calories, long protein, long carbs, long fats) {
         /**
-         * Creates display data without an ingredient customization marker.
+         * Creates display data without an ingredient customisation marker.
          *
          * @param name The meal's display name.
          * @param portionCount Number of whole recipe portions represented by this meal.

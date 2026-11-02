@@ -131,7 +131,7 @@ class CommandCompleterTest {
     }
 
     /**
-     * Parses completion input with the same literal-quote behavior used by the terminal editor.
+     * Parses completion input with the same literal-quote behaviour used by the terminal editor.
      */
     private List<Candidate> candidates(String line) {
         List<Candidate> candidates = new ArrayList<>();

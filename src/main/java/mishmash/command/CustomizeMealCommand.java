@@ -49,7 +49,7 @@ public final class CustomizeMealCommand implements Command {
      * Publishes one copy-on-write ingredient replacement after all position and dietary checks pass.
      *
      * @param recipeBook The shared command context; source recipes are not read or changed.
-     * @return A customization summary or a prompt to generate a plan first.
+     * @return A customisation summary or a prompt to generate a plan first.
      * @throws MishMashException If a position does not exist or the replacement violates current restrictions.
      */
     @Override
@@ -62,7 +62,7 @@ public final class CustomizeMealCommand implements Command {
         Objects.requireNonNull(recipeBook, "recipeBook");
         MealPlan currentPlan = activeMealPlan.get().orElse(null);
         if (currentPlan == null || currentPlan.getNumberOfDays() == 0) {
-            LOGGER.fine("Meal customization skipped: no active meal plan");
+            LOGGER.fine("Meal customisation skipped: no active meal plan");
             return CommandResult.note("No active meal plan. Use 'generate-plan' first.");
         }
 
@@ -94,11 +94,11 @@ public final class CustomizeMealCommand implements Command {
             DietaryPreferences preferences) {
         boolean hadGroceryList = activeMealPlan.getGroceryList().isPresent();
         activeMealPlan.update(updatedPlan);
-        LOGGER.fine(() -> "Customized ingredients for Day " + customization.dayNumber()
+        LOGGER.fine(() -> "Customised ingredients for Day " + customization.dayNumber()
                 + ", Meal " + customization.mealNumber() + "; ingredient count="
                 + customization.ingredients().size());
         String action = updatedMeal.hasCustomizedIngredients()
-                ? "ingredients customized"
+                ? "ingredients customised"
                 : "ingredients restored from its source recipe";
         String result = "Meal " + customization.mealNumber() + " on Day " + customization.dayNumber()
                 + " " + action + "." + System.lineSeparator()
@@ -111,7 +111,7 @@ public final class CustomizeMealCommand implements Command {
         }
         if (updatedMeal.hasCustomizedIngredients() && preferences.hasCategoryRestrictions()) {
             return CommandResult.warning(result + System.lineSeparator()
-                    + "Customized ingredient names are not classified for named-diet or avoided-category rules."
+                    + "Customised ingredient names are not classified for named-diet or avoided-category rules."
                     + System.lineSeparator()
                     + "This meal keeps its source recipe's food categories; verify the replacement yourself.");
         }
@@ -134,7 +134,7 @@ public final class CustomizeMealCommand implements Command {
     private void validateMealNumber(DayPlan day) throws MishMashException {
         int mealCount = day.getPlannedMeals().size();
         if (mealCount == 0) {
-            throw new MishMashException("Day " + customization.dayNumber() + " has no meals to customize.",
+            throw new MishMashException("Day " + customization.dayNumber() + " has no meals to customise.",
                     USAGE, null);
         }
         if (customization.mealNumber() > mealCount) {

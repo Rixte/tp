@@ -43,7 +43,7 @@ class FoodTagTest {
     }
 
     /**
-     * Rejects empty entries and duplicates after alias normalization.
+     * Rejects empty entries and duplicates after alias normalisation.
      */
     @TestFactory
     Stream<DynamicTest> parseCsv_blankOrRepeatedEntries_rejectMalformedLists() {

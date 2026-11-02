@@ -30,7 +30,7 @@ import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 
 /**
- * Checks atomic ingredient customization, no-op behavior, positions, and dietary safety.
+ * Checks atomic ingredient customisation, no-op behaviour, positions, and dietary safety.
  */
 class CustomizeMealCommandTest {
     private final GroceryItem rice = new GroceryItem("Rice", new BigDecimal("100"), "g");
@@ -73,7 +73,7 @@ class CustomizeMealCommandTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> command(1, 1, rice).execute(recipeBook));
 
-        assertEquals("Day 1 has no meals to customize.", error.getExplanation());
+        assertEquals("Day 1 has no meals to customise.", error.getExplanation());
         assertEquals(CustomizeMealCommand.USAGE, error.getUsage().orElseThrow());
         assertSame(plan, activePlan.get().orElseThrow());
     }
@@ -86,7 +86,7 @@ class CustomizeMealCommandTest {
         CommandResult result = command(1, 1, tofu).executeWithResult(recipeBook);
 
         MealPlan updatedPlan = activePlan.get().orElseThrow();
-        assertTrue(result.feedback().startsWith("Meal 1 on Day 1 ingredients customized."));
+        assertTrue(result.feedback().startsWith("Meal 1 on Day 1 ingredients customised."));
         assertEquals(CommandResult.Status.DONE, result.status());
         assertEquals(List.of(tofu), updatedPlan.getDays().get(0).getPlannedMeals().get(0).getIngredients());
         assertEquals(List.of(rice), originalPlan.getDays().get(0).getPlannedMeals().get(0).getIngredients());
@@ -210,7 +210,7 @@ class CustomizeMealCommandTest {
     }
 
     /**
-     * Creates a customization command connected to this test's shared state.
+     * Creates a customisation command connected to this test's shared state.
      */
     private CustomizeMealCommand command(int dayNumber, int mealNumber, GroceryItem... ingredients) {
         IngredientCustomization customization =
