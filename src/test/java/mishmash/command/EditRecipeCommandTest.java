@@ -97,13 +97,13 @@ class EditRecipeCommandTest {
         RecipeBook book = new RecipeBook();
         MishMashException empty = assertThrows(MishMashException.class,
                 () -> new EditRecipeCommand(1, proteinChange()).execute(book));
-        assertEquals("There are no recipes to edit.", empty.getMessage());
+        assertEquals("There are no recipes to edit.", empty.getExplanation());
         Recipe recipe = TestRecipes.recipe("Rice", 200, 4, 45, 1);
         book.add(recipe);
         for (int index : new int[] {2, Integer.MAX_VALUE}) {
             MishMashException error = assertThrows(MishMashException.class,
                     () -> new EditRecipeCommand(index, proteinChange()).execute(book));
-            assertEquals("Recipe index must be between 1 and 1.", error.getMessage());
+            assertEquals("Recipe index must be between 1 and 1.", error.getExplanation());
         }
         assertEquals(List.of(recipe), book.getRecipes());
     }
@@ -202,7 +202,7 @@ class EditRecipeCommandTest {
 
         MishMashException error = assertThrows(MishMashException.class, () -> pending.execute(book));
 
-        assertEquals("Recipe index must be between 1 and 1.", error.getMessage());
+        assertEquals("Recipe index must be between 1 and 1.", error.getExplanation());
         assertEquals(List.of(kept), book.getRecipes());
         assertEquals(1, kept.getProtein());
     }

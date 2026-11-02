@@ -123,7 +123,7 @@ class DeleteRecipeCommandTest {
         for (int index : new int[] {3, 4, Integer.MAX_VALUE}) {
             MishMashException exception = assertThrows(MishMashException.class,
                     () -> new DeleteRecipeCommand(index).execute(book));
-            assertEquals("Recipe index must be between 1 and 2.", exception.getMessage());
+            assertEquals("Recipe index must be between 1 and 2.", exception.getExplanation());
         }
 
         assertEquals(List.of(rice, oats), book.getRecipes());
@@ -136,7 +136,7 @@ class DeleteRecipeCommandTest {
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> new DeleteRecipeCommand(1).execute(book));
 
-        assertEquals("There are no recipes to delete.", exception.getMessage());
+        assertEquals("There are no recipes to delete.", exception.getExplanation());
         assertEquals(0, book.getRecipes().size());
     }
 
@@ -177,7 +177,7 @@ class DeleteRecipeCommandTest {
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> new DeleteRecipeCommand(2).confirmationPrompt(book));
 
-        assertEquals("Recipe index must be between 1 and 1.", exception.getMessage());
+        assertEquals("Recipe index must be between 1 and 1.", exception.getExplanation());
         assertEquals(List.of(rice), book.getRecipes());
     }
 
@@ -188,7 +188,7 @@ class DeleteRecipeCommandTest {
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> new DeleteRecipeCommand(1).confirmationPrompt(book));
 
-        assertEquals("There are no recipes to delete.", exception.getMessage());
+        assertEquals("There are no recipes to delete.", exception.getExplanation());
     }
 
     @Test

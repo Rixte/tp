@@ -13,6 +13,11 @@ import mishmash.ui.RecipeViewer;
  * Shows the recipes in the book: a short numbered list of all of them, or the full details of one.
  */
 public class ListRecipeCommand implements Command {
+    /**
+     * Describes how to list all recipes or show one in full.
+     */
+    public static final String USAGE = "Format: list-recipes [INDEX]";
+
     private final Integer index;
 
     /**
@@ -58,10 +63,12 @@ public class ListRecipeCommand implements Command {
             return recipes.isEmpty() ? CommandResult.note(feedback) : CommandResult.info(feedback);
         }
         if (recipes.isEmpty()) {
-            throw new MishMashException("There are no recipes to show. Use 'add-recipe' to add one.");
+            throw new MishMashException("There are no recipes to show. Use 'add-recipe' to add one.",
+                    USAGE, null);
         }
         if (index > recipes.size()) {
-            throw new MishMashException("Recipe index must be between 1 and " + recipes.size() + ".");
+            throw new MishMashException("Recipe index must be between 1 and " + recipes.size() + ".",
+                    USAGE, null);
         }
         // The user counts from 1, but the list counts from 0.
         return CommandResult.info(new RecipeViewer().view(recipes.get(index - 1)));

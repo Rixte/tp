@@ -12,6 +12,11 @@ import mishmash.model.RecipeBook;
  * Deletes the recipe at a position chosen by the user and returns its confirmation.
  */
 public class DeleteRecipeCommand implements Command {
+    /**
+     * Describes how to choose the recipe to delete.
+     */
+    public static final String USAGE = "Format: delete-recipe INDEX";
+
     private final int index;
 
     /**
@@ -81,10 +86,11 @@ public class DeleteRecipeCommand implements Command {
 
         int recipeCount = recipeBook.size();
         if (recipeCount == 0) {
-            throw new MishMashException("There are no recipes to delete.");
+            throw new MishMashException("There are no recipes to delete.", USAGE, null);
         }
         if (index > recipeCount) {
-            throw new MishMashException("Recipe index must be between 1 and " + recipeCount + ".");
+            throw new MishMashException("Recipe index must be between 1 and " + recipeCount + ".",
+                    USAGE, null);
         }
         return recipeBook.getRecipes().get(index - 1);
     }

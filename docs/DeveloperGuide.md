@@ -402,7 +402,7 @@ The parser does not receive the recipe book, so whether the index exists is deci
 | No index, empty book | `ListRecipeCommand.execute` | Normal message, not an error. |
 | Command word with a different case or spelling (`List-Recipes`, `list-recipe`) | `Parser.parseNamedCommand` | `Unknown command` error. |
 
-Syntax errors start as an `IllegalArgumentException`. `parseListRecipe` wraps it in a `MishMashException` that keeps the original cause and ends with the list-recipes usage, so `MishMash.displayError` does not print the general command list. The two execution-time errors carry no `Format:` line, so `displayError` adds the format of every command. In every case the session continues and the recipe book is unchanged.
+Syntax errors start as an `IllegalArgumentException`. `parseListRecipe` wraps it in a `MishMashException` that keeps the original cause and ends with the list-recipes usage, so `MishMash.displayError` does not print the general command list. The two execution-time errors pass `ListRecipeCommand.USAGE` as well, so they also show only the list-recipes format. In every case the session continues and the recipe book is unchanged.
 
 #### Design choices and alternatives
 
@@ -545,7 +545,7 @@ The activity diagram shows which step decides each outcome.
 | Input or state | Where it is decided | Result |
 | --- | --- | --- |
 | Missing, non-numeric, zero, or oversized index | `Parser.parseRecipeIndex` | Error ending with `Format: delete-recipe INDEX`; no question. |
-| Empty book, or index above the recipe count | `DeleteRecipeCommand.confirmationPrompt` | Error without a `Format:` line, so every command's format follows; no question. |
+| Empty book, or index above the recipe count | `DeleteRecipeCommand.confirmationPrompt` | Error followed by the delete-recipe usage; no question. |
 | Valid index, answered `y` or `yes` | `MishMash.userConfirms`, then `execute` | Recipe removed and confirmation shown. |
 | Valid index, any other answer or end of input | `MishMash.userConfirms` | `Cancelled. Nothing was changed.` |
 
