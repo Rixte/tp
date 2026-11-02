@@ -21,7 +21,7 @@ loop each displayed day
   Targets --> Viewer : excesses
   deactivate Targets
   loop calories, protein, carbs, fats
-    Viewer -> Viewer : formatWarning(actual, target, excess)
+    Viewer -> Viewer : formatWarning(..., actual, target, excess)
     activate Viewer
     Viewer --> Viewer : warning line or empty string
     deactivate Viewer

@@ -5,13 +5,19 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 ## Contents
 
 - [Acknowledgements](#acknowledgements)
-- [Setting Up, Getting Started](#setting-up-getting-started)
+- [Setting up, getting started](#setting-up-getting-started)
 - [Design](#design)
+  - [Architecture](#architecture)
+  - [UI component](#ui-component)
+  - [Logic component](#logic-component)
+  - [Model component](#model-component)
+  - [Storage component](#storage-component)
+  - [Common classes](#common-classes)
 - [Implementation](#implementation)
-- [Documentation, Logging, Testing, Configuration and DevOps](#documentation-logging-testing-configuration-and-devops)
+- [Documentation, logging, testing, dev-ops](#documentation-logging-testing-dev-ops)
 - [Appendix A: Product Scope](#appendix-a-product-scope)
 - [Appendix B: User Stories](#appendix-b-user-stories)
-  - [Use Cases](#use-cases)
+  - [Use cases](#use-cases)
 - [Appendix C: Non-Functional Requirements](#appendix-c-non-functional-requirements)
 - [Appendix D: Glossary](#appendix-d-glossary)
 - [Appendix E: Instructions for Manual Testing](#appendix-e-instructions-for-manual-testing)
@@ -38,7 +44,7 @@ Feature navigation:
 ## Acknowledgements
 
 - The project originates from the [NUS CS2113 team-project template](https://github.com/NUS-CS2113-AY2627-S1/tp). The team's shared repository is [AY2627S1-CS2113-W13-4/tp](https://github.com/AY2627S1-CS2113-W13-4/tp).
-- The guide structure follows the [AB3 User Guide](https://se-education.org/addressbook-level3/UserGuide.html) and [AB3 Developer Guide](https://se-education.org/addressbook-level3/DeveloperGuide.html), adapted to the [CS2113 deliverable requirements](https://nus-cs2113-ay2627-s1.github.io/website/admin/tp-deliverables.html). Product descriptions refer to MishMash rather than AB3 behaviour.
+- The guide structure follows the [AddressBook-Level3 project](https://github.com/se-edu/addressbook-level3)'s [User Guide](https://se-education.org/addressbook-level3/UserGuide.html) and [Developer Guide](https://se-education.org/addressbook-level3/DeveloperGuide.html), adapted to the [CS2113 deliverable requirements](https://nus-cs2113-ay2627-s1.github.io/website/admin/tp-deliverables.html). This reuse concerns documentation structure; the feature descriptions document MishMash's implementation.
 - [Gradle](https://gradle.org/) provides build automation and dependency management.
 - [JUnit Jupiter](https://junit.org/junit5/) provides the automated testing framework.
 - [Checkstyle](https://checkstyle.org/) checks Java coding conventions.
@@ -47,11 +53,11 @@ Feature navigation:
   in the development build. The JNI terminal provider supports native consoles; unsupported environments
   retain the existing Scanner-based input. JLine is distributed under the BSD 3-Clause license.
 - [Jackson](https://github.com/FasterXML/jackson) reads and writes the versioned JSON snapshots used for local persistence.
-- [PlantUML](https://plantuml.com/) generates the UML diagrams from the editable sources under `docs/diagrams`, which has one folder per feature.
+- [PlantUML](https://plantuml.com/) generates the UML diagrams from the editable sources under `docs/diagrams`, organised by contributor and feature. The [diagram index](diagrams/README.md) records locations, verification, and PDF export instructions.
 
 <!-- TEAM: Add any further sources of reused or adapted code, ideas, and documentation before submission. -->
 
-## Setting Up, Getting Started
+## Setting up, getting started
 
 Refer to [Setting Up and Getting Started](SettingUp.md) for Java 25 prerequisites, importing the project, running tests, packaging the JAR, and troubleshooting.
 
@@ -65,7 +71,11 @@ Completion uses `Parser.COMMAND_USAGE`; history stays in memory. Names and confi
 Gradle packages the reader and JNI provider, merges service registrations, and enables native access on Java 25. Tests use in-memory terminals and injected factories; check native behaviour with the packaged JAR.
 <!-- @@author -->
 
-This guide describes the current source checkout. For a published build, consult the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) and its release notes; milestone assignment alone does not establish what a release JAR contains. Build the current checkout when testing the features described here. [User Stories](#appendix-b-user-stories) show milestone assignments and current source support.
+This guide documents current `master` for the upcoming submission release. The published
+[v2.0 release](https://github.com/AY2627S1-CS2113-W13-4/tp/releases/tag/v2.0) predates persistence
+and some meal-editing features described here. Build the current checkout when testing this guide;
+when the submission release is published, verify its JAR against these instructions and update this
+release reference. [User Stories](#appendix-b-user-stories) show milestone assignments and current source support.
 
 ## Design
 
@@ -210,6 +220,18 @@ validation, locks, backups, quarantine, write failures, and retry behaviour. The
 the shadow JAR through multiple processes to verify retention from a working directory outside the repository.
 JAR tests also cover forced termination after autosave, lock release, corrupt-primary recovery, unsaved-change
 warnings and shutdown retries, failed dietary repair, and unchanged save files after no-ops or cancellation.
+
+### Common classes
+
+Shared types remain in the packages that define their responsibilities:
+
+| Type | Shared responsibility |
+| --- | --- |
+| `command.CommandResult` | Carries feedback and an explicit outcome from commands to the UI and persistence coordinator. |
+| `exception.MishMashException` | Carries recoverable errors, optional command-specific usage, and the original cause from parsing or execution to the application. |
+| `parser.IngredientParser` | Validates ingredient syntax for adding recipes, editing recipes, and customising planned meals. |
+| `model.GroceryItem`, `model.NutritionTotals` | Provide validated ingredient quantities and nutrition values used by planning, viewing, and storage. |
+
 ## Implementation
 
 This section explains the design and implementation of MishMash’s completed features, including their key components, workflows, and error handling.
@@ -1360,6 +1382,9 @@ and aggregation values.
 
 ![Class diagram of the grocery source and snapshot model.](images/oilybikechain/grocery-model-classes.svg)
 
+*Stored references and portions only; traversal methods are expanded in the collection sequence below.
+Collection ends preserve order and allow repeated references. [PlantUML source](diagrams/oilybikechain/grocery-model-classes.puml).*
+
 ![Class diagram of grocery aggregation values.](images/oilybikechain/grocery-aggregation-classes.svg)
 
 The parser and command retain the same active-plan holder. Plain navigable associations allow shared
@@ -1415,7 +1440,12 @@ result is stored, preserving any previous snapshot if generation fails.
 
 ![Sequence diagram of grocery aggregation and snapshot publication.](images/oilybikechain/grocery-execution.svg)
 
-The execution sequence counts every recipe occurrence, then publishes one completed snapshot.
+The execution sequence follows `executeWithResult`; `...` omits its `recipeBook` parameter.
+The collection reference expands in the preceding `generateForPlan` sequence. Only a completed grocery
+snapshot is published, and the command returns a `DONE` result. Autosaving follows the command result,
+as shown under [Persistence and recovery](#persistence-and-recovery).
+The [PlantUML source](diagrams/oilybikechain/grocery-execution.puml) keeps the publication sequence separate
+from ingredient traversal so its labels remain readable at normal PDF width.
 Ingredient-key lookup, decimal merging, and result-item construction happen inside
 `GroceryListGenerator.generate` and are described in the ingredient-aggregation section above.
 
@@ -1436,7 +1466,8 @@ The class and sequence diagrams above have editable sources and regeneration ins
 `docs/images/oilybikechain`. Use Java 25 and PlantUML 1.2026.9 with the existing shared style and
 Smetana class layout. Check method names, retained references, multiplicities, supplier indirection,
 message order, and failure paths against current code, then syntax-check, render, and inspect every
-image. Keep sources and SVGs synchronised. The contribution history identifies the relevant commits;
+image. Keep sources and SVGs synchronised. The [final integration review](diagrams/README.md#final-integration-review)
+records owner evidence and both grocery readability decisions in the exported PDF. The contribution history identifies the relevant commits;
 teammates' viewing, generation, formatting, and dietary components are shown as integration context.
 
 <!-- @@author -->
@@ -1840,7 +1871,9 @@ error, and prompts for another command.
 
 <!-- @@author -->
 
-## Documentation, Logging, Testing, Configuration and DevOps
+<a id="documentation-logging-testing-configuration-and-devops"></a>
+
+## Documentation, logging, testing, dev-ops
 
 ### Documentation
 
@@ -1942,7 +1975,7 @@ Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional
 </tbody>
 </table>
 
-### Use Cases
+### Use cases
 
 The actor is a user who has started a session and entered a name. MSS means Main Success Scenario.
 

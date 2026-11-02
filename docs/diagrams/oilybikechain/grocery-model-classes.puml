@@ -5,39 +5,35 @@ hide circle
 
 title Grocery source and snapshot model
 top to bottom direction
-skinparam nodesep 35
-skinparam ranksep 55
+skinparam nodesep 30
+skinparam ranksep 35
+skinparam defaultFontSize 16
 hide empty members
 
 class ActiveMealPlan
-class MealPlan {
-  + getDays(): List<DayPlan>
-}
-class DayPlan {
-  + getPlannedMeals(): List<PlannedMeal>
-}
+class MealPlan
+class DayPlan
 class PlannedMeal {
   - portionCount: int
-  + getScaledIngredients(): List<GroceryItem>
 }
-class Recipe {
-  + getIngredients(): List<GroceryItem>
-}
+class Recipe
 class GroceryItem {
   - name: String
   - quantity: BigDecimal
   - unit: String
 }
 
-ActiveMealPlan --> "0..1" MealPlan : -plan
-ActiveMealPlan --> "0..*" GroceryItem : -groceryList\n{ordered, nonunique}
-MealPlan --> "0..*" DayPlan : -days\n{ordered, nonunique}
-DayPlan --> "0..*" PlannedMeal : -plannedMeals\n{ordered, nonunique}
-PlannedMeal --> "1" Recipe : -recipe
-PlannedMeal --> "0..*" GroceryItem : -customizedIngredients\n{ordered, nonunique}
-Recipe --> "1..*" GroceryItem : -ingredients\n{ordered, nonunique}
+ActiveMealPlan -down-> "0..1" MealPlan : -plan
+ActiveMealPlan --> "0..*" GroceryItem : -groceryList
+MealPlan -down-> "0..*" DayPlan : -days
+DayPlan -down-> "0..*" PlannedMeal : -plannedMeals
+PlannedMeal -down-> "1" Recipe : -recipe
+PlannedMeal --> "0..*" GroceryItem : -customizedIngredients
+Recipe --> "1..*" GroceryItem : -ingredients
+DayPlan -[hidden]right-> GroceryItem
 
 legend bottom
-  Only feature-relevant members are shown.
+  Collections preserve order and allow repeated references.
+  Only source/snapshot fields are shown; traversal is expanded separately.
 endlegend
 @enduml

@@ -26,6 +26,9 @@ integration context. Earlier implementations on other branches are not additiona
 `c3f6e95` supplies grocery aggregation tests and Javadoc, rather than another runtime
 component. Commit `995af37` supplies the existing contribution documentation.
 
+The [final cross-owner integration review](../README.md#final-integration-review) records
+organisation checks and the two grocery figures' readability decisions in the refreshed DG PDF.
+
 ## Rendering
 
 Use Java 25 and PlantUML **1.2026.9**, LGPL distribution, matching the existing
