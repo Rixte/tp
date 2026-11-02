@@ -15,6 +15,15 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 - [Appendix D: Glossary](#appendix-d-glossary)
 - [Appendix E: Instructions for Manual Testing](#appendix-e-instructions-for-manual-testing)
 
+
+Feature navigation: **Recipes:** [Adding a recipe](#adding-a-recipe) · [Deleting a recipe](#deleting-a-recipe) · [Listing recipes](#listing-recipes) · [Editing a recipe](#editing-a-recipe)
+
+**Plans:** [Generating a meal plan](#generating-a-meal-plan) · [Viewing a meal plan](#viewing-a-meal-plan) · [Adjusting planned meal portions](#adjusting-planned-meal-portions) · [Customizing planned meal ingredients](#customizing-planned-meal-ingredients) · [Replacing a planned meal](#replacing-a-planned-meal) · [Confirming plan changes](#confirming-plan-changes) · [Resetting a meal plan](#resetting-a-meal-plan)
+
+**Preferences and nutrition:** [Clearing dietary preferences and restrictions](#clearing-dietary-preferences-and-restrictions) · [Applying dietary restrictions](#applying-dietary-restrictions) · [Viewing dietary preferences](#viewing-dietary-preferences) · [Setting and viewing daily targets](#setting-and-viewing-daily-targets) · [Recording meals and tracking nutrition](#recording-meals-and-tracking-nutrition) · [Combined daily nutrition totals](#combined-daily-nutrition-totals) · [Detecting exceeded nutrition targets](#detecting-exceeded-nutrition-targets) · [Checking nutrition shortfalls](#checking-nutrition-shortfalls)
+
+**Groceries and support:** [Grocery command integration](#grocery-command-integration) · [Viewing a grocery list](#viewing-a-grocery-list) · [Command help](#command-help) · [Defensive checks and generation diagnostics](#defensive-checks-and-generation-diagnostics)
+
 ## Acknowledgements
 
 - The project originates from the [NUS CS2113 team-project template](https://github.com/NUS-CS2113-AY2627-S1/tp). The team's shared repository is [AY2627S1-CS2113-W13-4/tp](https://github.com/AY2627S1-CS2113-W13-4/tp).
