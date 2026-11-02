@@ -117,7 +117,7 @@ public class GeneratePlanParser {
         if (value == null) {
             return null;
         }
-        String error = label + " must be a positive whole number.";
+        String error = label + " must be a positive whole number from 1 to " + Integer.MAX_VALUE + ".";
         if (!value.matches("[0-9]+")) {
             throw new IllegalArgumentException(error);
         }
