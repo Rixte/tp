@@ -39,7 +39,7 @@ class ConsoleInputsTest {
 
     @Test
     void open_redirectedInput_skipsNativeTerminalAndPreservesLines() {
-        ByteArrayInputStream stream = stream("Name\nbye\n");
+        ByteArrayInputStream stream = createInputStream("Name\nbye\n");
         try (PrintStream output = new PrintStream(new ByteArrayOutputStream());
                 ConsoleInput input = ConsoleInputs.open(false, stream, output, () -> {
                     throw new AssertionError("Plain input must not initialise native terminal access");
@@ -52,8 +52,8 @@ class ConsoleInputsTest {
 
     @Test
     void open_interactiveTerminal_selectsJLineAndReadsTheSameStream() throws IOException {
-        Terminal terminal = new DumbTerminal(stream("help\n"), new ByteArrayOutputStream());
-        try (ConsoleInput input = ConsoleInputs.open(true, stream("unused"), System.out, () -> terminal)) {
+        Terminal terminal = new DumbTerminal(createInputStream("help\n"), new ByteArrayOutputStream());
+        try (ConsoleInput input = ConsoleInputs.open(true, createInputStream("unused"), System.out, () -> terminal)) {
             assertInstanceOf(JLineConsoleInput.class, input);
             assertEquals(Optional.of("help"), input.readCommand("Command?"));
         }
@@ -63,7 +63,7 @@ class ConsoleInputsTest {
     void open_nativeInitializationFailure_fallsBackWithoutConsumingInput() {
         IOException failure = new IOException("No native console");
         try (LogCapture logs = new LogCapture(ConsoleInputs.class);
-                ConsoleInput input = ConsoleInputs.open(true, stream("help\n"), System.out, () -> {
+                ConsoleInput input = ConsoleInputs.open(true, createInputStream("help\n"), System.out, () -> {
                     throw failure;
                 })) {
             assertInstanceOf(ScannerConsoleInput.class, input);
@@ -73,12 +73,25 @@ class ConsoleInputsTest {
     }
 
     @Test
+    void open_nativeProviderUnavailable_fallsBackAndPreservesTheCause() {
+        IllegalStateException failure = new IllegalStateException("Native provider unavailable");
+        try (LogCapture logs = new LogCapture(ConsoleInputs.class);
+                ConsoleInput input = ConsoleInputs.open(true, createInputStream("bye\n"), System.out, () -> {
+                    throw failure;
+                })) {
+            assertInstanceOf(ScannerConsoleInput.class, input);
+            assertSame(failure, logs.getRecords().getFirst().getThrown());
+            assertEquals(Optional.of("bye"), input.readCommand("Command?"));
+        }
+    }
+
+    @Test
     void open_editorInitializationFailure_closesTerminalBeforeFallingBack() {
         AtomicInteger closeCount = new AtomicInteger();
         IllegalStateException failure = new IllegalStateException("Unsupported terminal");
-        Terminal terminal = brokenTerminal(failure, closeCount, null);
+        Terminal terminal = createBrokenTerminal(failure, closeCount, null);
         try (LogCapture logs = new LogCapture(ConsoleInputs.class);
-                ConsoleInput input = ConsoleInputs.open(true, stream("bye\n"), System.out, () -> terminal)) {
+                ConsoleInput input = ConsoleInputs.open(true, createInputStream("bye\n"), System.out, () -> terminal)) {
             assertEquals(1, closeCount.get());
             assertInstanceOf(ScannerConsoleInput.class, input);
             assertSame(failure, logs.getRecords().getFirst().getThrown());
@@ -90,9 +103,9 @@ class ConsoleInputsTest {
     void open_cleanupAlsoFails_retainsOriginalFailureAndSuppressedCleanupCause() {
         IllegalStateException failure = new IllegalStateException("Editor unavailable");
         IOException closeFailure = new IOException("Close failed");
-        Terminal terminal = brokenTerminal(failure, new AtomicInteger(), closeFailure);
+        Terminal terminal = createBrokenTerminal(failure, new AtomicInteger(), closeFailure);
         try (LogCapture logs = new LogCapture(ConsoleInputs.class);
-                ConsoleInput input = ConsoleInputs.open(true, stream(""), System.out, () -> terminal)) {
+                ConsoleInput input = ConsoleInputs.open(true, createInputStream(""), System.out, () -> terminal)) {
             assertInstanceOf(ScannerConsoleInput.class, input);
             assertSame(failure, logs.getRecords().getFirst().getThrown());
             assertEquals(1, failure.getSuppressed().length);
@@ -105,24 +118,25 @@ class ConsoleInputsTest {
     void open_unexpectedInitializationFailure_closesTerminalAndPropagatesTheCause() {
         IllegalArgumentException failure = new IllegalArgumentException("Invalid editor configuration");
         AtomicInteger closeCount = new AtomicInteger();
-        Terminal terminal = brokenTerminal(failure, closeCount, null);
+        Terminal terminal = createBrokenTerminal(failure, closeCount, null);
 
         assertSame(failure, assertThrows(IllegalArgumentException.class,
-                () -> ConsoleInputs.open(true, stream(""), System.out, () -> terminal)));
+                () -> ConsoleInputs.open(true, createInputStream(""), System.out, () -> terminal)));
         assertEquals(1, closeCount.get());
     }
 
     /**
      * Encodes deterministic input without using or changing the real process console.
      */
-    private ByteArrayInputStream stream(String text) {
+    private ByteArrayInputStream createInputStream(String text) {
         return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
      * Simulates a terminal that fails as soon as the editor inspects its capabilities.
      */
-    private Terminal brokenTerminal(RuntimeException failure, AtomicInteger closeCount, IOException closeFailure) {
+    private Terminal createBrokenTerminal(RuntimeException failure, AtomicInteger closeCount,
+            IOException closeFailure) {
         return (Terminal) Proxy.newProxyInstance(Terminal.class.getClassLoader(), new Class<?>[]{Terminal.class},
                 (proxy, method, arguments) -> {
                     if (method.getName().equals("close")) {

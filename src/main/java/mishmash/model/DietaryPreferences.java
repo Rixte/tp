@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 /**
  * Holds immutable dietary requirements that apply together to each selected recipe.
  *
- * <p>Ingredient exclusions use complete names after case and whitespace normalisation.
+ * <p>Ingredient exclusions use complete names after case and whitespace normalization.
  *
  * @param diet The named diet, or {@link Diet#NONE} for no named-diet restriction.
  * @param avoidedTags Additional excluded food categories.
@@ -22,9 +22,9 @@ public record DietaryPreferences(Diet diet, Set<FoodTag> avoidedTags, Set<String
      *
      * @param diet The named diet applied alongside explicit exclusions.
      * @param avoidedTags The additional categories to exclude.
-     * @param excludedIngredients The complete ingredient names to normalise and exclude.
+     * @param excludedIngredients The complete ingredient names to normalize and exclude.
      * @throws NullPointerException If any argument or collection element is null.
-     * @throws IllegalArgumentException If an ingredient name is blank or repeated after normalisation.
+     * @throws IllegalArgumentException If an ingredient name is blank or repeated after normalization.
      */
     public DietaryPreferences {
         Objects.requireNonNull(diet, "diet");
@@ -118,9 +118,9 @@ public record DietaryPreferences(Diet diet, Set<FoodTag> avoidedTags, Set<String
     }
 
     /**
-     * Normalises a complete ingredient name for exact matching.
+     * Normalizes a complete ingredient name for exact matching.
      *
-     * @param name The ingredient name to normalise.
+     * @param name The ingredient name to normalize.
      * @return The lowercase name with trimmed and collapsed whitespace.
      * @throws NullPointerException If the name is null.
      */
@@ -144,7 +144,7 @@ public record DietaryPreferences(Diet diet, Set<FoodTag> avoidedTags, Set<String
     /**
      * Formats sorted labels while making an empty exclusion list explicit.
      *
-     * @param values The normalised labels to display.
+     * @param values The normalized labels to display.
      * @return Comma-separated sorted labels, or {@code none} when empty.
      */
     private static String formatValues(Collection<String> values) {

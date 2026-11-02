@@ -49,7 +49,7 @@ public final class CustomizeMealCommand implements Command {
      * Publishes one copy-on-write ingredient replacement after all position and dietary checks pass.
      *
      * @param recipeBook The shared command context; source recipes are not read or changed.
-     * @return A customisation summary or a prompt to generate a plan first.
+     * @return A customization summary or a prompt to generate a plan first.
      * @throws MishMashException If a position does not exist or the replacement violates current restrictions.
      */
     @Override

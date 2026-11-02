@@ -21,14 +21,17 @@ import mishmash.model.RecipeBook;
 import mishmash.testutil.TestRecipes;
 
 /**
- * Checks that the shared parser recognises generate-plan and reports its errors like other commands.
+ * Checks that the shared parser recognizes generate-plan and reports its errors like other commands.
  */
 class ParserGeneratePlanTest {
     private final ActiveMealPlan activePlan = new ActiveMealPlan();
     private final Parser parser = new Parser(new MealPlanGenerator(new Random(1)), activePlan,
             () -> Optional.empty());
 
-    private static RecipeBook threeRecipes() {
+    /**
+     * Creates three recipes with known combined totals for generation and viewing checks.
+     */
+    private static RecipeBook createThreeRecipeBook() {
         RecipeBook recipeBook = new RecipeBook();
         recipeBook.add(TestRecipes.recipe("A", 500, 20, 50, 10));
         recipeBook.add(TestRecipes.recipe("B", 600, 30, 60, 15));
@@ -38,7 +41,7 @@ class ParserGeneratePlanTest {
 
     @Test
     void viewPlan_targetsWithinTolerance_warnsAndReadsReplacementTargets() throws MishMashException {
-        RecipeBook recipes = threeRecipes();
+        RecipeBook recipes = createThreeRecipeBook();
         Command view = parser.parseCommand("view-plan");
         Command viewDay = parser.parseCommand("view-plan d/1");
         parser.parseCommand("generate-plan d/1 cal/1700 p/85 c/180 f/45").execute(recipes);
@@ -66,7 +69,7 @@ class ParserGeneratePlanTest {
 
     @Test
     void viewPlan_legacyPlanWithoutRequest_doesNotReusePreviousTargets() throws MishMashException {
-        RecipeBook recipes = threeRecipes();
+        RecipeBook recipes = createThreeRecipeBook();
         Command view = parser.parseCommand("view-plan");
         parser.parseCommand("generate-plan d/1 cal/1700").execute(recipes);
         assertTrue(view.execute(recipes).contains("Warning:"));
@@ -78,7 +81,7 @@ class ParserGeneratePlanTest {
 
     @Test
     void checkShortfall_explicitTargets_doesNotChangeViewWarnings() throws MishMashException {
-        RecipeBook recipes = threeRecipes();
+        RecipeBook recipes = createThreeRecipeBook();
         parser.parseCommand("generate-plan d/1 cal/1700").execute(recipes);
         String before = parser.parseCommand("view-plan").execute(recipes);
 
@@ -98,14 +101,14 @@ class ParserGeneratePlanTest {
 
         assertTrue(activePlan.get().isEmpty());
 
-        command.execute(threeRecipes());
+        command.execute(createThreeRecipeBook());
 
         assertTrue(activePlan.get().isPresent());
     }
 
     @Test
     void parseCommand_generateThenViewPlan_viewShowsGeneratedPlan() throws MishMashException {
-        RecipeBook recipeBook = threeRecipes();
+        RecipeBook recipeBook = createThreeRecipeBook();
         Command viewBeforeGenerating = parser.parseCommand("view-plan");
         assertTrue(viewBeforeGenerating.execute(recipeBook).startsWith("No active meal plan."));
 
@@ -140,7 +143,7 @@ class ParserGeneratePlanTest {
     @Test
     void parseCommand_noArgumentConstructor_sharesPlanBetweenGenerateAndView() throws MishMashException {
         Parser plain = new Parser();
-        RecipeBook recipeBook = threeRecipes();
+        RecipeBook recipeBook = createThreeRecipeBook();
 
         assertInstanceOf(GeneratePlanCommand.class, plain.parseCommand("generate-plan d/1"));
         assertInstanceOf(AddRecipeCommand.class,

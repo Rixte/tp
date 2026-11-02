@@ -29,11 +29,17 @@ class MealPlanGeneratorTest {
             TestRecipes.recipe("Apple", 100, 1, 25, 0),
             TestRecipes.recipe("Pizza", 1500, 50, 150, 70));
 
-    private static MealPlanGenerator seeded(long seed) {
+    /**
+     * Creates a generator whose meal selections can be reproduced from a known seed.
+     */
+    private static MealPlanGenerator createSeededGenerator(long seed) {
         return new MealPlanGenerator(new Random(seed));
     }
 
-    private static List<String> mealNames(MealPlan plan) {
+    /**
+     * Returns meal names in day and meal order for comparing seeded generation results.
+     */
+    private static List<String> getMealNames(MealPlan plan) {
         List<String> names = new ArrayList<>();
         for (DayPlan day : plan.getDays()) {
             day.getMeals().forEach(meal -> names.add(meal.getName()));
@@ -44,7 +50,7 @@ class MealPlanGeneratorTest {
     @Test
     void generate_emptyRecipeBook_throwsIllegalArgumentException() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> seeded(1).generate(List.of(), 3, NutritionTargets.none()));
+                () -> createSeededGenerator(1).generate(List.of(), 3, NutritionTargets.none()));
         assertTrue(e.getMessage().contains("recipe book is empty"));
     }
 
@@ -52,7 +58,7 @@ class MealPlanGeneratorTest {
     void generate_fewerThanThreeRecipes_throwsIllegalArgumentException() {
         List<Recipe> two = FIVE_RECIPES.subList(0, 2);
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> seeded(1).generate(two, 3, NutritionTargets.none()));
+                () -> createSeededGenerator(1).generate(two, 3, NutritionTargets.none()));
         assertTrue(e.getMessage().contains("at least 3 recipes"));
     }
 
@@ -60,22 +66,22 @@ class MealPlanGeneratorTest {
     void generate_daysOutsideSupportedRange_throwsIllegalArgumentException() {
         for (int days : new int[] {-1, 0, 8}) {
             assertThrows(IllegalArgumentException.class,
-                    () -> seeded(1).generate(FIVE_RECIPES, days, NutritionTargets.none()));
+                    () -> createSeededGenerator(1).generate(FIVE_RECIPES, days, NutritionTargets.none()));
         }
     }
 
     @Test
     void generate_nullArguments_throwNullPointerException() {
         assertThrows(NullPointerException.class,
-                () -> seeded(1).generate(null, 3, NutritionTargets.none()));
-        assertThrows(NullPointerException.class, () -> seeded(1).generate(FIVE_RECIPES, 3, null));
+                () -> createSeededGenerator(1).generate(null, 3, NutritionTargets.none()));
+        assertThrows(NullPointerException.class, () -> createSeededGenerator(1).generate(FIVE_RECIPES, 3, null));
         assertThrows(NullPointerException.class, () -> new MealPlanGenerator(null));
     }
 
     @Test
     void generate_noTargets_hasRequestedShape() {
         for (int days = 1; days <= 7; days++) {
-            MealPlan plan = seeded(days).generate(FIVE_RECIPES, days, NutritionTargets.none());
+            MealPlan plan = createSeededGenerator(days).generate(FIVE_RECIPES, days, NutritionTargets.none());
 
             assertEquals(days, plan.getNumberOfDays());
             for (DayPlan day : plan.getDays()) {
@@ -89,7 +95,7 @@ class MealPlanGeneratorTest {
     @Test
     void generate_exactlyThreeRecipes_usesAllEachDay() {
         List<Recipe> three = FIVE_RECIPES.subList(0, 3);
-        MealPlan plan = seeded(1).generate(three, 4, NutritionTargets.none());
+        MealPlan plan = createSeededGenerator(1).generate(three, 4, NutritionTargets.none());
         for (DayPlan day : plan.getDays()) {
             assertEquals(new HashSet<>(three), new HashSet<>(day.getMeals()));
         }
@@ -97,9 +103,9 @@ class MealPlanGeneratorTest {
 
     @Test
     void generate_sameSeed_samePlan() {
-        MealPlan first = seeded(42).generate(FIVE_RECIPES, 7, NutritionTargets.none());
-        MealPlan second = seeded(42).generate(FIVE_RECIPES, 7, NutritionTargets.none());
-        assertEquals(mealNames(first), mealNames(second));
+        MealPlan first = createSeededGenerator(42).generate(FIVE_RECIPES, 7, NutritionTargets.none());
+        MealPlan second = createSeededGenerator(42).generate(FIVE_RECIPES, 7, NutritionTargets.none());
+        assertEquals(getMealNames(first), getMealNames(second));
     }
 
     @Test
@@ -109,7 +115,7 @@ class MealPlanGeneratorTest {
         Set<Recipe> expected = Set.of(FIVE_RECIPES.get(0), FIVE_RECIPES.get(1), FIVE_RECIPES.get(2));
 
         for (long seed = 0; seed < 10; seed++) {
-            MealPlan plan = seeded(seed).generate(FIVE_RECIPES, 5, targets);
+            MealPlan plan = createSeededGenerator(seed).generate(FIVE_RECIPES, 5, targets);
             for (DayPlan day : plan.getDays()) {
                 assertEquals(expected, new HashSet<>(day.getMeals()));
             }
@@ -120,7 +126,7 @@ class MealPlanGeneratorTest {
     void generate_calorieAndMacroTargets_everyDayWithinTolerance() {
         NutritionTargets targets = new NutritionTargets(1800, 100, 200, 50);
         for (long seed = 0; seed < 10; seed++) {
-            MealPlan plan = seeded(seed).generate(FIVE_RECIPES, 7, targets);
+            MealPlan plan = createSeededGenerator(seed).generate(FIVE_RECIPES, 7, targets);
             plan.getDays().forEach(day -> assertWithinTolerance(targets, day));
         }
     }
@@ -134,7 +140,7 @@ class MealPlanGeneratorTest {
         }
         NutritionTargets targets = new NutritionTargets(2000, 120, null, null);
 
-        MealPlan plan = seeded(7).generate(recipes, 7, targets);
+        MealPlan plan = createSeededGenerator(7).generate(recipes, 7, targets);
         assertEquals(7, plan.getNumberOfDays());
         for (DayPlan day : plan.getDays()) {
             assertEquals(3, new HashSet<>(day.getMeals()).size());
@@ -146,10 +152,13 @@ class MealPlanGeneratorTest {
     void generate_unreachableTarget_throwsIllegalArgumentException() {
         NutritionTargets targets = new NutritionTargets(10000, null, null, null);
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> seeded(1).generate(FIVE_RECIPES, 3, targets));
+                () -> createSeededGenerator(1).generate(FIVE_RECIPES, 3, targets));
         assertTrue(e.getMessage().contains("within 15%"));
     }
 
+    /**
+     * Checks every supplied daily target against the generator's permitted tolerance.
+     */
     private static void assertWithinTolerance(NutritionTargets targets, DayPlan day) {
         assertWithin(targets.getCalories(), day.getTotalCalories());
         assertWithin(targets.getProtein(), day.getTotalProtein());
@@ -157,6 +166,9 @@ class MealPlanGeneratorTest {
         assertWithin(targets.getFats(), day.getTotalFats());
     }
 
+    /**
+     * Checks a single supplied target while leaving omitted nutrients unrestricted.
+     */
     private static void assertWithin(Integer target, long actual) {
         if (target != null) {
             assertTrue(Math.abs(actual - target) <= target * NutritionTargets.TOLERANCE,

@@ -202,7 +202,7 @@ public final class CliFormatter {
     }
 
     /**
-     * Builds a coloured square-bracketed status label.
+     * Builds a colored square-bracketed status label.
      */
     private static String status(String label, String color) {
         return style("[" + label + "]", color);

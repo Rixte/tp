@@ -11,7 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Checks position, ingredient, and defensive-copy invariants of customisation requests.
+ * Checks position, ingredient, and defensive-copy invariants of customization requests.
  */
 class IngredientCustomizationTest {
     private final GroceryItem rice = new GroceryItem("Rice", BigDecimal.ONE, "g");

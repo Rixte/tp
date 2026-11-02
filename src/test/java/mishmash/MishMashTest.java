@@ -47,7 +47,8 @@ class MishMashTest {
     @Test
     void main_viewingErrors_logsRecoverableRejectionsAndContinues() {
         try (LogCapture logs = new LogCapture(MishMash.class)) {
-            String output = runCli(session("view-list extra", "view-plan d/0", "view-plan", "view-list", "bye"));
+            String output = runCli(createSessionInput(
+                    "view-list extra", "view-plan d/0", "view-plan", "view-list", "bye"));
             List<LogRecord> rejections = logs.getRecords().stream()
                     .filter(record -> record.getMessage().equals("Command rejected")).toList();
 
@@ -68,13 +69,13 @@ class MishMashTest {
 
     @Test
     void main_newSession_greetsAgainWithoutPreviousPlanOrGroceries() {
-        String firstSession = runCli(session(
+        String firstSession = runCli(createSessionInput(
                 "add-recipe n/A cal/100 p/10 c/20 f/5 i/Rice:1g",
                 "add-recipe n/B cal/100 p/10 c/20 f/5 i/Rice:1g",
                 "add-recipe n/C cal/100 p/10 c/20 f/5 i/Rice:1g",
                 "generate-plan d/1", "generate-list", "view-plan", "view-list", "bye"));
 
-        String nextSession = runCli(session("view-plan", "view-list", "bye"));
+        String nextSession = runCli(createSessionInput("view-plan", "view-list", "bye"));
 
         assertTrue(firstSession.contains("Daily Totals: 300 kcal | Protein: 30g | Carbs: 60g | Fats: 15g"));
         assertTrue(firstSession.contains("[ ] Rice: 3g"), firstSession);
@@ -91,7 +92,7 @@ class MishMashTest {
 
     @Test
     void main_editRecipe_recoversFromErrorsAndShowsUpdatedDetails() {
-        String output = runCli(session("edit-recipe 1 p/10", ADD_RICE, "edit-recipe 1 n/Changed p/bad",
+        String output = runCli(createSessionInput("edit-recipe 1 p/10", ADD_RICE, "edit-recipe 1 n/Changed p/bad",
                 "list-recipes", "edit-recipe 2 p/10", "edit-recipe 1 n/Brown Rice p/10 i/Brown Rice:175g",
                 "list-recipes 1", "help", "bye"));
 
@@ -111,7 +112,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_editAfterDeletion_usesNewIndexWithoutAnotherConfirmation() {
-        String output = runCli(session(ADD_RICE, ADD_OATS, "delete-recipe 1", "y",
+        String output = runCli(createSessionInput(ADD_RICE, ADD_OATS, "delete-recipe 1", "y",
                 "edit-recipe 1 n/Protein Oats p/12", "list-recipes 1", "bye"));
 
         String editedDetails = String.join(System.lineSeparator(), "Protein Oats",
@@ -127,7 +128,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_lateEditErrors_preserveDetailsAndAllowSuccessfulRetry() {
-        String output = runCli(session(ADD_RICE, "edit-recipe 1 n/Changed i/Water:100ml food/milk,",
+        String output = runCli(createSessionInput(ADD_RICE, "edit-recipe 1 n/Changed i/Water:100ml food/milk,",
                 "edit-recipe 1 n/Changed cal/250 i/Rice:0g", "list-recipes 1",
                 "edit-recipe 1 p/10", "list-recipes 1", "bye"));
 
@@ -148,7 +149,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_editBetweenGenerations_keepsOldWarningsAndGroceriesUntilNewPlan() {
-        String output = runCli(session(
+        String output = runCli(createSessionInput(
                 "add-recipe n/A cal/600 p/30 c/50 f/10 i/Rice:100g food/none",
                 "add-recipe n/B cal/600 p/30 c/50 f/10 i/Rice:100g food/none",
                 "add-recipe n/C cal/600 p/30 c/50 f/10 i/Rice:100g food/none",
@@ -178,7 +179,7 @@ class MishMashTest {
 
     @Test
     void main_helpAndRecovery_promptAfterEveryCommand() {
-        String output = runCli(session("help", "list-recipes", "view-plan", "view-list",
+        String output = runCli(createSessionInput("help", "list-recipes", "view-plan", "view-list",
                 "generate-list", "generate-plan d/1", "unknown", "", "help extra", "bye"));
 
         for (String word : List.of("add-recipe", "list-recipes", "delete-recipe", "generate-plan",
@@ -195,7 +196,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_checkShortfall_handlesMissingPlanInvalidTargetsAndSuccessfulCheck() {
-        String output = runCli(session("check-shortfall cal/2000", "check-shortfall cal/0",
+        String output = runCli(createSessionInput("check-shortfall cal/2000", "check-shortfall cal/0",
                 "add-recipe n/A cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "add-recipe n/B cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "add-recipe n/C cal/600 p/30 c/50 f/10 i/Rice:100g",
@@ -215,7 +216,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_shortfallMissingValues_showsSpecificErrorsAndContinuesWithoutConfirmation() {
-        String output = runCli(session("check-shortfall cal/", "check-shortfall p/",
+        String output = runCli(createSessionInput("check-shortfall cal/", "check-shortfall p/",
                 "check-shortfall c/", "check-shortfall f/", "check-shortfall cal/2000", "help", "bye"));
 
         for (String prefix : List.of("cal", "p", "c", "f")) {
@@ -235,7 +236,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_shortfallErrorsAndRepeatedChecks_keepPlanAndGroceriesUsable() {
-        String output = runCli(session(
+        String output = runCli(createSessionInput(
                 "add-recipe n/A cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "add-recipe n/B cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "add-recipe n/C cal/600 p/30 c/50 f/10 i/Rice:100g",
@@ -260,7 +261,7 @@ class MishMashTest {
     //@@author Rixte
     @Test
     void main_endOfInputAfterInvalidShortfall_exitsAfterDisplayingRecoverableError() {
-        String output = runCli(session("check-shortfall cal/"));
+        String output = runCli(createSessionInput("check-shortfall cal/"));
 
         assertEquals(1, countOccurrences(output, "Error: Missing value after cal/."), output);
         assertEquals(1, countOccurrences(output, Parser.CHECK_SHORTFALL_USAGE), output);
@@ -271,7 +272,7 @@ class MishMashTest {
 
     @Test
     void main_cancelledDelete_promptsOnceAfterCancellation() {
-        String output = runCli(session(ADD_RICE, "delete-recipe 1", "n", "list-recipes", "bye"));
+        String output = runCli(createSessionInput(ADD_RICE, "delete-recipe 1", "n", "list-recipes", "bye"));
         assertEquals(4, countOccurrences(output, CONTINUE_PROMPT), output);
         assertTrue(output.contains("Cancelled. Nothing was changed." + System.lineSeparator()
                 + CONTINUE_PROMPT), output);
@@ -512,7 +513,7 @@ class MishMashTest {
             // A missing output stream makes session construction fail before run() can log anything.
             System.setOut(null);
             NullPointerException error = assertThrows(NullPointerException.class,
-                    () -> MishMash.main(new String[0], "mishmash.%g.log"));
+                    () -> MishMash.runMain("mishmash.%g.log"));
 
             assertEquals("output", error.getMessage());
             List<LogRecord> failures = recordingHandler.records.stream()
@@ -579,7 +580,7 @@ class MishMashTest {
         try (PrintStream capturedOutput = new PrintStream(output, true, StandardCharsets.UTF_8)) {
             System.setIn(input);
             System.setOut(capturedOutput);
-            MishMash.main(new String[0], "mishmash.%g.log");
+            MishMash.runMain("mishmash.%g.log");
         } finally {
             System.setIn(originalInput);
             System.setOut(originalOutput);
@@ -601,7 +602,7 @@ class MishMashTest {
 
     @Test
     void main_addThenConfirmedDelete_displaysExpectedTranscript() {
-        String output = runCli(session(ADD_RICE, "delete-recipe 1", "y", "bye"));
+        String output = runCli(createSessionInput(ADD_RICE, "delete-recipe 1", "y", "bye"));
 
         String expected = String.join(System.lineSeparator(),
                 "New recipe added!",
@@ -625,7 +626,7 @@ class MishMashTest {
         return List.of("y", "Y", "yes", "YES", "Yes", "  yes  ").stream()
                 .map(answer -> DynamicTest.dynamicTest("Answer: [" + answer + "]", () -> {
                     // After Rice is deleted only Oats remains, so index 2 must no longer exist.
-                    String output = runCli(session(ADD_RICE, ADD_OATS, "delete-recipe 1", answer,
+                    String output = runCli(createSessionInput(ADD_RICE, ADD_OATS, "delete-recipe 1", answer,
                             "delete-recipe 2", "bye"));
 
                     assertEquals(1, countOccurrences(output, "Recipe deleted!"), output);
@@ -641,7 +642,7 @@ class MishMashTest {
         return List.of("n", "N", "no", "", "   ", "maybe", "yes please", "yy", "bye").stream()
                 .map(answer -> DynamicTest.dynamicTest("Answer: [" + answer + "]", () -> {
                     // The second delete only works if the first one left the recipe in place.
-                    String output = runCli(session(ADD_RICE, "delete-recipe 1", answer,
+                    String output = runCli(createSessionInput(ADD_RICE, "delete-recipe 1", answer,
                             "delete-recipe 1", "y", "bye"));
 
                     assertEquals(2, countOccurrences(output,
@@ -656,7 +657,7 @@ class MishMashTest {
 
     @Test
     void main_deleteThenEndOfInput_cancelsInsteadOfDeleting() {
-        String output = runCli(session(ADD_RICE, "delete-recipe 1"));
+        String output = runCli(createSessionInput(ADD_RICE, "delete-recipe 1"));
 
         assertTrue(output.contains("Are you sure you want to delete recipe 1: Rice? [y/N]:"), output);
         assertTrue(output.contains("Cancelled. Nothing was changed."), output);
@@ -665,7 +666,7 @@ class MishMashTest {
 
     @Test
     void main_deleteMissingRecipe_showsErrorWithoutAsking() {
-        String output = runCli(session("delete-recipe 1", ADD_RICE, "delete-recipe 2", "bye"));
+        String output = runCli(createSessionInput("delete-recipe 1", ADD_RICE, "delete-recipe 2", "bye"));
 
         assertEquals(0, countOccurrences(output, "Are you sure"), output);
         assertEquals(2, countOccurrences(output, "Error: "), output);
@@ -680,7 +681,7 @@ class MishMashTest {
         return List.of("delete-recipe", "delete-recipe 0", "delete-recipe -1", "delete-recipe abc",
                         "delete-recipe 1 2", "delete-recipe 2147483648").stream()
                 .map(badCommand -> DynamicTest.dynamicTest(badCommand, () -> {
-                    String output = runCli(session(ADD_RICE, badCommand, "delete-recipe 1", "y", "bye"));
+                    String output = runCli(createSessionInput(ADD_RICE, badCommand, "delete-recipe 1", "y", "bye"));
 
                     assertEquals(1, countOccurrences(output, "Error: "), output);
                     assertEquals(1, countOccurrences(output, "Format: delete-recipe INDEX"), output);
@@ -694,7 +695,7 @@ class MishMashTest {
 
     @Test
     void main_unknownCommand_listsEveryCommandUsageOnce() {
-        String output = runCli(session("unknown", "bye"));
+        String output = runCli(createSessionInput("unknown", "bye"));
 
         assertTrue(output.contains("Error: Unknown command: unknown"), output);
         assertEquals(1, countOccurrences(output, Parser.ADD_RECIPE_USAGE), output);
@@ -703,7 +704,7 @@ class MishMashTest {
 
     @Test
     void main_listRecipes_showsListThenFullRecipeWithoutAsking() {
-        String output = runCli(session(ADD_RICE, ADD_OATS, "list-recipes", "list-recipes 2", "bye"));
+        String output = runCli(createSessionInput(ADD_RICE, ADD_OATS, "list-recipes", "list-recipes 2", "bye"));
 
         String expected = String.join(System.lineSeparator(),
                 "Recipes:",
@@ -724,7 +725,7 @@ class MishMashTest {
 
     @Test
     void main_listRecipeWithNoRecipes_continuesWithoutError() {
-        String output = runCli(session("list-recipes", ADD_RICE, "list-recipes", "bye"));
+        String output = runCli(createSessionInput("list-recipes", ADD_RICE, "list-recipes", "bye"));
 
         assertEquals(1, countOccurrences(output, "No recipes yet. Use 'add-recipe' to add one."), output);
         assertTrue(output.contains("1. Rice (200 kcal)"), output);
@@ -734,7 +735,7 @@ class MishMashTest {
 
     @Test
     void main_listRecipeBadIndex_showsErrorAndRecovers() {
-        String output = runCli(session("list-recipes 1", ADD_RICE, "list-recipes 2", "list-recipes abc",
+        String output = runCli(createSessionInput("list-recipes 1", ADD_RICE, "list-recipes 2", "list-recipes abc",
                 "list-recipes 1", "bye"));
 
         assertEquals(3, countOccurrences(output, "Error: "), output);
@@ -750,7 +751,7 @@ class MishMashTest {
 
     @Test
     void main_listRecipeThenDelete_showsTheNumbersDeleteUses() {
-        String output = runCli(session(ADD_RICE, ADD_OATS, "list-recipes", "delete-recipe 2", "y",
+        String output = runCli(createSessionInput(ADD_RICE, ADD_OATS, "list-recipes", "delete-recipe 2", "y",
                 "list-recipes", "bye"));
 
         assertTrue(output.contains("Are you sure you want to delete recipe 2: Oats? [y/N]:"), output);
@@ -763,7 +764,7 @@ class MishMashTest {
     @Test
     void main_recordAndViewMeals_showsFeedbackAndCumulativeTotals() {
         String today = " | 1 serving | " + LocalDate.now();
-        String output = runCli(session(
+        String output = runCli(createSessionInput(
                 "add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken:200g",
                 "add-recipe n/Protein Oatmeal cal/450 p/35 c/60 f/8 i/Oats:50g",
                 "record-meal 1", "record-meal 2", "view-meals", "bye"));
@@ -785,7 +786,7 @@ class MishMashTest {
 
     @Test
     void main_mealCommandErrors_showMessagesAndKeepSessionRunning() {
-        String output = runCli(session("view-meals", "record-meal 1",
+        String output = runCli(createSessionInput("view-meals", "record-meal 1",
                 "add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken:200g",
                 "record-meal 9", "record-meal 0", "record-meal x", "record-meal", "view-meals extra",
                 "view-meals", "record-meal 1", "view-meals", "bye"));
@@ -807,7 +808,7 @@ class MishMashTest {
 
     @Test
     void main_recordedMealsAndPlan_areIndependent() {
-        String output = runCli(session(
+        String output = runCli(createSessionInput(
                 "add-recipe n/A cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "record-meal 1", "view-plan", "view-meals", "bye"));
 
@@ -817,7 +818,7 @@ class MishMashTest {
 
     @Test
     void main_helpAfterMealCommands_listsThem() {
-        String output = runCli(session("help", "bye"));
+        String output = runCli(createSessionInput("help", "bye"));
 
         assertTrue(output.contains("record-meal - Record a recipe you have eaten"), output);
         assertTrue(output.contains("Format: record-meal INDEX"), output);
@@ -831,7 +832,7 @@ class MishMashTest {
      */
     @Test
     void main_editAndDeleteAfterRecording_keepMealAsRecorded() {
-        String output = runCli(session(
+        String output = runCli(createSessionInput(
                 "add-recipe n/A cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "record-meal 1", "edit-recipe 1 p/99", "delete-recipe 1", "y", "view-meals", "bye"));
 
@@ -844,7 +845,7 @@ class MishMashTest {
 
     @Test
     void main_generatePlanThenRecordMeal_recordsOnlyTheChosenRecipe() {
-        String output = runCli(session(
+        String output = runCli(createSessionInput(
                 "add-recipe n/A cal/600 p/30 c/50 f/10 i/Rice:100g",
                 "add-recipe n/B cal/400 p/20 c/40 f/5 i/Oats:50g",
                 "add-recipe n/C cal/200 p/5 c/20 f/8 i/Kale:50g",
@@ -856,7 +857,7 @@ class MishMashTest {
         assertEquals(0, countOccurrences(output, "Error: "), output);
     }
 
-    private static String session(String... lines) {
+    private static String createSessionInput(String... lines) {
         return "Tester" + System.lineSeparator()
                 + String.join(System.lineSeparator(), lines) + System.lineSeparator();
     }

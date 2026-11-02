@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 public record IngredientCustomization(int dayNumber, int mealNumber, List<GroceryItem> ingredients) {
     /**
-     * Creates a customisation with positive positions and an independent ingredient snapshot.
+     * Creates a customization with positive positions and an independent ingredient snapshot.
      *
      * @throws NullPointerException If the list or any ingredient is null.
      * @throws IllegalArgumentException If a position is not positive, the list is empty, or a quantity is not
