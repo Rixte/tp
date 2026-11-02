@@ -16,7 +16,6 @@ class MealLog {
   + getTotalsOn(date: LocalDate): NutritionTotals
 }
 class MealEntry <<record>> {
-  - recipe: Recipe
   - date: LocalDate
   - servings: int
   + nutrition(): NutritionTotals
