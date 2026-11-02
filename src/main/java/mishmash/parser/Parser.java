@@ -509,7 +509,7 @@ public class Parser {
             TargetChanges changes = new SetTargetsParser().parse(arguments);
             return new SetTargetsCommand(changes, targetSettings);
         } catch (IllegalArgumentException e) {
-            throw new MishMashException(e.getMessage() + System.lineSeparator() + SET_TARGETS_USAGE, e);
+            throw new MishMashException(e.getMessage(), SET_TARGETS_USAGE, e);
         }
     }
 
@@ -522,8 +522,8 @@ public class Parser {
      */
     private Command parseViewTargets(String arguments) throws MishMashException {
         if (!arguments.isBlank()) {
-            throw new MishMashException(ViewTargetsCommand.COMMAND_WORD + " does not accept arguments."
-                    + System.lineSeparator() + VIEW_TARGETS_USAGE);
+            throw new MishMashException(ViewTargetsCommand.COMMAND_WORD + " does not accept arguments.",
+                    VIEW_TARGETS_USAGE, null);
         }
         return new ViewTargetsCommand(targetSettings);
     }
