@@ -38,29 +38,11 @@ Refer to [Setting Up and Getting Started](SettingUp.md) for Java 25 prerequisite
 <!-- @@author Rixte -->
 ### Interactive Input in the Development Build
 
-`MishMash` reads names, commands, and confirmations through `ConsoleInput`. The existing
-Scanner constructor remains available for borrowed streams and deterministic tests. The launcher
-owns and closes its adapter; `run()` does not close caller-provided input or output.
+`ConsoleInputs` uses JLine on supported interactive consoles and falls back to Scanner if terminal setup fails. The launcher owns its input adapter; injected test streams remain caller-owned.
 
-`ConsoleInputs` selects `JLineConsoleInput` when Java exposes an interactive console and `TERM`
-does not declare a dumb terminal. Terminal initialization failures fall back to
-`ScannerConsoleInput` before reading application input. An editor initialization failure closes
-the newly created terminal before falling back. Terminal-close failures retain their cause in the log.
+Completion uses `Parser.COMMAND_USAGE`; history stays in memory. Names and confirmation answers use neither. Ctrl+C clears the command or supplies a blank confirmation, while EOF ends input. JLine preserves the existing grammar by disabling history expansion, quote interpretation, and escape interpretation.
 
-`CommandCompleter` derives command names and prefixes from `Parser.COMMAND_USAGE`. It avoids a second
-hand-maintained command registry and leaves validation to the existing parser. Already supplied scalar
-prefixes are omitted from suggestions; repeated `i/` arguments remain available.
-
-JLine records commands only in session memory. Name and confirmation reads disable both history and
-completion. History expansion, quote interpretation, and escape interpretation are disabled so the
-editor does not change the existing command grammar. Ctrl+C clears a command or supplies a blank
-confirmation answer; EOF remains distinct from a submitted blank line.
-
-Gradle packages the JLine reader and JNI provider, merges service-loader registrations, and adds the
-`Enable-Native-Access: ALL-UNNAMED` JAR manifest attribute required for native terminal access on Java 25.
-The Gradle application launcher also supplies the corresponding JVM option. Unit tests use in-memory
-terminals, scripted interruptions, and injected terminal factories; native terminal behavior is checked
-separately using the packaged JAR.
+Gradle packages the reader and JNI provider, merges service registrations, and enables native access on Java 25. Tests use in-memory terminals and injected factories; check native behaviour with the packaged JAR.
 <!-- @@author -->
 
 This guide describes the current source checkout. For a published build, consult the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) and its release notes; milestone assignment alone does not establish what a release JAR contains. Build the current checkout when testing the features described here. [User Stories](#appendix-b-user-stories) show milestone assignments and current source support.
@@ -126,42 +108,20 @@ Commands validate their arguments and relevant application state. Requests that 
 
 ### Model Component
 
-| Class | Represents |
+| Model group | Responsibility |
 | --- | --- |
-| `ApplicationState` | The five shared roots: recipe book, active plan, dietary settings, target settings, and meal log. |
-| `CommandResult` | User-facing command feedback and its explicit presentation status. |
-| `Recipe` | A recipe name, calorie and macronutrient values, and ingredient entries. |
-| `RecipeBook` | The session's ordered collection of recipes. |
-| `RecipeChanges` | Validated optional edits, applied to the current recipe during execution. |
-| `GroceryItem` | An ingredient name, decimal quantity, and unit. |
-| `PlannedMeal` | One recipe snapshot, its positive whole-recipe portion count, and optional occurrence-specific replacement ingredients. |
-| `PortionAdjustment` | Validated one-based day and meal positions with the requested portion count. |
-| `IngredientCustomization` | Validated positions and a complete immutable replacement ingredient list. |
-| `DayPlan` | The meals selected for one day and their nutrition totals. |
-| `MealPlan` | The ordered days of a generated plan. |
-| `NutritionTargets` | Optional daily calorie, protein, carbohydrate, and fat targets. |
-| `Nutrient` | The four nutrients that can have a target, with their command prefix, label, and unit. |
-| `TargetChanges` | Validated changes to the saved targets: a new value, or removal, for each nutrient mentioned. |
-| `TargetSettings` | The daily targets saved with `set-targets`, shared by the commands that use them during the session. |
-| `GeneratePlanRequest` | The requested number of days and nutrition targets. |
-| `DietarySettings` | The shared session dietary profile, including its unrestricted reset operation. |
-| `DietaryPreferences` | An immutable named diet, avoided tags, and normalized excluded ingredient names. |
-| `Diet`, `FoodTag`, `FoodInfo` | Named-diet rules, supported categories, and declared recipe classification. |
-| `ActiveMealPlan` | The current plan, retained generation request, and generated grocery list, if available. |
-| `MealEntry` | A recorded recipe snapshot, ISO calendar date, and positive whole-serving count. |
-| `MealEntryChanges` | Validated optional changes to a recorded meal's date and servings. |
-| `MealLog` | The `MealEntry` values (recipe, date, servings) the user has recorded as eaten, in the order recorded. |
-| `NutritionTotals` | Summed calories, protein, carbohydrates, and fats, held as `long` values. |
+| `ApplicationState` | Shares the recipe book, active plan, dietary settings, target settings, and meal log. |
+| `RecipeBook`, `Recipe`, `GroceryItem` | Ordered recipes, their nutrition/classification, and decimal ingredient quantities with units. |
+| `ActiveMealPlan`, `MealPlan`, `DayPlan`, `PlannedMeal` | One active plan, its generation request and groceries; days contain recipe snapshots with whole portions and optional ingredient overrides. |
+| `DietarySettings`, `DietaryPreferences`, `Diet`, `FoodTag`, `FoodInfo` | Current restrictions and declared recipe classifications. |
+| `TargetSettings`, `NutritionTargets`, `NutritionTotals` | Saved targets, applied constraints, and totals held as `long` values. |
+| `MealLog`, `MealEntry` | Recorded recipe snapshots with dates and whole-serving counts, separate from planned meals. |
 
-There are no separate `Ingredient` or `GroceryList` classes in the current model. Recipe ingredients and generated grocery entries use `GroceryItem`.
+Validated request/change objects and their interactions are described under the corresponding [Implementation](#implementation) feature.
 
-Recipes remain in insertion order. Their displayed indexes start at 1 and can change after deletion. Duplicate names are permitted. Editing replaces the recipe at its position without changing indexes. Existing meal plans retain their recipe snapshots when recipes are added, edited, or removed from the recipe book.
+Recipe indexes start at 1 and change after deletion; duplicate names are allowed. Editing replaces an entry without shifting indexes. Existing plans and recorded meals retain independent recipe snapshots after recipe edits or deletion.
 
-Recorded meals are kept in one `MealLog` for the session. Each `MealEntry` stores the `Recipe` object itself, so each recorded meal keeps the nutrition the recipe had when it was recorded, whatever happens to the recipe book afterwards. The log is separate from the active plan: the plan holds meals the user intends to eat, and the log holds meals the user has eaten.
-
-Saved daily targets are kept in one `TargetSettings` for the session and are read when `generate-plan` runs. A generated plan stores the targets that were applied to it, so later changes to the saved targets do not alter it.
-
-Only one meal plan is active at a time. Successfully generating a replacement plan clears the groceries associated with the previous plan. Failed generation preserves the previous plan and groceries.
+Saved targets apply during generation; changing them later does not change an existing plan's applied targets. Successful replacement generation clears old groceries; failed generation preserves both plan and groceries. Ingredients and groceries use `GroceryItem`; there are no separate `Ingredient` or `GroceryList` classes.
 
 ### Storage Component
 
@@ -1842,26 +1802,7 @@ The project documentation is maintained in Markdown under `docs`. The main docum
 
 Keep command formats, examples, prerequisites, and expected results consistent with the code. Document planned behaviour separately from available behaviour.
 
-#### Claiming and correcting authorship with RepoSense
-
-RepoSense normally uses Git history to identify contributions. Use `@@author` tags when necessary to credit your work or restore the original author's credit after moving or refactoring content. These tags change RepoSense attribution, not Git commit history.
-
-Use the comment syntax appropriate to the file:
-
-| File type | Start tag | End tag |
-| --- | --- | --- |
-| Java | `// @@author oilybikechain` | `// @@author` |
-| Markdown | `<!-- @@author oilybikechain -->` | `<!-- @@author -->` |
-
-1. Identify the code or documentation belonging to the contributor. Replace `oilybikechain` with the appropriate RepoSense author identifier when crediting someone else.
-2. Put the start tag on its own line immediately before that contribution, including its heading or explanatory comments.
-3. Put the end tag on its own line immediately after it. Without an end tag, attribution continues to the next start tag or the end of the file.
-4. To fix incorrect credit, correct the existing start tag or add a correctly scoped pair around the original contribution. Keep unrelated contributions outside the pair.
-5. Commit and push the change to the branch analysed by the tracker, then check the next refreshed report.
-
-Do not add an end tag without a corresponding start tag; it can leave subsequent content unattributed. Markdown HTML comments remain hidden in the rendered guide.
-
-Reference: [RepoSense authorship-tag guide](https://reposense.org/ug/usingAuthorTags.html).
+For RepoSense attribution and corrections, see [Contributing to MishMash](Contributing.md#claiming-and-correcting-authorship-with-reposense).
 
 ### Logging
 
