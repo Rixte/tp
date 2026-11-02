@@ -26,6 +26,7 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 - [JLine](https://jline.org/docs/line-reader/) provides interactive line editing, completion, and session history
   in the development build. The JNI terminal provider supports native consoles; unsupported environments
   retain the existing Scanner-based input. JLine is distributed under the BSD 3-Clause license.
+- [Jackson](https://github.com/FasterXML/jackson) reads and writes the versioned JSON snapshots used for local persistence.
 - [PlantUML](https://plantuml.com/) generates the UML diagrams from the editable sources under `docs/diagrams`, which has one folder per feature.
 
 <!-- TEAM: Add any further sources of reused or adapted code, ideas, and documentation before submission. -->
@@ -62,7 +63,7 @@ terminals, scripted interruptions, and injected terminal factories; native termi
 separately using the packaged JAR.
 <!-- @@author -->
 
-The JAR currently published on the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) is **v2.0**. The team has verified that the published v2.0 JAR matches the current source code described in this guide. Pending v2.0b features are explicitly labelled **Coming soon** in [User Stories](#v20b-follow-up-stories).
+This guide describes the current source checkout. For a published build, consult the [team's Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) and its release notes; milestone assignment alone does not establish what a release JAR contains. Build the current checkout when testing the features described here. [User Stories](#appendix-b-user-stories) distinguish milestone assignment, source support, and issue status.
 
 ## Design
 
@@ -127,12 +128,13 @@ Commands validate their arguments and relevant application state. Requests that 
 
 | Class | Represents |
 | --- | --- |
+| `ApplicationState` | The five shared roots: recipe book, active plan, dietary settings, target settings, and meal log. |
 | `CommandResult` | User-facing command feedback and its explicit presentation status. |
 | `Recipe` | A recipe name, calorie and macronutrient values, and ingredient entries. |
 | `RecipeBook` | The session's ordered collection of recipes. |
 | `RecipeChanges` | Validated optional edits, applied to the current recipe during execution. |
 | `GroceryItem` | An ingredient name, decimal quantity, and unit. |
-| `PlannedMeal` | One recipe occurrence and its positive whole-recipe portion count. |
+| `PlannedMeal` | One recipe snapshot, its positive whole-recipe portion count, and optional occurrence-specific replacement ingredients. |
 | `PortionAdjustment` | Validated one-based day and meal positions with the requested portion count. |
 | `IngredientCustomization` | Validated positions and a complete immutable replacement ingredient list. |
 | `DayPlan` | The meals selected for one day and their nutrition totals. |
@@ -145,7 +147,9 @@ Commands validate their arguments and relevant application state. Requests that 
 | `DietarySettings` | The shared session dietary profile, including its unrestricted reset operation. |
 | `DietaryPreferences` | An immutable named diet, avoided tags, and normalized excluded ingredient names. |
 | `Diet`, `FoodTag`, `FoodInfo` | Named-diet rules, supported categories, and declared recipe classification. |
-| `ActiveMealPlan` | The current meal plan and its generated grocery list, if available. |
+| `ActiveMealPlan` | The current plan, retained generation request, and generated grocery list, if available. |
+| `MealEntry` | A recorded recipe snapshot, ISO calendar date, and positive whole-serving count. |
+| `MealEntryChanges` | Validated optional changes to a recorded meal's date and servings. |
 | `MealLog` | The `MealEntry` values (recipe, date, servings) the user has recorded as eaten, in the order recorded. |
 | `NutritionTotals` | Summed calories, protein, carbohydrates, and fats, held as `long` values. |
 
@@ -164,6 +168,55 @@ Only one meal plan is active at a time. Successfully generating a replacement pl
 `ApplicationState` owns all five shared model roots. The production launcher restores them through `SessionStorage`, builds `Parser(ApplicationState)`, and uses `SessionPersistence` to autosave completed changes. See [Persistence and recovery](#persistence-and-recovery).
 
 Diagnostic logs remain separate from the versioned JSON user-data snapshot.
+
+### Persistence and recovery
+
+`ApplicationState` shares recipes, `ActiveMealPlan`, dietary settings, target settings, and `MealLog` between
+the parser and storage. Existing parser/session constructors still create isolated in-memory sessions;
+the public production entry point restores state before opening the command loop. This keeps tests from
+reading or overwriting a developer's real data. `StorageJarTest` covers the actual production launcher.
+
+![Persistence ownership and dependencies](images/storage/classes.svg)
+
+`SessionData` is a storage-only record hierarchy with schema version 2. Recipe values are embedded independently
+in the recipe book, planned occurrences, and recorded meals. Orders and duplicates are preserved; sets are sorted
+for deterministic output. Recorded entries retain their ISO calendar date and whole-serving count. Decimal
+quantities are plain strings and nullable targets use JSON null. Null groceries
+mean not generated; an empty array means a generated empty snapshot. Restoration uses domain constructors,
+including exact ordered ingredient equality from the defensive PR fixes.
+
+Jackson rejects duplicate/unknown/missing fields, scalar coercion, fractional integer values, trailing JSON,
+and null primitives. Parsing limits document size to 10 MiB, depth to 100, strings to 1,000,000 characters,
+and numeric tokens to 1,000 characters. No polymorphic typing or native Java serialization is enabled.
+Only validated snapshots are published; malformed data cannot partially update application state.
+
+![Autosave sequence](images/storage/autosave.svg)
+
+`SessionPersistence` marks `DONE` and `WARNING` outcomes dirty and saves before presenting feedback. Notes,
+read-only output, cancelled commands, and parse/execution errors do not trigger autosave. A failed save retains
+the live state, produces warning feedback, and retries after the next mutation and on normal exit. Future
+state-changing commands must report a mutation outcome; presentation status currently supplies that contract.
+Unexpected application failures are still logged and rethrown; they do not trigger an unsafe final save.
+
+`JsonSessionStorage` holds an exclusive `FileChannel` lock for the process lifetime. Writes validate the JSON,
+flush a same-directory temporary file, preserve the previous valid backup, and replace the primary with an
+atomic move where supported. Filesystems without atomic replacement fall back to replacement plus backup
+recovery. Temporary-file cleanup is best effort. An unreferenced `.tmp` is never loaded automatically.
+Operating-system locks and file flushing do not provide a guarantee against every power or hardware failure.
+
+Startup distinguishes invalid JSON from filesystem access failure. Only invalid files are quarantined;
+an inaccessible file or a failed backup restoration stops startup. Recovery never quarantines a valid backup
+merely because writing the primary failed. Unsupported versions are preserved like malformed snapshots;
+version 1 snapshots are upgraded automatically to version 2. Legacy undated records receive the local upgrade
+date and one serving, with warning feedback. The original file is retained as the backup. The upgrade is saved
+immediately so repeated restarts do not change those assigned dates. Failed upgrades stop startup and preserve
+the original primary; they never classify a valid legacy file as corrupt.
+
+Run Java 25 `./gradlew check shadowJar`. Storage tests use temporary directories and cover round trips,
+validation, locks, backups, quarantine, write failures, and retry behavior. The check task also builds and runs
+the shadow JAR through multiple processes to verify retention from a working directory outside the repository.
+JAR tests also cover forced termination after autosave, lock release, corrupt-primary recovery, unsaved-change
+warnings and shutdown retries, failed dietary repair, and unchanged save files after no-ops or cancellation.
 ## Implementation
 
 This section explains the implemented MVP features, followed by v2.0b plan-management features and generation diagnostics.
@@ -2240,56 +2293,7 @@ Viewing never changes the profile or generated data.
 | Macronutrient | Protein, carbohydrate, or fat, measured in grams. |
 | Daily target | An optional desired daily total for calories or a macronutrient. |
 | Grocery list | The combined ingredient quantities generated from the active plan. |
-| Session | One running instance of the application; application data is not retained after it ends. |
-
-### Persistence and recovery
-
-`ApplicationState` shares recipes, `ActiveMealPlan`, dietary settings, target settings, and `MealLog` between
-the parser and storage. Existing parser/session constructors still create isolated in-memory sessions;
-the public production entry point restores state before opening the command loop. This keeps tests from
-reading or overwriting a developer's real data. `StorageJarTest` covers the actual production launcher.
-
-![Persistence ownership and dependencies](images/storage/classes.svg)
-
-`SessionData` is a storage-only record hierarchy with schema version 2. Recipe values are embedded independently
-in the recipe book, planned occurrences, and recorded meals. Orders and duplicates are preserved; sets are sorted
-for deterministic output. Recorded entries retain their ISO calendar date and whole-serving count. Decimal
-quantities are plain strings and nullable targets use JSON null. Null groceries
-mean not generated; an empty array means a generated empty snapshot. Restoration uses domain constructors,
-including exact ordered ingredient equality from the defensive PR fixes.
-
-Jackson rejects duplicate/unknown/missing fields, scalar coercion, fractional integer values, trailing JSON,
-and null primitives. Parsing limits document size to 10 MiB, depth to 100, strings to 1,000,000 characters,
-and numeric tokens to 1,000 characters. No polymorphic typing or native Java serialization is enabled.
-Only validated snapshots are published; malformed data cannot partially update application state.
-
-![Autosave sequence](images/storage/autosave.svg)
-
-`SessionPersistence` marks `DONE` and `WARNING` outcomes dirty and saves before presenting feedback. Notes,
-read-only output, cancelled commands, and parse/execution errors do not trigger autosave. A failed save retains
-the live state, produces warning feedback, and retries after the next mutation and on normal exit. Future
-state-changing commands must report a mutation outcome; presentation status currently supplies that contract.
-Unexpected application failures are still logged and rethrown; they do not trigger an unsafe final save.
-
-`JsonSessionStorage` holds an exclusive `FileChannel` lock for the process lifetime. Writes validate the JSON,
-flush a same-directory temporary file, preserve the previous valid backup, and replace the primary with an
-atomic move where supported. Filesystems without atomic replacement fall back to replacement plus backup
-recovery. Temporary-file cleanup is best effort. An unreferenced `.tmp` is never loaded automatically.
-Operating-system locks and file flushing do not provide a guarantee against every power or hardware failure.
-
-Startup distinguishes invalid JSON from filesystem access failure. Only invalid files are quarantined;
-an inaccessible file or a failed backup restoration stops startup. Recovery never quarantines a valid backup
-merely because writing the primary failed. Unsupported versions are preserved like malformed snapshots;
-version 1 snapshots are upgraded automatically to version 2. Legacy undated records receive the local upgrade
-date and one serving, with warning feedback. The original file is retained as the backup. The upgrade is saved
-immediately so repeated restarts do not change those assigned dates. Failed upgrades stop startup and preserve
-the original primary; they never classify a valid legacy file as corrupt.
-
-Run Java 25 `./gradlew check shadowJar`. Storage tests use temporary directories and cover round trips,
-validation, locks, backups, quarantine, write failures, and retry behavior. The check task also builds and runs
-the shadow JAR through multiple processes to verify retention from a working directory outside the repository.
-JAR tests also cover forced termination after autosave, lock release, corrupt-primary recovery, unsaved-change
-warnings and shutdown retries, failed dietary repair, and unchanged save files after no-ops or cancellation.
+| Session | One running instance of the application. Successfully saved application data remains available across sessions. |
 
 ## Appendix E: Instructions for Manual Testing
 
