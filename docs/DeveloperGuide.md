@@ -775,6 +775,7 @@ argument rejection. Run the existing Java 25 test suite when changing this behav
 
 <!-- @@author -->
 
+<!-- @@author oilybikechain -->
 ### Clearing dietary preferences and restrictions
 
 *Section author: oilybikechain*
@@ -795,6 +796,7 @@ new unrestricted profile.
 and null boundaries. `ClearDietIntegrationTest` covers deferred parser execution, invalid
 arguments, help text, future unrestricted generation, and identity-preservation of unrelated
 planning state.
+<!-- @@author -->
 
 <!-- @@author neil0618 -->
 ### Setting and viewing daily targets
@@ -978,6 +980,7 @@ the second view should report missing data.
 
 <!-- @@author -->
 
+<!-- @@author oilybikechain -->
 ### Adjusting planned meal portions
 
 *Section author: oilybikechain*
@@ -1009,6 +1012,7 @@ generation. Existing model, viewer, and grocery tests provide regression coverag
 
 <!-- @@author -->
 
+<!-- @@author oilybikechain -->
 ### Customising planned meal ingredients
 
 *Section author: oilybikechain*
