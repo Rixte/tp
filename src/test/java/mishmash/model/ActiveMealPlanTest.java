@@ -91,6 +91,56 @@ class ActiveMealPlanTest {
         assertEquals(List.of(rice), activePlan.getGroceryList().orElseThrow());
     }
 
+    //@@author GauthamNandi
+    @Test
+    void update_noActivePlan_isRejectedAndLeavesNoPlan() {
+        MealPlan replacement = new MealPlan(List.of(new DayPlan(List.of(createRecipe()))));
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> activePlan.update(replacement));
+
+        assertEquals("An active meal plan is required before it can be updated.", error.getMessage());
+        assertTrue(activePlan.get().isEmpty());
+    }
+
+    /**
+     * Normal plans cannot change length, so this uses {@link ResizedPlan} to reach the guard that protects
+     * the stored request if the plan and its request ever disagree.
+     */
+    @Test
+    void update_lengthDiffersFromRequest_isRejectedAndPreservesAllState() {
+        ResizedPlan original = new ResizedPlan();
+        GeneratePlanRequest request = new GeneratePlanRequest(1, NutritionTargets.none());
+        activePlan.setGenerated(original, request, Optional.of(List.of(rice)));
+        original.reportedDays = 2;
+        DayPlan day = new DayPlan(List.of(createRecipe()));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> activePlan.update(new MealPlan(List.of(day, day))));
+
+        assertEquals("Updated plan length must match its generation request.", error.getMessage());
+        assertEquals(original, activePlan.get().orElseThrow());
+        assertEquals(request, activePlan.getRequest().orElseThrow());
+        assertEquals(List.of(rice), activePlan.getGroceryList().orElseThrow());
+    }
+
+    /**
+     * A one-day plan whose reported length a test can change after it has been published.
+     */
+    private static final class ResizedPlan extends MealPlan {
+        private int reportedDays = 1;
+
+        private ResizedPlan() {
+            super(List.of(new DayPlan(List.of())));
+        }
+
+        @Override
+        public int getNumberOfDays() {
+            return reportedDays;
+        }
+    }
+    //@@author
+
     /**
      * Creates a minimal recipe using the shared grocery item.
      */

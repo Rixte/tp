@@ -204,6 +204,15 @@ class MealCorrectionCommandsTest {
     }
 
     @Test
+    void deleteMeal_constructor_rejectsInvalidArguments() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> new DeleteMealCommand(0, log));
+
+        assertEquals("Meal number must be at least 1.", error.getMessage());
+        assertThrows(NullPointerException.class, () -> new DeleteMealCommand(1, null));
+    }
+
+    @Test
     void parser_buildsTheExpectedCommands() throws MishMashException {
         assertInstanceOf(EditMealCommand.class, parser.parseCommand("edit-meal 1 s/2"));
         assertInstanceOf(DeleteMealCommand.class, parser.parseCommand("delete-meal 1"));
