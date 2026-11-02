@@ -2314,6 +2314,10 @@ Other occurrences, source recipes, recorded meals, and settings remain unchanged
 - Decimal ingredient quantities must retain their numeric precision.
 - Generating meals and groceries must leave the stored recipe entries unchanged.
 - The normal application workflow does not require a network connection or an external database.
+- Snapshot loading must reject files larger than 10 MiB without partially publishing application state.
+- Concurrent production instances using the same data directory must be prevented by an exclusive process lock.
+
+These are compatibility, integrity, and resource constraints. No measured recipe-capacity or response-time guarantee is specified; the 5,000-candidate generation bound is an algorithm limit, not a performance benchmark.
 
 ## Appendix D: Glossary
 
@@ -2601,9 +2605,40 @@ Use a fresh temporary directory with the sample recipes. Save `set-targets cal/1
 
 ### Session Data
 
-Create recipes, a plan with adjusted portions and custom ingredients, groceries, recorded meals, preferences, and targets. Enter `bye`, restart from the same directory, and verify that all views restore the earlier values. Repeat with end-of-input instead of `bye`.
+#### Retention across normal exits
 
-In a disposable test directory, damage the primary JSON file after closing MishMash. Verify that startup warns, recovers a valid backup, and preserves the damaged primary under a unique quarantine name. Damage both snapshots to test empty-state recovery. Use an empty working directory for each independent manual-test subsection.
+Create recipes, a plan with adjusted portions and custom ingredients, groceries, recorded meals, preferences, and targets. Exit with `bye`, restart from the same working directory, and verify that all views restore their earlier values. Repeat using EOF instead of `bye`.
+
+#### Missing, damaged, and locked files
+
+Use disposable working directories only. Close MishMash before copying or editing snapshots. The default files, relative to the directory from which Java is launched, are:
+
+| File | Role |
+| --- | --- |
+| `data/mishmash.json` | Current validated snapshot. |
+| `data/mishmash.backup.json` | Previous valid snapshot; recovery can therefore lose the most recent change. |
+| `data/mishmash.lock` | Process lock; the operating-system lock, not the file's mere existence, prevents concurrent use. |
+
+Create a reproducible seed in an empty directory:
+
+1. Launch MishMash, enter a name, and add the Chicken Rice sample recipe.
+2. Add the Tofu Rice sample recipe, then exit with `bye`.
+3. Check that the primary contains both recipes and the backup contains Chicken Rice alone. Copy this closed seed directory for each independent case below.
+
+To corrupt a file, replace its entire contents with `{broken` in a text editor. Preserve copies of the valid seed files outside each case directory.
+
+| Case and action before launch | Expected result after launch |
+| --- | --- |
+| Leave both seed snapshots unchanged. | Both recipes restore without recovery feedback. |
+| Rename the primary to `mishmash.saved.json`; leave the valid backup. | Warning about the missing primary; Chicken Rice restores from backup and a valid primary is recreated. The renamed file is not loaded. |
+| Corrupt only the primary. | Recovery warning; Chicken Rice restores from backup. Damaged primary is preserved as `mishmash.corrupt-<timestamp>-<uuid>.json`. |
+| Corrupt both primary and backup. | Warning and empty application state. Both originals remain under unique `mishmash.corrupt-...` and `mishmash.backup.corrupt-backup-...` JSON names. |
+| In another empty directory, launch without either snapshot. | Normal empty state; no damage-recovery warning. |
+| Keep one instance running on the seed; launch a second terminal in the same working directory and run the same JAR. | Second launch reports `MishMash is already using this data folder. Close the other instance first.` and stops before the command loop. The first instance stays usable. |
+
+After each recovery, use `list-recipes` to verify the exact contents, exit, and restart again to check stable restoration. After the lock case, close the first instance and confirm that a new instance starts normally; do not delete the lock file while a process holds it.
+
+Filesystem-access failures must stop startup rather than quarantine valid data. Permission failures, schema upgrades, interrupted writes, and save-retry behaviour are covered by the temporary-directory and packaged-JAR storage tests.
 
 <!-- @@author Rixte -->
 ### Confirmation answers in manual workflows
