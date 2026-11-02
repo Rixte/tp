@@ -382,8 +382,10 @@ public class Parser {
      * Creates read-only dietary output after rejecting unexpected arguments.
      */
     private Command parseViewDiet(String arguments) throws MishMashException {
+        //@@author peilingggg
         requireNoDietArguments("view-diet", arguments);
         return recipeBook -> dietarySettings.get().describe();
+        //@@author
     }
 
     /**
