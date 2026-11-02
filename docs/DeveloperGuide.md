@@ -1926,35 +1926,40 @@ Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Set daily macronutrient targets</td><td>Plan toward my protein, carbohydrate, and fat goals</td><td>Neil</td><td><code>set-targets p/... c/... f/...</code></td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking intake</td><td>Record meals eaten</td><td>Keep track of my actual food intake</td><td>Gautham</td><td><code>record-meal</code></td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Calculate nutrition totals for each meal</td><td>Review each recorded meal's calories and macronutrients</td><td>Gautham</td><td><code>view-meals</code></td></tr>
-<tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Calculate daily nutrition totals</td><td>Review the combined nutrition of each planned day</td><td>Justin</td><td><code>view-plan</code>; recorded totals are session-wide</td></tr>
+<tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Calculate daily nutrition totals</td><td>Review the combined nutrition of each planned day</td><td>Justin</td><td><code>view-plan</code> for planned days; <code>view-meals date/YYYY-MM-DD</code> for recorded daily totals</td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Detect meal plans that exceed nutrition targets</td><td>Identify days above my exact generation targets</td><td>Justin</td><td><code>view-plan</code> warnings</td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Detect meal plans that fall short of nutrition targets</td><td>Identify deficits against the targets I supply</td><td>Samantha</td><td><code>check-shortfall</code></td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User managing recipes</td><td>Edit an existing recipe</td><td>Keep its details consistent with how I prepare it</td><td>Samantha</td><td><code>edit-recipe</code></td></tr>
 </tbody>
 </table>
 
-### v2.0b Follow-up Stories
+### Follow-up Stories by Milestone
 
-This is a source-checkout audit against the [v2.0b milestone](https://github.com/AY2627S1-CS2113-W13-4/tp/issues?q=is%3Aissue+milestone%3Av2.0b), not a claim that every milestone item has shipped. An open issue can have partial or existing support.
+Milestone assignments below follow the [team repository](https://github.com/AY2627S1-CS2113-W13-4/tp/milestones) as checked on 2 November 2026. Source support describes this checkout; an open issue does not necessarily mean its feature is absent, and an implemented feature is not a claim that a published JAR contains it.
 
-| Priority | As a ... | I want to ... | So that I can ... | Issue | Support in this checkout |
+#### v2.0b
+
+| Priority | As a ... | I want to ... | So that I can ... | Issue | Source support and issue status |
 | --- | --- | --- | --- | --- | --- |
-| `**` | Returning user | Reset my active plan and groceries | Start planning again while keeping recipes, settings, and intake records | [#53](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/53) | Implemented: `reset-plan`. |
-| `**` | Returning user | Confirm plan removal or replacement | Avoid losing a plan accidentally | [#61](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/61) | Implemented for the documented plan-changing commands. |
-| `**` | User with dietary requirements | View my dietary settings | Check which restrictions apply to generation | [#71](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/71) | Implemented: `view-diet`. |
-| `**` | User with dietary requirements | Clear my dietary restrictions | Generate meals without restrictions | [#72](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/72) | Implemented: `clear-diet`. |
-| `**` | Meal prep user | Understand unsuccessful generation | Know which recipes or settings to change | [#59](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/59) | Existing diagnostics and dietary-repair recovery; check issue acceptance before closing. |
-| `**` | Meal prep user | Replace an individual planned meal | Adapt a plan to what I want to eat | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) | Implemented: `replace-meal`; the replacement starts at one portion and must satisfy current dietary preferences. |
-| `**` | Meal prep user | Adjust a planned meal's portion | Match nutrition and grocery quantities to my serving | [#58](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/58) | Implemented: `adjust-portion`; whole-recipe portions only. |
-| `**` | Meal prep user | Customise one planned meal's ingredients | Adapt that meal without editing the original recipe | [#60](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/60) | Implemented: `customize-meal`; source recipes remain unchanged. |
-| `**` | User tracking intake | Review recorded meals by date | Understand my intake for a selected day | [#62](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/62) | Coming soon (v2.0b); records have no dates. |
-| `**` | User tracking intake | Correct or remove a recorded meal | Keep my intake records accurate | [#63](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/63) | Coming soon (v2.0b); no correction or removal command. |
+| `**` | Returning user | Reset my active plan and groceries | Start again while keeping recipes, settings, and intake records | [#53](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/53) (closed) | Implemented: `reset-plan`. |
+| `**` | Meal prep user | Customise one planned meal's ingredients | Adapt one occurrence without editing its source recipe | [#60](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/60) (closed) | Implemented: `customize-meal`; nutrition is not recalculated from ingredients. |
+| `**` | Returning user | Confirm plan removal or replacement | Avoid accidentally losing my plan | [#61](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/61) (closed) | Implemented: confirmation before reset, replacement generation, and incompatible dietary changes. |
+| `**` | User with dietary requirements | View my dietary settings | Check which restrictions apply | [#71](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/71) (closed) | Implemented: `view-diet`. |
 
-**Retention:** Issue #51's data-retention capability is implemented by local autosave and recovery. Issue #77 tracks team PPP deliverables rather than a product user story.
+#### v2.1
 
-### User Stories for Future Consideration
+| Priority | As a ... | I want to ... | So that I can ... | Issue | Source support and issue status |
+| --- | --- | --- | --- | --- | --- |
+| `**` | Returning user | Retain my data between sessions | Continue planning after restarting | [#51](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/51) (closed) | Implemented: local JSON autosave, restoration, backup recovery, and process locking. |
+| `**` | Meal prep user | Replace an individual planned meal | Adapt the plan to what I want to eat | [#57](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/57) (closed) | Implemented: `replace-meal`; one portion, source ingredients, and current dietary checks. |
+| `**` | Meal prep user | Adjust a planned meal's portion | Scale nutrition and groceries to my intended quantity | [#58](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/58) (closed) | Implemented: `adjust-portion`; positive whole-recipe portions only. |
+| `**` | Meal prep user | Understand unsuccessful plan generation | Know what to change before retrying | [#59](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/59) (open) | Implemented: generation failure advice for eligible recipes and nutrition targets; issue remains open. |
+| `**` | User tracking intake | Review recorded meals by date | Understand intake for a selected day | [#62](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/62) (open) | Implemented: dated records, servings, and `view-meals date/YYYY-MM-DD`; issue remains open. |
+| `**` | User tracking intake | Correct or remove recorded meals | Keep intake records accurate | [#63](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/63) (open) | Implemented: `edit-meal` and confirmed `delete-meal`; issue remains open. |
+| `**` | User with dietary requirements | Clear my dietary restrictions | Generate without restrictions | [#72](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/72) (closed) | Implemented: `clear-diet`. |
+| `**` | CLI user | Edit commands and use completion and history | Enter long commands more easily | [#115](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/115) (open) | Implemented: JLine editing, Tab completion, in-memory history, and plain-input fallback; issue remains open. |
 
-Optional ideas beyond the milestone include searching recipes and estimating grocery costs. These are not implemented or release commitments.
+The v2.1 milestone also includes CLI presentation (#106), defensive handling and coverage (#111, #113, #122), and documentation/UML work (#102). These improve existing features rather than introduce separate product workflows. The v2.0b PPP issue #77 is a team deliverable, not a product user story.
 
 ### Use Cases
 
