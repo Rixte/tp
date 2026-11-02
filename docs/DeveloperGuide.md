@@ -907,15 +907,6 @@ For manual verification, follow [Set and View Daily Targets](#set-and-view-daily
 
 `ActiveMealPlan` stores the successful plan and its generation request. Replacement generation requires confirmation when a plan exists. Success invalidates previous groceries; failure preserves the prior plan.
 
-#### Design choice: bounded candidate search
-
-| Approach | Benefit | Trade-off |
-| --- | --- | --- |
-| Enumerate all triples when there are at most 5,000 combinations (current choice). | Checks every combination, so an acceptable triple is not missed. | The number of triples grows rapidly with the recipe pool. |
-| Sample 5,000 triples above that threshold (current choice). | Bounds candidate construction and filtering instead of enumerating the full search space. | Repeated samples are possible; failure does not prove that no acceptable triple exists. Shuffling still depends on recipe-pool size. |
-| Always enumerate every triple (alternative). | Complete search for every supported recipe pool. | Higher memory and processing cost for large pools. |
-
-The hybrid approach keeps complete search for small pools while limiting candidate count for larger ones. It provides no fixed response-time guarantee.
 
 
 
