@@ -1854,6 +1854,14 @@ Levels include `FINE` for command diagnostics, `INFO` for lifecycle events and s
 
 The project uses JUnit Jupiter. Tests are under `src/test/java/mishmash` and mirror the production packages. They cover validation, commands, models, generation, display formatting, and full console interactions.
 
+JLine's automated UI tests also belong in this JUnit suite. `ui/JLineConsoleInputTest` exercises real
+in-memory editing and uses a scripted reader for interrupt/EOF handling. `ui/CommandCompleterTest` covers
+command and prefix suggestions, while `ui/ConsoleInputsTest` covers adapter selection and fallback.
+`JLineSessionTest` is an integration test: it runs application commands, confirmations, and meal corrections
+through the real JLine input adapter. These tests do not require native console access. Actual terminal
+display, native-provider initialization, and platform key sequences still need the
+[manual terminal checklist](#interactive-command-entry).
+
 Run verification from the repository root:
 
 ```powershell
@@ -2656,6 +2664,35 @@ After each recovery, use `list-recipes` to verify the exact contents, exit, and 
 Filesystem-access failures must stop startup rather than quarantine valid data. Permission failures, schema upgrades, interrupted writes, and save-retry behaviour are covered by the temporary-directory and packaged-JAR storage tests.
 
 <!-- @@author Rixte -->
+### Interactive Command Entry
+
+Build the current JAR with Java 25 using `./gradlew shadowJar` (Windows: `.\gradlew.bat shadowJar`).
+Copy `build/libs/MishMash.jar` into a disposable empty working directory, open a terminal there, and launch
+it with `java -jar "MishMash.jar"`. Record the operating system and terminal used; repeat on each supported
+platform before release.
+
+1. At the name prompt, type `check-sh` and press Tab. Check that it does not become `check-shortfall`.
+   Clear the line and enter your name, then type `check-sh` at the command prompt and press Tab. It should complete
+   the command. Type `ca`, press Tab, then type `2000`. Check that the line reads `check-shortfall cal/2000`. Enter it;
+   the no-plan message should appear, with another command prompt.
+2. Recall that command with Up, move through it with Left/Right and Home/End, and change `2000` to `2100`
+   using Backspace/Delete. Check that the cursor and displayed text agree, then submit it.
+   Start a new draft, press Up then Down, and check that Down restores the draft.
+3. Type `reset-plan` without pressing Enter, then press Ctrl+C. Check that it is discarded and the session
+   remains usable. Add a recipe using the User Guide example, enter `delete-recipe 1`, then press Ctrl+C at
+   the confirmation. Check cancellation and verify the recipe remains with `list-recipes`.
+4. Repeat `delete-recipe 1` and answer `no`. Use Up/Down at the next command prompt to check that commands
+   are recalled, while your name and `no` are absent. Type `bye`, restart in the same directory, and check
+   that the recipe is retained while the earlier session's command history is absent.
+5. Enter `delete-recipe 1` and press Ctrl+D on the empty confirmation line. Check cancellation and the return
+   to the command prompt. Verify the recipe remains with `list-recipes`, then press Ctrl+D at an empty
+   command prompt to exit normally. Restart and check that the recipe is still retained.
+6. Run from an IDE Run console or with redirected input. Verify that ordinary commands and confirmation
+   answers still work with plain input. Test `TERM=dumb` where supported and check that it also uses plain
+   input. JLine editing shortcuts are not expected in these fallback modes.
+
+These checks complement the JUnit tests by exercising the real terminal and its native provider.
+
 ### Confirmation answers in manual workflows
 
 The shared instructions at the start of [Manual Testing](#appendix-e-instructions-for-manual-testing) apply throughout; cancellation checks are in [Reset and Confirm Plan Changes](#reset-and-confirm-plan-changes).
