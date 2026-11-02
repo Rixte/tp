@@ -2595,7 +2595,20 @@ Use a fresh temporary working directory, load exactly the three sample recipes, 
 
 ### Reset and Confirm Plan Changes
 
-Use a fresh temporary directory with the sample recipes. Save `set-targets cal/1500`, set `set-diet exclude/Forbidden`, record `record-meal 1`, and generate a one-day plan and groceries.
+Use a fresh temporary directory. Add these classified versions of the sample recipes (do not also add the unclassified versions):
+
+```text
+add-recipe n/Chicken Rice cal/600 p/40 c/70 f/15 i/Chicken:200g i/Rice:150g food/poultry
+add-recipe n/Tofu Rice cal/500 p/25 c/60 f/12 i/Tofu:200g i/Rice:100g food/soy,legume
+add-recipe n/Oats cal/400 p/15 c/50 f/10 i/Oats:80g i/Milk:200ml food/oat,milk,lactose
+set-targets cal/1500
+set-diet exclude/Forbidden
+record-meal 1
+generate-plan d/1
+generate-list
+```
+
+All three recipes are classified and contain no `Forbidden` ingredient, so they remain eligible under the ingredient exclusion. Each day's total is 1500 kcal, matching the saved target. Keep the general [Sample Recipes](#sample-recipes) unchanged for tests that require unclassified recipes.
 
 1. Enter `generate-plan d/2` and answer `n`. Check that the original one-day plan and groceries remain. Repeat with a blank answer and an unrecognised answer; neither authorises replacement.
 2. Enter `generate-plan d/2` and answer `yes`. Expect a two-day plan and cleared groceries. Generate groceries again.
