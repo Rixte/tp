@@ -11,6 +11,7 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 - [Documentation, Logging, Testing, Configuration and DevOps](#documentation-logging-testing-configuration-and-devops)
 - [Appendix A: Product Scope](#appendix-a-product-scope)
 - [Appendix B: User Stories](#appendix-b-user-stories)
+  - [Use Cases](#use-cases)
 - [Appendix C: Non-Functional Requirements](#appendix-c-non-functional-requirements)
 - [Appendix D: Glossary](#appendix-d-glossary)
 - [Appendix E: Instructions for Manual Testing](#appendix-e-instructions-for-manual-testing)
@@ -70,6 +71,10 @@ This guide describes the current source checkout. For a published build, consult
 
 ### Architecture
 
+![MishMash architecture and dependency directions](images/architecture/overview.svg)
+
+Arrows show dependency or data-access direction, not the timing of calls. The editable SVG groups classes by responsibility; it does not imply AB3-style manager interfaces. `MishMash` connects the console, parser, shared state, and persistence at startup. Commands use model data and generation services; persistence restores and saves the same shared roots.
+
 The application separates terminal interaction, command handling, application data, and output formatting. The main application coordinates these components throughout a single command session.
 
 | Area | Current responsibility |
@@ -94,7 +99,16 @@ presentation testable without an interactive terminal.
 
 ### Logic Component
 
-The logic covers command parsing, application actions, and generation. It supports the following commands:
+The logic covers command parsing, application actions, and generation. A normal command follows this flow:
+
+1. `MishMash` reads a line through `ConsoleInput`.
+2. `Parser.parseCommand` validates syntax and constructs a command; feature parsers handle specialised fields.
+3. `MishMash` obtains the command's optional confirmation prompt. Cancellation skips execution.
+4. `Command.executeWithResult` reads or updates the shared models and returns a `CommandResult`.
+5. `SessionPersistence.afterCommand` saves mutation outcomes before `CliFormatter` displays feedback. A save failure retains live state and produces a warning.
+6. Recoverable `MishMashException` failures display error/usage feedback and return to the loop; `bye` and EOF flush pending saves and exit.
+
+The logic supports the following commands:
 
 | Command | Purpose |
 | --- | --- |
@@ -148,7 +162,7 @@ Saved targets apply during generation; changing them later does not change an ex
 
 Diagnostic logs remain separate from the versioned JSON user-data snapshot.
 
-### Persistence and recovery
+#### Persistence and recovery
 
 `ApplicationState` shares recipes, `ActiveMealPlan`, dietary settings, target settings, and `MealLog` between
 the parser and storage. Existing parser/session constructors still create isolated in-memory sessions;
