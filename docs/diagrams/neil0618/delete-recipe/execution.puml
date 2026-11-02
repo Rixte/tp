@@ -1,0 +1,69 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+title Executing delete-recipe 2: confirm and delete
+
+actor User
+participant ":MishMash" as App
+participant "cmd:DeleteRecipeCommand" as Cmd
+participant "recipeBook:RecipeBook" as Book
+
+note over App, Cmd : Parsing has already created cmd for index 2.
+
+App -> Cmd : confirmationPrompt(recipeBook)
+activate Cmd
+
+Cmd -> Cmd : findTarget(recipeBook)
+activate Cmd
+Cmd -> Book : size()
+activate Book
+Book --> Cmd : recipeCount
+deactivate Book
+Cmd -> Book : getRecipes()
+activate Book
+Book --> Cmd : recipes
+deactivate Book
+Cmd --> Cmd : target
+deactivate Cmd
+
+Cmd --> App : question
+deactivate Cmd
+
+App -> User : display question
+User --> App : "y"
+
+App -> Cmd : executeWithResult(recipeBook)
+activate Cmd
+
+Cmd -> Cmd : execute(recipeBook)
+activate Cmd
+
+Cmd -> Cmd : findTarget(recipeBook)
+activate Cmd
+note right of Cmd : Repeats the checks above
+Cmd --> Cmd : target
+deactivate Cmd
+
+Cmd -> Book : remove(1)
+activate Book
+Book --> Cmd : deleted
+deactivate Book
+Cmd -> Book : size()
+activate Book
+Book --> Cmd : recipesRemaining
+deactivate Book
+Cmd --> Cmd : confirmation
+deactivate Cmd
+
+Cmd --> App : result
+deactivate Cmd
+App -> User : display confirmation
+
+Cmd -[hidden]-> App
+destroy Cmd
+
+note over Cmd, Book
+  An index that is out of range makes findTarget fail
+  before the question, so nothing is asked or removed.
+  result is a CommandResult holding the confirmation text with status done.
+end note
+@enduml

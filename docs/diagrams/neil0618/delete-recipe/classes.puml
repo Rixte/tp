@@ -1,0 +1,47 @@
+@startuml
+!pragma layout smetana
+!include ../../rixte/shortfall/style.iuml
+hide circle
+
+title Deleting a recipe: selected classes
+top to bottom direction
+skinparam nodesep 60
+skinparam ranksep 85
+hide empty members
+
+class MishMash
+class Parser {
+  + parseCommand(input: String): Command
+}
+interface Command <<interface>> {
+  + confirmationPrompt(recipeBook: RecipeBook): Optional<String>
+  + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
+}
+class CommandResult <<record>>
+class DeleteRecipeCommand {
+  + confirmationPrompt(recipeBook: RecipeBook): Optional<String>
+  + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
+}
+class RecipeBook {
+  + size(): int
+  + getRecipes(): List<Recipe>
+  + remove(index: int): Recipe
+}
+class Recipe {
+  + getName(): String
+}
+
+MishMash --> "1" Parser : -parser
+MishMash ..> Command : asks, then executes
+Parser ..> DeleteRecipeCommand : creates
+DeleteRecipeCommand .up.|> Command
+Command ..> CommandResult : returns
+DeleteRecipeCommand ..> RecipeBook : execution parameter
+RecipeBook --> "0..*" Recipe : -recipes\n{ordered}
+
+legend bottom
+  Only feature-relevant members are shown.
+endlegend
+@enduml

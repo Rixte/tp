@@ -1,0 +1,36 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+skinparam ConditionStyle InsideDiamond
+skinparam ActivityBackgroundColor #F5F8FC
+skinparam ActivityBorderColor #475569
+skinparam ActivityDiamondBackgroundColor #FFF9E8
+skinparam ActivityDiamondBorderColor #C4AC70
+skinparam ActivityFontSize 14
+title Workflow of delete-recipe: where each outcome is decided
+
+start
+:User enters\ndelete-recipe INDEX;
+if (Valid\nINDEX?) then ([no])
+  :Parser rejects with\nthe delete-recipe format;
+  stop
+else ([yes])
+endif
+if (INDEX in\nrange?) then ([no])
+  :confirmationPrompt rejects;\nMishMash shows all formats;
+  stop
+else ([yes])
+endif
+:MishMash asks\nAre you sure? (y/n);
+if (Answer is\ny or yes?) then ([yes])
+  :execute removes\nthe recipe;
+  :Show its name and the\nrecipes remaining;
+else ([no])
+  :Show Cancelled.\nNothing was changed.;
+endif
+stop
+
+legend bottom
+  Valid INDEX: one positive whole number that fits in an int. In range: the book is not empty and INDEX
+  does not exceed the recipe count. Only the confirmed path changes the recipe book.
+endlegend
+@enduml

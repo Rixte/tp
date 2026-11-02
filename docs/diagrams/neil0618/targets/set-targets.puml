@@ -1,0 +1,58 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+title Executing set-targets cal/2000 p/none
+
+participant ":MishMash" as App
+participant "cmd:SetTargetsCommand" as Cmd
+participant "settings:TargetSettings" as Settings
+participant "changes:TargetChanges" as Changes
+participant "updated:NutritionTargets" as Updated
+
+ref over App, Cmd : Parse "set-targets cal/2000 p/none"
+
+App -> Cmd : executeWithResult(recipeBook)
+activate Cmd
+
+Cmd -> Settings : get()
+activate Settings
+Settings --> Cmd : current
+deactivate Settings
+
+Cmd -> Changes : applyTo(current)
+activate Changes
+create Updated
+Changes -> Updated : NutritionTargets(...)
+activate Updated
+Updated --> Changes
+deactivate Updated
+Changes --> Cmd : updated
+deactivate Changes
+
+note right of Cmd
+  hasSameTargets(current, updated), a static helper,
+  compares every nutrient of the two targets.
+end note
+
+alt updated equals the saved targets
+  note right of Cmd : Return a note: Daily targets are unchanged.
+else updated differs from the saved targets
+  Cmd -> Settings : set(updated)
+  activate Settings
+  Settings --> Cmd
+  deactivate Settings
+
+  Cmd -> Cmd : build the confirmation text
+end
+
+Cmd --> App : result
+deactivate Cmd
+Cmd -[hidden]-> App
+destroy Cmd
+
+note over Cmd, Updated
+  The recipe book and the active meal plan are not used,
+  so an existing plan keeps the targets it was generated with.
+  The result has status done when targets are saved
+  and status note when nothing changes.
+end note
+@enduml

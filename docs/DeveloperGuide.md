@@ -373,7 +373,7 @@ This feature implements the story: **As a user managing recipes, I want to list 
 
 `Parser` validates the optional index and creates a `ListRecipeCommand`. The command keeps only a nullable `Integer index`, where `null` means "list every recipe". The recipe book is supplied only when `executeWithResult` runs, so the command reads the recipes as they are at that moment rather than a copy taken during parsing. Recipe details are formatted by `RecipeViewer`, the class that also formats the `add-recipe` and `edit-recipe` confirmations, so a recipe looks the same wherever it is shown.
 
-![Selected classes and relationships for recipe listing.](images/list-recipes/classes.svg)
+![Selected classes and relationships for recipe listing.](images/neil0618/list-recipes/classes.svg)
 
 *Only feature-relevant members are shown. Dashed arrows with an open head are dependencies; the dashed arrow with a hollow triangle is interface realization; the solid arrow is an association with a role name and multiplicity. `RecipeBook.getRecipes` returns a read-only copy, so listing cannot change the book.*
 
@@ -382,9 +382,9 @@ This feature implements the story: **As a user managing recipes, I want to list 
 The successful `list-recipes 2` scenario is separated into parsing and execution. Invalid and
 no-index outcomes are described afterwards so both interactions remain readable at guide width.
 
-![Parsing list-recipes 2.](images/list-recipes/parsing.svg)
+![Parsing list-recipes 2.](images/neil0618/list-recipes/parsing.svg)
 
-![Executing list-recipes 2.](images/list-recipes/execution.svg)
+![Executing list-recipes 2.](images/neil0618/list-recipes/execution.svg)
 
 *The execution diagram refers to the parsing diagram with a `ref` frame. The no-index form skips index parsing and the viewer. The `X` marks objects that are no longer used after the command returns.*
 
@@ -418,7 +418,7 @@ Syntax errors start as an `IllegalArgumentException`. `parseListRecipe` wraps it
 
 `ListRecipeCommandTest` checks the numbered list, empty and duplicate-name books, the full details of the first, last, and a duplicate-named recipe, out-of-range and empty-book errors with the book left unchanged, repeated calls, and null arguments. `ParserTest` checks both forms, accepted variations such as leading zeros and extra whitespace, invalid arguments showing only the list-recipes usage, the largest index (which parses and fails only at execution), and near-miss command words. `MishMashTest` checks the console flow: the list followed by one recipe in full, an empty book, a bad index followed by recovery, and the numbers matching those used by `delete-recipe`.
 
-For manual verification, follow [List Recipes](#list-recipes) in the manual-testing appendix, or the User Guide's [Listing Recipes](UserGuide.md#listing-recipes) example. The class diagram and sequence diagram have editable sources and rendering instructions in [`docs/diagrams/list-recipes`](diagrams/list-recipes/README.md). When the implementation changes, check method names, message order, and the error paths against the code, then regenerate and inspect both SVGs.
+For manual verification, follow [List Recipes](#list-recipes) in the manual-testing appendix, or the User Guide's [Listing Recipes](UserGuide.md#listing-recipes) example. The class diagram and sequence diagram have editable sources and rendering instructions in [`docs/diagrams/neil0618/list-recipes`](diagrams/neil0618/list-recipes/README.md). When the implementation changes, check method names, message order, and the error paths against the code, then regenerate and inspect both SVGs.
 
 <!-- @@author -->
 
@@ -518,7 +518,7 @@ The command changes only the `RecipeBook`. It does not use `ActiveMealPlan`, so 
 
 `Command` declares `confirmationPrompt(RecipeBook)`, a default method that returns an empty `Optional`. A command that needs confirmation overrides it and returns its question. `MishMash.executeCommand` calls it for every command. If it returns a question, `userConfirms` displays it and reads the next input line, and `execute` runs only if the answer agrees.
 
-![Selected classes and relationships for recipe deletion.](images/delete-recipe/classes.svg)
+![Selected classes and relationships for recipe deletion.](images/neil0618/delete-recipe/classes.svg)
 
 *Only feature-relevant members are shown. Dashed arrows with an open head are dependencies; the dashed arrow with a hollow triangle is interface realization; solid arrows are associations with a role name and multiplicity. `RecipeBook.remove` takes a zero-based index, while `DeleteRecipeCommand` stores the one-based number the user typed.*
 
@@ -528,7 +528,7 @@ This keeps all console input and output in `MishMash`. `DeleteRecipeCommand` onl
 
 The first sequence starts after parsing and follows a confirmed `delete-recipe 2`.
 
-![Execution of recipe deletion, with confirmation.](images/delete-recipe/execution.svg)
+![Execution of recipe deletion, with confirmation.](images/neil0618/delete-recipe/execution.svg)
 
 *The command validates the index once while building the prompt and again immediately before removal. The `X` marks the command object, which is no longer used once it has returned. An invalid index is not drawn here because it is covered by the activity diagram below.*
 
@@ -538,7 +538,7 @@ The first sequence starts after parsing and follows a confirmed `delete-recipe 2
 
 The activity diagram shows which step decides each outcome.
 
-![Where each outcome of delete-recipe is decided.](images/delete-recipe/flow.svg)
+![Where each outcome of delete-recipe is decided.](images/neil0618/delete-recipe/flow.svg)
 
 *Diamonds are decisions, with their guards in square brackets. Both error paths end before the question is asked. Only the confirmed path changes the recipe book.*
 
@@ -566,7 +566,7 @@ Syntax errors start as an `IllegalArgumentException`, which `parseDeleteRecipe` 
 
 `DeleteRecipeCommandTest` checks the confirmation text and removal, the first and last positions, repeated deletion at one index, duplicate names, emptying the book, out-of-range and empty-book errors with the book left unchanged, prompts that never modify the book, and null arguments. `ParserTest` checks a valid index, the question naming the recipe, leading zeros and extra whitespace, invalid arguments showing only the delete-recipe usage, and near-miss command words. `MishMashTest` checks the console flow: a confirmed transcript, a cancellation, end of input cancelling instead of deleting, a missing recipe never producing a question, and a later `edit-recipe` using the renumbered index.
 
-For manual verification, follow [Delete a Recipe](#delete-a-recipe) in the manual-testing appendix, or the User Guide's [Deleting a Recipe](UserGuide.md#deleting-a-recipe) example. The editable diagram sources and rendering instructions are in [`docs/diagrams/delete-recipe`](diagrams/delete-recipe/README.md). When the implementation changes, check method names, message order, and the decision branches against the code, then regenerate and inspect every SVG.
+For manual verification, follow [Delete a Recipe](#delete-a-recipe) in the manual-testing appendix, or the User Guide's [Deleting a Recipe](UserGuide.md#deleting-a-recipe) example. The editable diagram sources and rendering instructions are in [`docs/diagrams/neil0618/delete-recipe`](diagrams/neil0618/delete-recipe/README.md). When the implementation changes, check method names, message order, and the decision branches against the code, then regenerate and inspect every SVG.
 
 <!-- @@author -->
 
@@ -813,7 +813,7 @@ The saved targets are used by `generate-plan`. For every nutrient that the `gene
 
 `Parser` owns one `TargetSettings` object and passes it to `SetTargetsCommand`, `ViewTargetsCommand`, and `GeneratePlanCommand`, in the same way that it shares `DietarySettings`. `TargetSettings` holds one immutable `NutritionTargets`, which is empty at the start. `SetTargetsParser` turns the arguments into a `TargetChanges`, and `Nutrient` names the four nutrients with their prefix, label, and unit, so the parser, the merge, and the display loop over one list instead of repeating four near-identical branches.
 
-![Selected classes and relationships for setting and viewing daily targets.](images/targets/classes.svg)
+![Selected classes and relationships for setting and viewing daily targets.](images/neil0618/targets/classes.svg)
 
 *Only feature-relevant members are shown. Dashed arrows with an open head are dependencies; dashed arrows with a hollow triangle are interface realization; solid arrows are associations with role names and multiplicities. `Parser` creates the one `TargetSettings` and shares it with the commands.*
 
@@ -823,34 +823,34 @@ The saved targets are used by `generate-plan`. For every nutrient that the `gene
 
 The activity diagram shows how `set-targets` treats each token, including every way it can be rejected.
 
-![Activity diagram of the set-targets workflow.](images/targets/flow.svg)
+![Activity diagram of the set-targets workflow.](images/neil0618/targets/flow.svg)
 
-*Diamonds are decisions, with their guards in square brackets. A rejected command leaves the saved targets unchanged.*
+*Diamonds are decisions, with their guards in square brackets. A rejected command, or one that would change nothing, leaves the saved targets unchanged.*
 
 The next two sequence diagrams follow `set-targets cal/2000 p/none`, first parsing and then execution.
 
-![Sequence for parsing set-targets.](images/targets/parsing.svg)
+![Sequence for parsing set-targets.](images/neil0618/targets/parsing.svg)
 
 *Parsing succeeds completely before any command exists, so a bad token never changes the saved targets. The `X` marks `SetTargetsParser`, which is no longer used once it has returned the changes.*
 
-`SetTargetsParser` reads each whitespace-separated token as `PREFIX/VALUE`. Prefixes are case-sensitive, like every other prefix, and `none` is accepted in any letter case, as for `food/none`. A value must consist of digits only and fit in an `int`; zero is rejected. The parser validates all tokens before creating a `TargetChanges`, and `Parser.parseSetTargets` wraps any `IllegalArgumentException` in a `MishMashException` that ends with the set-targets format. A command object is created only if every token is valid, so a bad command can never partly change the saved targets.
+`SetTargetsParser` reads each whitespace-separated token as `PREFIX/VALUE`. Prefixes are case-sensitive, like every other prefix, and `none` is accepted in any letter case, as for `food/none`. A value must consist of digits only and fit in an `int`; zero is rejected. The parser validates all tokens before creating a `TargetChanges`, and `Parser.parseSetTargets` wraps any `IllegalArgumentException` in a `MishMashException` that carries the set-targets format as its usage. A command object is created only if every token is valid, so a bad command can never partly change the saved targets.
 
 Once parsing succeeds, execution reads the saved targets, applies the validated changes, and stores
-the replacement value.
+the replacement value unless it equals what is already saved.
 
-![Sequence for executing set-targets.](images/targets/set-targets.svg)
+![Sequence for executing set-targets.](images/neil0618/targets/set-targets.svg)
 
-*The execution diagram refers to the parsing diagram with a `ref` frame.*
+*The execution diagram refers to the parsing diagram with a `ref` frame. Its `alt` frame separates the case where nothing would change, which returns a note without storing anything, from the case that stores the new targets.*
 
-`SetTargetsCommand.execute` reads the saved targets, asks `TargetChanges.applyTo` for the updated targets, and stores them. `applyTo` builds a new `NutritionTargets` and does not modify the old one. If the updated targets equal the saved ones, it stores nothing and returns a `NOTE`, `Daily targets are unchanged. Nothing was changed.`, as `ClearDietCommand` does. Otherwise the reply lists every target now saved, or says `All daily targets cleared.` when none remain, and reminds the user that an existing plan is unchanged.
+`SetTargetsCommand.executeWithResult` reads the saved targets, asks `TargetChanges.applyTo` for the updated targets, compares them with the saved ones, and stores them. `applyTo` builds a new `NutritionTargets` and does not modify the old one. If the updated targets equal the saved ones, it stores nothing and returns a `NOTE`, `Daily targets are unchanged. Nothing was changed.`, as `ClearDietCommand` does. Otherwise the reply lists every target now saved, or says `All daily targets cleared.` when none remain, and reminds the user that an existing plan is unchanged.
 
 #### Using the targets in `generate-plan`
 
-![Classes that apply saved targets during plan generation.](images/targets/generate-classes.svg)
+![Classes that apply saved targets during plan generation.](images/neil0618/targets/generate-classes.svg)
 
 *Each association is drawn once, as a line with its role name and multiplicity, not also as an attribute.*
 
-![How generate-plan combines typed and saved targets.](images/targets/generate-plan.svg)
+![How generate-plan combines typed and saved targets.](images/neil0618/targets/generate-plan.svg)
 
 *The `opt` frame runs only when something is saved. The command creates a `DietaryPlanner` for each execution and does not use it afterwards. If no acceptable plan exists, `generate` throws and `ActiveMealPlan.setGenerated` is never called, so the previous plan stays active.*
 
@@ -894,7 +894,7 @@ In every case the session continues, and an error leaves the saved targets uncha
 
 `TargetChangesTest` checks setting, keeping, and removing nutrients, that the original targets are never modified, the merge in `NutritionTargets.overriddenBy`, the summary text, and `TargetSettings`. `SetTargetsParserTest` checks every accepted form (any order, extra spaces, `none` in any case, leading zeros, the largest `int`) and every rejection above. `SetTargetsCommandTest` checks the confirmation texts, partial updates, removal, the untouched plan and recipes, `view-targets`, and the interaction with `generate-plan`: saved targets used, typed targets winning per nutrient, saved targets read at execution, removal, a typed target replacing an impossible saved one, a failed generation keeping the previous plan, and the `Daily targets used:` and `Daily targets applied:` lines appearing only when a saved target contributed. `ParserTargetsTest` checks that the parser creates the commands, shares one set of targets between them, reports errors with the set-targets usage only, and lists both commands in the usage and help text.
 
-For manual verification, follow [Set and View Daily Targets](#set-and-view-daily-targets) in the manual-testing appendix, or the User Guide's [Setting Daily Targets](UserGuide.md#setting-daily-targets) example. Editable sources and rendering instructions are in [`docs/diagrams/targets`](diagrams/targets/README.md). When the implementation changes, check method names, message order, and branches against the code, then regenerate and inspect every SVG.
+For manual verification, follow [Set and View Daily Targets](#set-and-view-daily-targets) in the manual-testing appendix, or the User Guide's [Setting Daily Targets](UserGuide.md#setting-daily-targets) example. Editable sources and rendering instructions are in [`docs/diagrams/neil0618/targets`](diagrams/neil0618/targets/README.md). When the implementation changes, check method names, message order, and branches against the code, then regenerate and inspect every SVG.
 
 <!-- @@author -->
 

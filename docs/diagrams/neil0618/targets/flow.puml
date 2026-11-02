@@ -1,0 +1,50 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+skinparam ConditionStyle InsideDiamond
+skinparam ActivityBackgroundColor #F5F8FC
+skinparam ActivityBorderColor #475569
+skinparam ActivityDiamondBackgroundColor #FFF9E8
+skinparam ActivityDiamondBorderColor #C4AC70
+skinparam ActivityFontSize 14
+title Workflow of set-targets
+
+start
+:Read set-targets\nPREFIX/VALUE tokens;
+if (Any\ntoken?) then ([no])
+  :Reject with\nthe usage line;
+  stop
+else ([yes])
+endif
+repeat
+  :Read the next token;
+  if (Valid and\nnew prefix?) then ([no])
+    :Reject with\nthe usage line;
+    stop
+  else ([yes])
+  endif
+  if (Value is\nnone?) then ([yes])
+    :Mark nutrient\nas removed;
+  else ([no])
+    if (Positive\nint?) then ([no])
+      :Reject with\nthe usage line;
+      stop
+    else ([yes])
+    endif
+    :Mark nutrient\nas replaced;
+  endif
+repeat while (More\ntokens?) is ([yes]) not ([no])
+:Keep every nutrient\nnot mentioned;
+if (Same as the\nsaved targets?) then ([yes])
+  :Show the\nunchanged note;
+  stop
+else ([no])
+endif
+:Save the updated targets;
+:Show the saved targets;
+stop
+
+legend bottom
+  Valid prefixes are cal, p, c and f. A rejected command, or one that changes nothing,
+  leaves the saved targets unchanged.
+endlegend
+@enduml
