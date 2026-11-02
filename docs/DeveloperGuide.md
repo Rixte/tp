@@ -16,13 +16,23 @@ MishMash is a command-line meal prep planner for managing recipes, generating me
 - [Appendix E: Instructions for Manual Testing](#appendix-e-instructions-for-manual-testing)
 
 
-Feature navigation: **Recipes:** [Adding a recipe](#adding-a-recipe) · [Deleting a recipe](#deleting-a-recipe) · [Listing recipes](#listing-recipes) · [Editing a recipe](#editing-a-recipe)
+Feature navigation:
 
-**Plans:** [Generating a meal plan](#generating-a-meal-plan) · [Viewing a meal plan](#viewing-a-meal-plan) · [Adjusting planned meal portions](#adjusting-planned-meal-portions) · [Customizing planned meal ingredients](#customizing-planned-meal-ingredients) · [Replacing a planned meal](#replacing-a-planned-meal) · [Confirming plan changes](#confirming-plan-changes) · [Resetting a meal plan](#resetting-a-meal-plan)
+**Recipes:** [Adding a recipe](#adding-a-recipe) · [Listing recipes](#listing-recipes) · [Editing a recipe](#editing-a-recipe) · [Deleting a recipe](#deleting-a-recipe)
 
-**Preferences and nutrition:** [Clearing dietary preferences and restrictions](#clearing-dietary-preferences-and-restrictions) · [Applying dietary restrictions](#applying-dietary-restrictions) · [Viewing dietary preferences](#viewing-dietary-preferences) · [Setting and viewing daily targets](#setting-and-viewing-daily-targets) · [Recording meals and tracking nutrition](#recording-meals-and-tracking-nutrition) · [Combined daily nutrition totals](#combined-daily-nutrition-totals) · [Detecting exceeded nutrition targets](#detecting-exceeded-nutrition-targets) · [Checking nutrition shortfalls](#checking-nutrition-shortfalls)
+**Dietary preferences:** [Applying dietary restrictions](#applying-dietary-restrictions) · [Viewing dietary preferences](#viewing-dietary-preferences) · [Clearing dietary preferences and restrictions](#clearing-dietary-preferences-and-restrictions)
 
-**Groceries and support:** [Grocery command integration](#grocery-command-integration) · [Viewing a grocery list](#viewing-a-grocery-list) · [Command help](#command-help) · [Defensive checks and generation diagnostics](#defensive-checks-and-generation-diagnostics)
+**Nutrition targets:** [Setting and viewing daily targets](#setting-and-viewing-daily-targets)
+
+**Meal planning:** [Generating a meal plan](#generating-a-meal-plan) · [Viewing a meal plan](#viewing-a-meal-plan) · [Adjusting planned meal portions](#adjusting-planned-meal-portions) · [Customizing planned meal ingredients](#customizing-planned-meal-ingredients) · [Replacing a planned meal](#replacing-a-planned-meal) · [Resetting a meal plan](#resetting-a-meal-plan)
+
+**Planned nutrition analysis:** [Combined daily nutrition totals](#combined-daily-nutrition-totals) · [Detecting exceeded nutrition targets](#detecting-exceeded-nutrition-targets) · [Checking nutrition shortfalls](#checking-nutrition-shortfalls)
+
+**Grocery lists:** [Generating a grocery list](#generating-a-grocery-list) · [Viewing a grocery list](#viewing-a-grocery-list)
+
+**Meal recording:** [Recording meals and tracking nutrition](#recording-meals-and-tracking-nutrition)
+
+**Shared behaviour:** [Command help](#command-help) · [Confirming plan changes](#confirming-plan-changes) · [Defensive checks and generation diagnostics](#defensive-checks-and-generation-diagnostics)
 
 ## Acknowledgements
 
@@ -1319,7 +1329,7 @@ against higher and lower targets, then use both viewing commands to confirm its 
 <!-- @@author -->
 
 <!-- @@author oilybikechain -->
-### Grocery command integration
+### Generating a grocery list
 
 *Section author: oilybikechain*
 
@@ -1431,7 +1441,7 @@ no arguments and never aggregates ingredients itself. See the
 The normal parser supplies `activeMealPlan::getGroceryList`. The command retains the
 supplier rather than a copied list, so later generation or reset is visible on execution.
 Grocery aggregation and publication are covered in
-[Grocery command integration](#grocery-command-integration).
+[Grocery command integration](#generating-a-grocery-list).
 
 #### Execution
 
