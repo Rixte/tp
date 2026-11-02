@@ -27,6 +27,6 @@ deactivate P
 note left of P : Reuse compatible days;\nreplace conflicting days.
 P --> C : updatedPlan
 deactivate P
-note right of C : Continue in the\npublication diagram.
+note right of C : Continue in\n"Updating groceries\nand saving the result".
 deactivate C
 @enduml
