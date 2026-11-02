@@ -19,7 +19,7 @@ public class DayPlan {
      */
     public DayPlan(List<Recipe> meals) {
         Objects.requireNonNull(meals, "meals");
-        this.plannedMeals = meals.stream().map(PlannedMeal::onePortionOf).toList();
+        plannedMeals = meals.stream().map(PlannedMeal::onePortionOf).toList();
     }
 
     /**

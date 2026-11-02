@@ -208,7 +208,9 @@ public class Parser {
         this(new MealPlanGenerator(new Random()), new ActiveMealPlan());
     }
 
-    /** Connects all commands to one restored application state. */
+    /**
+     * Connects all commands to one restored application state.
+     */
     public Parser(ApplicationState state) {
         this(Objects.requireNonNull(state, "state").getMealLog(),
                 new MealPlanGenerator(new Random()), state.getActiveMealPlan());

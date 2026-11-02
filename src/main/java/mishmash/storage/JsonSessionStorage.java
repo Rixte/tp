@@ -56,7 +56,9 @@ public final class JsonSessionStorage implements SessionStorage {
     private final FileLock lock;
     private boolean isClosed;
 
-    /** Creates storage after its caller has acquired the process lock. */
+    /**
+     * Creates storage after its caller has acquired the process lock.
+     */
     private JsonSessionStorage(Path dataFile, Clock clock, FileChannel lockChannel, FileLock lock) {
         this.dataFile = dataFile;
         backupFile = siblingWithSuffix(dataFile, ".backup.json");
@@ -77,7 +79,9 @@ public final class JsonSessionStorage implements SessionStorage {
         return open(dataFile, Clock.systemDefaultZone());
     }
 
-    /** Opens storage with an injectable clock for deterministic recovery tests. */
+    /**
+     * Opens storage with an injectable clock for deterministic recovery tests.
+     */
     static JsonSessionStorage open(Path dataFile, Clock clock) throws StorageException {
         Path normalizedFile = Objects.requireNonNull(dataFile, "dataFile").toAbsolutePath().normalize();
         Path parent = normalizedFile.getParent();
@@ -207,12 +211,16 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    /** Returns the primary file for diagnostics and tests without exposing a mutable path. */
+    /**
+     * Returns the primary file for diagnostics and tests without exposing a mutable path.
+     */
     public Path getDataFile() {
         return dataFile;
     }
 
-    /** Creates the strict mapper shared by load, pre-save validation, and backup recovery. */
+    /**
+     * Creates the strict mapper shared by load, pre-save validation, and backup recovery.
+     */
     private static JsonMapper createMapper() {
         StreamReadConstraints constraints = StreamReadConstraints.builder()
                 .maxDocumentLength(MAX_FILE_SIZE_BYTES)
@@ -234,7 +242,9 @@ public final class JsonSessionStorage implements SessionStorage {
                 .build();
     }
 
-    /** Recovers a missing primary from a validated backup. */
+    /**
+     * Recovers a missing primary from a validated backup.
+     */
     private LoadResult recoverFromBackup(String reason) throws StorageException {
         ApplicationState state;
         try {
@@ -246,7 +256,9 @@ public final class JsonSessionStorage implements SessionStorage {
         return LoadResult.recovered(state, reason + " MishMash restored its last valid backup.");
     }
 
-    /** Preserves all unreadable candidates before starting with a new empty state. */
+    /**
+     * Preserves all unreadable candidates before starting with a new empty state.
+     */
     private LoadResult quarantineAndStartEmpty(Exception cause) throws StorageException {
         LOGGER.log(Level.FINE, "No valid saved snapshot could be recovered", cause);
         StringBuilder preserved = new StringBuilder();
@@ -266,12 +278,16 @@ public final class JsonSessionStorage implements SessionStorage {
                         + System.lineSeparator() + files);
     }
 
-    /** Reads, bounds, parses, and reconstructs one complete snapshot. */
+    /**
+     * Reads, bounds, parses, and reconstructs one complete snapshot.
+     */
     private ApplicationState readState(Path path) throws StorageException {
         return decodeSnapshot(readBytes(path), path);
     }
 
-    /** Validates exactly the bytes read, retaining the filename for failure diagnostics. */
+    /**
+     * Validates exactly the bytes read, retaining the filename for failure diagnostics.
+     */
     private ApplicationState decodeSnapshot(byte[] bytes, Path path) throws StorageException {
         try {
             return validateBytes(bytes);
@@ -280,7 +296,9 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    /** Bounds reads and distinguishes filesystem failures from data that can be quarantined. */
+    /**
+     * Bounds reads and distinguishes filesystem failures from data that can be quarantined.
+     */
     private byte[] readBytes(Path path) throws StorageException {
         try (java.io.InputStream input = Files.newInputStream(path)) {
             byte[] bytes = input.readNBytes((int) MAX_FILE_SIZE_BYTES + 1);
@@ -293,14 +311,18 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    /** Distinguishes malformed snapshots from inaccessible files that must not be moved automatically. */
+    /**
+     * Distinguishes malformed snapshots from inaccessible files that must not be moved automatically.
+     */
     private static final class InvalidSnapshotException extends StorageException {
         private InvalidSnapshotException(String message, Throwable cause) {
             super(message, cause);
         }
     }
 
-    /** Validates serialized bytes using the same strict conversion used at startup. */
+    /**
+     * Validates serialized bytes using the same strict conversion used at startup.
+     */
     private ApplicationState validateBytes(byte[] bytes) throws IOException {
         if (bytes.length > MAX_FILE_SIZE_BYTES) {
             throw new IOException("Saved data exceeds the 10 MiB safety limit.");
@@ -329,18 +351,24 @@ public final class JsonSessionStorage implements SessionStorage {
         return data.toState();
     }
 
-    /** Checks a previously validated snapshot for the old undated-meal format. */
+    /**
+     * Checks a previously validated snapshot for the old undated-meal format.
+     */
     private boolean hasLegacySchema(byte[] bytes) {
         return hasLegacyVersion(mapper.readTree(bytes));
     }
 
-    /** Matches only an integral version marker, leaving malformed markers to strict DTO validation. */
+    /**
+     * Matches only an integral version marker, leaving malformed markers to strict DTO validation.
+     */
     private static boolean hasLegacyVersion(JsonNode root) {
         JsonNode version = root == null ? null : root.get("schemaVersion");
         return version != null && version.isIntegralNumber() && version.canConvertToInt() && version.intValue() == 1;
     }
 
-    /** Returns file bytes only when the candidate is present and fully valid. */
+    /**
+     * Returns file bytes only when the candidate is present and fully valid.
+     */
     private Optional<byte[]> readValidBytes(Path path) throws StorageException {
         if (Files.notExists(path)) {
             return Optional.empty();
@@ -359,14 +387,18 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    /** Preserves an invalid existing file instead of replacing it silently. */
+    /**
+     * Preserves an invalid existing file instead of replacing it silently.
+     */
     private void quarantineIfInvalid(Path path) throws StorageException {
         if (!Files.notExists(path) && readValidBytes(path).isEmpty()) {
             quarantine(path, "corrupt-during-save");
         }
     }
 
-    /** Moves a damaged or unsupported file to a unique diagnostic name. */
+    /**
+     * Moves a damaged or unsupported file to a unique diagnostic name.
+     */
     private Path quarantine(Path source, String reason) throws StorageException {
         String timestamp = QUARANTINE_TIME.format(Instant.now(clock));
         String uniqueName = stem(source) + "." + reason + "-" + timestamp + "-" + UUID.randomUUID() + ".json";
@@ -378,7 +410,9 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    /** Replaces one file through a flushed same-directory temporary file. */
+    /**
+     * Replaces one file through a flushed same-directory temporary file.
+     */
     private void writeAtomically(Path target, byte[] bytes) throws StorageException {
         Path temporary = null;
         try {
@@ -421,31 +455,41 @@ public final class JsonSessionStorage implements SessionStorage {
         }
     }
 
-    /** Rejects operations after the process lock has been released. */
+    /**
+     * Rejects operations after the process lock has been released.
+     */
     private void requireOpen() throws StorageException {
         if (isClosed || !lock.isValid() || !lockChannel.isOpen()) {
             throw new StorageException("Session storage is closed.");
         }
     }
 
-    /** Creates a sibling name from the primary base name and a storage suffix. */
+    /**
+     * Creates a sibling name from the primary base name and a storage suffix.
+     */
     private static Path siblingWithSuffix(Path source, String suffix) {
         return source.resolveSibling(stem(source) + suffix);
     }
 
-    /** Returns a file name without its final extension. */
+    /**
+     * Returns a file name without its final extension.
+     */
     private static String stem(Path path) {
         String name = path.getFileName().toString();
         int extension = name.lastIndexOf('.');
         return extension > 0 ? name.substring(0, extension) : name;
     }
 
-    /** Returns the stable error used when another process owns the same file. */
+    /**
+     * Returns the stable error used when another process owns the same file.
+     */
     private static StorageException alreadyRunning() {
         return new StorageException("MishMash is already using this data folder. Close the other instance first.");
     }
 
-    /** Returns the stable lock error while retaining its original cause. */
+    /**
+     * Returns the stable lock error while retaining its original cause.
+     */
     private static StorageException alreadyRunning(Throwable cause) {
         return new StorageException("MishMash is already using this data folder. Close the other instance first.",
                 cause);

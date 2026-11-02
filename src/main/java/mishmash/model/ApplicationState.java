@@ -14,7 +14,9 @@ public final class ApplicationState {
     private final TargetSettings targetSettings;
     private final MealLog mealLog;
 
-    /** Creates an empty application state. */
+    /**
+     * Creates an empty application state.
+     */
     public ApplicationState() {
         this(new RecipeBook(), new ActiveMealPlan(), new DietarySettings(), new TargetSettings(), new MealLog());
     }
@@ -38,27 +40,37 @@ public final class ApplicationState {
         this.mealLog = Objects.requireNonNull(mealLog, "mealLog");
     }
 
-    /** Returns the shared recipe book. */
+    /**
+     * Returns the shared recipe book.
+     */
     public RecipeBook getRecipeBook() {
         return recipeBook;
     }
 
-    /** Returns the shared active meal-plan holder. */
+    /**
+     * Returns the shared active meal-plan holder.
+     */
     public ActiveMealPlan getActiveMealPlan() {
         return activeMealPlan;
     }
 
-    /** Returns the shared dietary settings. */
+    /**
+     * Returns the shared dietary settings.
+     */
     public DietarySettings getDietarySettings() {
         return dietarySettings;
     }
 
-    /** Returns the shared daily-target settings. */
+    /**
+     * Returns the shared daily-target settings.
+     */
     public TargetSettings getTargetSettings() {
         return targetSettings;
     }
 
-    /** Returns the shared recorded-meal log. */
+    /**
+     * Returns the shared recorded-meal log.
+     */
     public MealLog getMealLog() {
         return mealLog;
     }

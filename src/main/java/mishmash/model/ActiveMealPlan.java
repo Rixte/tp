@@ -93,7 +93,7 @@ public class ActiveMealPlan {
         Optional<List<GroceryItem>> snapshot = Objects.requireNonNull(groceries, "groceries").map(List::copyOf);
         this.plan = plan;
         this.request = Optional.of(request);
-        this.groceryList = snapshot;
+        groceryList = snapshot;
     }
 
     /**

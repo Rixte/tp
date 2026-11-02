@@ -205,15 +205,15 @@ class MishMashResetPlanTest {
      */
     private ActiveMealPlan failsFirstReset(String scenario) {
         return new ActiveMealPlan() {
-            private boolean firstReset = true;
+            private boolean isFirstReset = true;
 
             @Override
             public void clear() {
-                if (!firstReset) {
+                if (!isFirstReset) {
                     super.clear();
                     return;
                 }
-                firstReset = false;
+                isFirstReset = false;
                 if (!scenario.equals("incomplete clear")) {
                     throw new IllegalStateException(scenario.equals("null-message failure")
                             ? null : "Private model details");
