@@ -2300,7 +2300,9 @@ Other occurrences, source recipes, recorded meals, and settings remain unchanged
 
 ## Appendix E: Instructions for Manual Testing
 
-These checks cover current behaviour. Testers may explore additional inputs. Each subsection is independent: start from an empty temporary working directory and load the sample recipes where needed so earlier tests do not change later preconditions.
+Each subsection starts in a fresh temporary working directory with the sample recipes where required. Follow steps within a subsection in order.
+
+For every rejected command, verify unchanged data and a successful retry. Answer `yes` to replacement/reset/dietary confirmations unless testing cancellation; this includes generation attempts expected to fail. First generation and malformed commands need no answer. See [Reset and Confirm Plan Changes](#reset-and-confirm-plan-changes) for cancellation checks.
 
 ### Launch
 
@@ -2322,15 +2324,15 @@ With exactly these three entries, each generated day contains all three. Meal or
 
 ### Add a Recipe
 
-- **Valid input:** Enter the first sample recipe. Expect one addition, its nutrition and ingredients, and another prompt.
-- **Missing ingredient:** Omit both `i/` fields. Expect an error requiring at least one ingredient and no addition.
-- **Invalid nutrition:** Replace `cal/600` with `cal/abc` or `cal/2147483648`. Expect an integer or range error.
-- **Boundary value:** Replace `cal/600` with `cal/0`. Expect successful addition; zero nutrition is allowed.
-- **Invalid quantity:** Use `i/Chicken:0g`. Expect rejection because recipe ingredient quantities must be positive.
-- **Decimal quantity:** Use `i/Chicken:200.5g`. Expect the decimal quantity to be preserved.
-- **Repeated field:** Add a second `n/` field. Expect rejection. Repeated `i/` fields remain valid.
-
-For rejected commands, check that existing recipes remain unchanged and a subsequent valid addition succeeds.
+| Input variation on the first sample recipe | Expected result |
+| --- | --- |
+| Unchanged sample | One addition with nutrition and ingredients. |
+| Omit both `i/` fields | Error requiring an ingredient; no addition. |
+| `cal/abc` or `cal/2147483648` | Integer/range error. |
+| `cal/0` | Accepted; zero nutrition is valid. |
+| `i/Chicken:0g` | Rejected; quantity must be positive. |
+| `i/Chicken:200.5g` | Exact decimal retained. |
+| A second `n/` field | Rejected; repeated `i/` remains valid. |
 
 ### List Recipes
 
@@ -2361,12 +2363,14 @@ Use a fresh session containing exactly the three sample recipes:
 
 ### View a Meal Plan
 
-After generating a two-day plan:
+Generate a two-day plan first.
 
-- Enter `view-plan`. Expect both days, meal nutrition, and daily totals.
-- Enter `view-plan d/1`. Expect only Day 1.
-- Enter `view-plan d/3`. Expect a day-range error and another prompt.
-- In a fresh session with no plan, enter `view-plan`. Expect the generate-first message.
+| Command | Expected result |
+| --- | --- |
+| `view-plan` | Both days, meal nutrition, and daily totals. |
+| `view-plan d/1` | Day 1 only. |
+| `view-plan d/3` | Day-range error. |
+| `view-plan` in a separate empty session | Generate-first guidance. |
 
 <!-- @@author oilybikechain -->
 ### Combined Daily Nutrition Totals
@@ -2481,88 +2485,54 @@ existing logging configuration; absence of a `FINE` record at a higher log level
 
 ### View a Grocery List
 
-- Enter `view-list` after grocery generation. Expect ingredient quantities, units, `[ ]` markers, and the total entry count.
-- Enter `view-list extra`. Expect a format error.
-- Successfully generate a replacement meal plan, then enter `view-list`. Expect a generate-list-first message because the previous groceries were cleared.
-- Generate groceries again, then attempt `generate-plan d/1 cal/1`. After that failure, verify that the previous grocery list is still available.
+| Action | Expected result |
+| --- | --- |
+| `view-list` after grocery generation | Quantities, units, `[ ]` markers, and entry count. |
+| `view-list extra` | Format error. |
+| Generate a replacement plan, then `view-list` | Generate-list-first guidance. |
+| Generate groceries, attempt `generate-plan d/1 cal/1`, then `view-list` | Failed generation preserves groceries. |
 
 <!-- @@author GauthamNandi -->
 ### Record and View Meals
 
-1. In a fresh session, enter `record-meal 1`. Expect
-   `[ERROR] Error: There are no recipes to record. Use 'add-recipe' to add one.`, `[TRY]` command formats,
-   and another `mishmash >` prompt. Enter `view-meals` and expect `[NOTE] No meals recorded yet.`
-2. Load exactly the three [sample recipes](#sample-recipes). Enter `record-meal 1`. Expect:
+Start empty, then follow the rows in order. Dates default to today and servings to 1.
 
-   ```text
-   [DONE] Meal recorded!
-   Chicken Rice (600 kcal | P: 40g, C: 70g, F: 15g)
-   Total so far: 600 kcal | Protein: 40g | Carbs: 70g | Fats: 15g
-   ```
-
-3. Enter `record-meal 2`. Expect Tofu Rice and `Total so far: 1100 kcal | Protein: 65g | Carbs: 130g | Fats: 27g`.
-4. Enter `view-meals`. Expect the header, `Meal 1: Chicken Rice ...` and `Meal 2: Tofu Rice ...`, each ending with `| 1 serving |` and today's date, then a divider, `Total: 1100 kcal | Protein: 65g | Carbs: 130g | Fats: 27g`, and the footer.
-5. Enter `record-meal 1` again, then `view-meals`. Expect a third entry, `Meal 3: Chicken Rice ...`, and `Total: 1700 kcal | Protein: 105g | Carbs: 200g | Fats: 42g`.
-6. Enter `add-recipe n/Black Coffee cal/5 p/0 c/0 f/0 i/Coffee:1cup`, then `record-meal 4`. Expect 0g for each macronutrient and a total that grows by 5 kcal only.
-7. Enter `record-meal 1 date/2026-03-02 s/2`, then `view-meals date/2026-03-02`. Expect only that meal, with doubled nutrition, its original meal number, and a `Total for 2026-03-02:` line.
-8. Enter `edit-meal 1 s/2`. Expect `[DONE] Meal updated!` and the meal's nutrition doubled. Enter `delete-meal 1`, then `n`, and expect the log to be unchanged. Enter `delete-meal 1`, then `y`, and expect `[DONE] Meal deleted!`; `view-meals` then shows one meal fewer, renumbered from 1.
-9. Try `record-meal`, `record-meal 0`, `record-meal 5`, `record-meal two`, `record-meal -1`, `record-meal 1 2`, `view-meals now`. Each should produce a recoverable error. Enter `view-meals` afterwards and confirm that the recorded meals are unchanged.
-10. Enter `edit-recipe 2 cal/100`, then `delete-recipe 1` and confirm. Enter `view-meals`. Every recorded meal should keep the calories and macros it had when recorded.
-11. Enter `generate-plan d/1`, then `view-meals` and `view-plan`. The recorded meals should be unchanged by plan generation, and the plan should be unaffected by the recorded meals.
-12. Enter `help` and confirm that all four commands are listed. Enter `bye`, restart, and enter a name.
-    `view-meals` should restore the remaining recorded entries, including their dates, servings, order, and recipe nutrition snapshots.
-<!-- @@author -->
-
-<!-- @@author peilingggg -->
-### Dietary Preferences and Plan Repair
-
-1. In a fresh session, use the [restricted-plan example in the User Guide](UserGuide.md#updating-an-existing-plan).
-   Confirm two days of classified vegan meals and 400 g each of Rice, Beans, and Tofu in groceries.
-2. Enter `view-diet`. Expect vegan with `none` for both explicit exclusion lists.
-3. Enter `set-diet diet/keto`. Expect invalid diet, supported values, aliases, and usage.
-   Confirm the profile, plan, and groceries remain unchanged.
-4. Add `add-recipe n/Lentils cal/600 p/10 c/20 f/5 i/Lentils:200g food/legume`,
-   then enter `set-diet diet/vegan avoid/soy` and answer `yes` to the confirmation. Expect repaired days with Rice, Beans, and Lentils.
-   Confirm each day still totals 1800 kcal and groceries contain 400 g of each ingredient.
-5. Enter `set-diet exclude/Beans,Tofu` and answer `yes` to the confirmation. This replaces the previous profile and leaves only Rice
-   and Lentils eligible. Expect saved preferences and a cleared plan and grocery list.
-   Confirm with `view-diet`, `view-plan`, and `view-list`.
-6. Restart from the same working directory and enter `view-diet`. Expect the previously saved profile.
-   Return to the restricted-plan example before continuing.
-7. Enter `set-diet avoid/milk,dairy`, `set-diet exclude/Beans, beans`, and `view-diet extra`
-   separately. Expect errors and no profile change.
-8. Enter `set-diet diet/vegan` to re-enable restrictions, then add an unclassified recipe by
-   omitting `food/`. Generate a new plan and confirm that it excludes the unclassified recipe.
-   Automated partial-repair tests cover mixed compatible/conflicting days deterministically.
+| Action | Expected result |
+| --- | --- |
+| `record-meal 1`, then `view-meals` before adding recipes | No-recipes error and no recorded meals. |
+| Load sample recipes; `record-meal 1` | Chicken Rice; totals 600 kcal, 40g protein, 70g carbs, 15g fats. |
+| `record-meal 2`, then `view-meals` | Two numbered entries with dates/servings; totals 1100 kcal, 65g protein, 130g carbs, 27g fats. |
+| `record-meal 1` again | Third entry; totals 1700 kcal, 105g protein, 200g carbs, 42g fats. |
+| Add `add-recipe n/Black Coffee cal/5 p/0 c/0 f/0 i/Coffee:1cup`; `record-meal 4` | Totals grow by 5 kcal only. |
+| `record-meal 1 date/2026-03-02 s/2`; `view-meals date/2026-03-02` | Only that entry, doubled nutrition, original meal number, and date-specific total. |
+| `edit-meal 1 s/2` | Updated confirmation; meal nutrition doubles. |
+| `delete-meal 1`, answer `n`; repeat and answer `y` | Cancellation preserves log; confirmation deletes and renumbers remaining entries. |
+| Try `record-meal`, `record-meal 0`, `record-meal 5`, `record-meal two`, `record-meal -1`, `record-meal 1 2`, and `view-meals now` | Recoverable errors; log unchanged. |
+| `edit-recipe 2 cal/100`; `delete-recipe 1` and confirm | Recorded nutrition snapshots remain unchanged. |
+| `generate-plan d/1`; view meals and plan | Recorded and planned meals remain independent. |
+| `help`; exit and restart from the same directory | All four meal-log commands listed; remaining entries restore dates, servings, order, and recipe snapshots. |
 
 <!-- @@author -->
 
 <!-- @@author neil0618 -->
 ### Set and View Daily Targets
 
-Use a fresh session containing exactly the three [sample recipes](#sample-recipes).
+Use exactly the sample recipes in a fresh directory; follow rows in order.
 
-1. Enter `view-targets`. Expect `[NOTE] No daily targets saved. Use 'set-targets' to set them.`
-2. Enter `set-targets cal/1500 p/80`. Expect `[DONE] Daily targets saved: 1500 kcal, 80 g protein.`
-   and a reminder that the current plan is unchanged.
-3. Enter `set-targets f/37`. Expect `[DONE] Daily targets saved: 1500 kcal, 80 g protein, 37 g fats.`,
-   which shows that earlier targets are kept. Enter `view-targets` and expect Calories `1500 kcal`,
-   Protein `80 g`, Carbs `not set`, and Fats `37 g`.
-4. Enter `generate-plan d/1`. Expect `[DONE]` followed by
-   `Daily targets used: 1500 kcal, 80 g protein, 37 g fats.` Enter `view-plan` and expect all three recipes,
-   daily totals of 1500 kcal, 80g protein, and 37g fats, and no warnings.
-5. Enter `generate-plan d/1 cal/1400`. Expect `Daily targets used: 1400 kcal, 80 g protein, 37 g fats.`, which shows that the typed calories replaced the saved 1500 while protein and fats still apply. Enter `view-plan` and expect `Warning: Calories exceed target by 100 kcal (1500 kcal actual; 1400 kcal target).` Enter `view-targets` and confirm that the saved calories are still `1500 kcal`.
-6. Enter `set-targets p/200`, then `generate-plan d/1`. Expect
-   `[ERROR] Error: Could not find 3 recipes that meet your daily targets within 15%. ...` followed by
-   `Daily targets applied: 1500 kcal, 200 g protein, 37 g fats (including your saved targets). Change those with 'set-targets'.`
-   Enter `view-plan` and verify that the plan from step 5 is still available. Enter `generate-plan d/1 p/80`.
-   Expect `[DONE]` with `Daily targets used: 1500 kcal, 80 g protein, 37 g fats.`
-7. Enter `set-targets cal/none c/none f/none p/none`. Expect `[DONE] All daily targets cleared.`
-   Enter `view-targets` and expect the `[NOTE] No daily targets saved` message. Enter `generate-plan d/1`
-   and confirm that there is no `Daily targets used:` line.
-8. Try `set-targets`, `set-targets cal/0`, `set-targets cal/-5`, `set-targets cal/abc`, `set-targets cal/1.5`, `set-targets cal/`, `set-targets x/5`, `set-targets 2000`, `set-targets cal/1 cal/2`, `set-targets p/5 f/oops`, and `view-targets now`. Each should produce a recoverable error that ends with the matching format line. After `set-targets p/5 f/oops`, enter `view-targets` and confirm that protein was not saved.
-9. Enter `set-targets cal/NONE`. Expect it to be accepted. Enter `set-targets CAL/5` and `Set-Targets cal/5`. Expect `Unrecognized parameter: CAL/5` and `Unknown command: Set-Targets`.
-10. Enter `set-targets cal/2000`, then `bye`, restart, and enter a name. `view-targets` should still report 2000 kcal.
+| Action | Expected result |
+| --- | --- |
+| `view-targets` | No saved targets; guidance to use `set-targets`. |
+| `set-targets cal/1500 p/80`; `set-targets f/37`; `view-targets` | Earlier values retained: 1500 kcal, 80g protein, 37g fats; carbs not set. Existing plan unchanged. |
+| `generate-plan d/1`; `view-plan` | Applied-target summary; all three recipes, 1500 kcal/80g protein/37g fats, no warnings. |
+| `generate-plan d/1 cal/1400`; view plan and targets | Applied calories 1400 and a 100 kcal excess warning; saved calories remain 1500. |
+| `set-targets p/200`; `generate-plan d/1` | Failure with effective targets and saved-target guidance; previous plan preserved. |
+| `generate-plan d/1 p/80` | Success using 1500 kcal, 80g protein, 37g fats. |
+| `set-targets cal/none c/none f/none p/none`; view targets; generate again | All cleared; no saved targets and no applied-target summary. |
+| Try bare `set-targets`; then try it with `cal/0`, `cal/-5`, `cal/abc`, `cal/1.5`, `cal/`, `x/5`, `2000`, or `cal/1 cal/2`; also try `view-targets now` | Recoverable error with matching usage. |
+| `set-targets p/5 f/oops`; `view-targets` | Invalid update is atomic: protein was not saved. |
+| `set-targets cal/NONE`; `set-targets CAL/5`; `Set-Targets cal/5` | Uppercase NONE accepted; uppercase prefix and command rejected. |
+| `set-targets cal/2000`; exit and restart; `view-targets` | 2000 kcal restored. |
+
 <!-- @@author -->
 
 ### Help and Recovery
@@ -2607,10 +2577,8 @@ In a disposable test directory, damage the primary JSON file after closing MishM
 <!-- @@author Rixte -->
 ### Confirmation answers in manual workflows
 
-For every manual workflow above, answer `yes` when reset, replacement generation, or an incompatible
-dietary change asks for agreement, unless that step explicitly tests cancellation. This also applies
-to replacement requests expected to fail generation. The first generation and malformed commands
-need no answer. Use [Confirming plan changes](#confirming-plan-changes) for cancellation checks.
+The shared instructions at the start of [Manual Testing](#appendix-e-instructions-for-manual-testing) apply throughout; cancellation checks are in [Reset and Confirm Plan Changes](#reset-and-confirm-plan-changes).
+
 <!-- @@author -->
 
 <!-- @@author Rixte -->
@@ -2623,16 +2591,26 @@ need no answer. Use [Confirming plan changes](#confirming-plan-changes) for canc
 <!-- @@author -->
 
 <!-- @@author peilingggg -->
+<a id="dietary-preferences-and-plan-repair"></a>
+
 ### Set, View, and Clear Dietary Preferences
 
-1. In a fresh session after entering a name, enter `view-diet`. Expect `none` for the diet and both exclusion lists.
-2. Enter `set-diet diet/vegetarian avoid/peanut exclude/Olive Oil`, then `view-diet`. Check that all three restrictions appear.
-3. Enter `set-diet diet/invalid`. Expect an error listing supported diets; `view-diet` must still show the previous profile.
-4. Enter `clear-diet`, then `view-diet`. Check that the diet and both exclusion lists display `none`.
-5. Enter `clear-diet` again. Expect `[NOTE] Dietary preferences are already clear. Nothing was changed.`
-6. Enter `clear-diet diet/none`. Expect `[ERROR]` argument feedback and `[TRY] Format: clear-diet`; `view-diet`
-   must still show the unrestricted profile.
-7. Test plan repair and grocery refresh using the separate classified recipes below. The general sample recipes above are unclassified and cannot exercise successful dietary repair.
+Use a fresh session without the general sample recipes for profile checks. Run the classified-recipe repair scenario below separately.
+
+| Action | Expected result |
+| --- | --- |
+| `view-diet` | Diet and both exclusion lists show `none`. |
+| `set-diet diet/vegetarian avoid/peanut exclude/Olive Oil`, then `view-diet` | All three restrictions appear. |
+| `set-diet diet/invalid` or `set-diet diet/keto` | Supported values and usage; previous profile remains. |
+| `set-diet avoid/milk,dairy`, `set-diet exclude/Beans, beans`, or `view-diet extra` | Error; profile remains unchanged. |
+| `clear-diet`, then `view-diet` | All restrictions show `none`. |
+| Repeat `clear-diet` | Note that preferences are already clear. |
+| `clear-diet diet/none` | Argument error with `Format: clear-diet`; profile stays unrestricted. |
+| Save a profile, exit, restart from the same directory, and `view-diet` | Saved profile is restored. |
+
+For vegan filtering and replacement semantics, use the [restricted-plan example](UserGuide.md#updating-an-existing-plan) in another fresh directory: verify two classified vegan days and Rice, Beans, and Tofu at 400g each. Add `add-recipe n/Lentils cal/600 p/10 c/20 f/5 i/Lentils:200g food/legume`, apply `set-diet diet/vegan avoid/soy`, and confirm. Expect Rice, Beans, and Lentils each day, 1800 kcal per day, and 400g of each ingredient. Then apply `set-diet exclude/Beans,Tofu` and confirm: the profile replaces the prior restrictions, but only Rice and Lentils qualify, so the plan and groceries clear.
+
+In a separate session with vegan restrictions, add an unclassified recipe without `food/`; new generation must exclude it. Automated tests cover deterministic partial repair of mixed compatible/conflicting days.
 
 #### Successful repair and grocery refresh
 
