@@ -1876,16 +1876,18 @@ The project uses JUnit Jupiter. Tests are under `src/test/java/mishmash` and mir
 Run verification from the repository root:
 
 ```powershell
-.\gradlew.bat test checkstyleMain checkstyleTest
+.\gradlew.bat check jacocoTestReport
 ```
 
 On Linux or macOS:
 
 ```text
-./gradlew test checkstyleMain checkstyleTest
+./gradlew check jacocoTestReport
 ```
 
-Use Java 25. JUnit reports appear at `build/reports/tests/test/index.html`, and Checkstyle reports are under `build/reports/checkstyle`. The add-recipe invalid-input dataset is `src/test/resources/add-recipe-invalid.tsv`.
+Use Java 25. JUnit reports appear at `build/reports/tests/test/index.html`, and Checkstyle reports are under `build/reports/checkstyle`. JaCoCo HTML coverage is at `build/reports/jacoco/test/html/index.html`. The `check` task includes tests, Checkstyle, and a coverage gate requiring 100% line and branch coverage for `ResetPlanCommand`, `GeneratePlanCommand`, and `SetDietCommand`; this is not a project-wide 100% requirement. `jacocoTestReport` generates the report separately. Tests enable assertions, and packaged-JAR storage tests use temporary working directories.
+
+The add-recipe invalid-input dataset is `src/test/resources/add-recipe-invalid.tsv`.
 
 ### Configuration
 
@@ -2374,7 +2376,7 @@ These checks cover current behaviour. Testers may explore additional inputs. Eac
 
 ### Launch
 
-1. Install Java 25 and download the published **v2.0 JAR** from the team's [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases). Save it in an empty folder and open a terminal in that folder.
+1. Install Java 25. To test this checkout, run `./gradlew shadowJar` (Windows: `.\gradlew.bat shadowJar`) from the repository root, then copy `build/libs/MishMash.jar` into an empty temporary folder and open a terminal there. To test a published release instead, download its JAR from the team's [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases) and limit checks to the features listed for that release.
 2. Run `java -ea -jar "MishMash.jar"`, replacing `MishMash.jar` with the downloaded file's actual name if it differs. The `-ea` option enables the application's internal assertion checks during manual testing.
 3. Confirm that the banner and name prompt appear. Enter a name and check that a command prompt follows.
 
@@ -2580,7 +2582,7 @@ existing logging configuration; absence of a `FINE` record at a higher log level
 10. Enter `edit-recipe 2 cal/100`, then `delete-recipe 1` and confirm. Enter `view-meals`. Every recorded meal should keep the calories and macros it had when recorded.
 11. Enter `generate-plan d/1`, then `view-meals` and `view-plan`. The recorded meals should be unchanged by plan generation, and the plan should be unaffected by the recorded meals.
 12. Enter `help` and confirm that all four commands are listed. Enter `bye`, restart, and enter a name.
-    `view-meals` should report `[NOTE] No meals recorded yet.`
+    `view-meals` should restore the remaining recorded entries, including their dates, servings, order, and recipe nutrition snapshots.
 <!-- @@author -->
 
 <!-- @@author peilingggg -->
@@ -2640,6 +2642,33 @@ Use a fresh session containing exactly the three [sample recipes](#sample-recipe
 - Enter `help`. Expect all supported command names, purposes, and formats.
 - Enter `help extra`, a blank line, or an unknown command. Expect an error followed by another prompt.
 - After an invalid command, enter a valid command and verify that it executes normally.
+
+
+### Adjust, Customise, and Replace Planned Meals
+
+Use a fresh temporary working directory, load exactly the three sample recipes, and enter `generate-plan d/1`, `generate-list`, and `view-plan`. Note which recipe occupies Meal 1; random ordering is expected.
+
+1. Enter `adjust-portion d/1 m/1 portions/2`. Check that Meal 1's nutrition doubles and the day's totals increase by one copy of that recipe's nutrition. Other meals and `list-recipes` details must stay unchanged. `view-list` must require grocery generation again.
+2. Run `generate-list`. Quantities must equal the original one-day groceries plus one copy of Meal 1's source ingredients. Repeat the same portion command: expect a no-op and preservation of these groceries.
+3. Enter `customize-meal d/1 m/1 i/TestRice:25g`. Nutrition and two portions must remain unchanged; the previous groceries must be cleared. Run `generate-list`: Meal 1 contributes `TestRice:50g` and no longer contributes its original ingredients. Ingredients shared with other meals must retain those other meals' contributions.
+4. Repeat the identical customization: expect a no-op with groceries preserved. Check `list-recipes` to confirm that the source recipe's ingredients are unchanged.
+5. Enter `replace-meal d/1 m/1 r/1`. Expect Meal 1 to become Chicken Rice at one portion, with Chicken 200g and Rice 150g as its ingredients, without the customization. The other two meals remain unchanged, even if one already uses Chicken Rice. Groceries must be cleared.
+6. Run `generate-list`, repeat the same replacement, and verify a no-op that preserves groceries. Daily totals must equal the three displayed meals; replacement need not retain generation's target tolerance or recipe uniqueness.
+7. Try `adjust-portion d/1 m/1 portions/0`, `adjust-portion d/1 m/1 portions/1.5`, `customize-meal d/1 m/1 i/TestRice:0g`, `replace-meal d/1 m/1 r/999`, and `replace-meal d/2 m/1 r/1`. Each must be rejected while the plan, groceries, recipes, and recorded meals stay unchanged.
+8. In a separate empty session, try valid forms of all three commands before generating a plan. Expect generate-first guidance.
+9. For dietary checks, use the classified recipes from [Successful repair and grocery refresh](#successful-repair-and-grocery-refresh). After applying vegetarian restrictions, try replacing a meal with Chicken A, or exclude `Forbidden` with `set-diet diet/vegetarian exclude/Forbidden` and then try `customize-meal d/1 m/1 i/Forbidden:1g`. Rejections must preserve the plan and groceries. Customizing to an allowed new ingredient under vegetarian rules must warn that names are not reclassified, keep source food categories, and leave nutrition unchanged.
+
+### Reset and Confirm Plan Changes
+
+Use a fresh temporary directory with the sample recipes. Save `set-targets cal/1500`, set `set-diet exclude/Forbidden`, record `record-meal 1`, and generate a one-day plan and groceries.
+
+1. Enter `generate-plan d/2` and answer `n`. Check that the original one-day plan and groceries remain. Repeat with a blank answer and an unrecognised answer; neither authorises replacement.
+2. Enter `generate-plan d/2` and answer `yes`. Expect a two-day plan and cleared groceries. Generate groceries again.
+3. Enter `reset-plan` and answer `n`. Check all views are unchanged. Enter `reset-plan extra`: expect syntax rejection without a confirmation.
+4. Enter `reset-plan` and answer `y`. Both `view-plan` and `view-list` must report absent data. `list-recipes`, `view-diet`, `view-targets`, and `view-meals` must retain their previous values.
+5. Enter `reset-plan` again. Expect a no-plan note without a confirmation.
+6. Regenerate a plan and groceries, then request reset and end input at the confirmation. Restart from the same working directory: the plan and groceries must still exist. Repeat for replacement generation. EOF cancels the pending operation and ends the session.
+7. Test dietary-change cancellation and failed repair separately with [Set, View, and Clear Dietary Preferences](#set-view-and-clear-dietary-preferences).
 
 ### Session Data
 
