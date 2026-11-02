@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="500" viewBox="0 0 960 500" role="img" aria-labelledby="title desc">
+<title id="title">MishMash architecture</title>
+<desc id="desc">MishMash uses console input and output, parses and executes commands, and coordinates persistence. Commands use generation logic and shared models. Storage restores and saves those models.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M1 1 L9 4 L1 7" fill="none" stroke="#334155" stroke-width="1.5"/></marker></defs>
+<rect width="960" height="500" fill="white"/>
+<g fill="#f8fafc" stroke="#334155" stroke-width="1.5">
+<rect x="20" y="55" width="270" height="105" rx="5"/>
+<rect x="345" y="55" width="270" height="105" rx="5"/>
+<rect x="670" y="55" width="270" height="105" rx="5"/>
+<rect x="20" y="310" width="270" height="105" rx="5"/>
+<rect x="345" y="310" width="270" height="105" rx="5"/>
+<rect x="670" y="310" width="270" height="105" rx="5"/>
+</g>
+<g font-family="Arial, sans-serif" text-anchor="middle" fill="#0f172a">
+<g font-size="18" font-weight="bold">
+<text x="155" y="82">Console and formatting</text><text x="480" y="82">Application coordinator</text><text x="805" y="82">Persistence</text>
+<text x="155" y="337">Generation logic</text><text x="480" y="337">Parsing and commands</text><text x="805" y="337">Shared models</text>
+</g>
+<g font-size="15">
+<text x="155" y="111">ConsoleInput / ConsoleInputs</text><text x="155" y="137">CliFormatter and viewers</text>
+<text x="480" y="111">MishMash</text><text x="480" y="137">launch, loop, confirmation</text>
+<text x="805" y="111">SessionPersistence</text><text x="805" y="137">SessionStorage / JSON files</text>
+<text x="155" y="366">DietaryPlanner / MealPlanGenerator</text><text x="155" y="392">GroceryListGenerator</text>
+<text x="480" y="366">Parser / feature parsers</text><text x="480" y="392">Command / CommandResult</text>
+<text x="805" y="366">ApplicationState</text><text x="805" y="392">recipes, plan, settings, meal log</text>
+</g></g>
+<g fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)">
+<path d="M345 107 H290"/><path d="M615 107 H670"/>
+<path d="M480 160 V310"/><path d="M345 360 H290"/>
+<path d="M615 360 H670"/><path d="M805 160 V310"/>
+<path d="M155 415 V465 H805 V415"/>
+</g>
+<g font-family="Arial, sans-serif" font-size="14" fill="#334155" text-anchor="middle">
+<text x="317" y="95">uses</text><text x="642" y="95">uses</text>
+<text x="480" y="237">parses / executes</text><text x="317" y="348">uses</text>
+<text x="642" y="348">uses</text><text x="805" y="237">loads / saves</text>
+<text x="480" y="455">reads / builds</text>
+</g>
+</svg>
