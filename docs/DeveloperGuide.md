@@ -1621,7 +1621,9 @@ keeps each meal's number from the whole log, so a number shown for one date work
 `delete-meal`. `ViewMealsCommand` reads
 the entries from the `MealLog`. An empty log is a valid state, not an error, so the command returns
 `No meals recorded yet.` Otherwise it creates a `MealLogViewer`, asks the log for the totals and delegates
-formatting to the viewer. Each meal appears with its own calories and macros, followed by one totals line. Viewing
+formatting to the viewer. Each meal appears with its own calories and macros, followed by one totals line. If the
+log is not empty but has no meals on a requested date, it returns `No meals recorded on DATE.` instead;
+an empty log returns `No meals recorded yet.` even when `date/` is supplied. Viewing
 never changes the log.
 
 #### Correcting recorded meals
