@@ -221,7 +221,7 @@ Adding a recipe leaves existing recipes, meal plans, groceries, and recorded mea
 
 ![Class diagram of the stored recipe references](images/peilingggg/add-recipe/classes.svg)
 
-*Figure 1. Selected stored references. Open arrowheads show navigability, with target
+*Selected stored references. Open arrowheads show navigability, with target
 multiplicities and private role names. Members, temporary dependencies, and `Command`
 realization are omitted; `AddRecipeCommand` implements `Command`.*
 [PlantUML source](diagrams/peilingggg/add-recipe/classes.puml)
@@ -238,7 +238,7 @@ recipe containing a 150 g ingredient and an explicit empty food-category declara
 
 ![Sequence diagram of validating and creating an addition command](images/peilingggg/add-recipe/parsing.svg)
 
-*Figure 2. Successful parsing. Dispatch helpers, ingredient creation, field validation,
+*Successful parsing. Dispatch helpers, ingredient creation, field validation,
 and library operations are condensed in the note. Only the recipe and command constructors
 are expanded. Parameters abbreviated with `...` are described below; parsing never updates the book.*
 [PlantUML source](diagrams/peilingggg/add-recipe/parsing.puml)
@@ -258,11 +258,11 @@ are expanded. Parameters abbreviated with `...` are described below; parsing nev
 #### Execution and output
 
 The inherited `Command.confirmationPrompt` returns an empty `Optional`, so addition does
-not ask for confirmation. Figure 3 starts when `MishMash` calls `execute(recipeBook)`.
+not ask for confirmation. The execution diagram starts when `MishMash` calls `execute(recipeBook)`.
 
 ![Sequence diagram of formatting and storing a recipe](images/peilingggg/add-recipe/execution.svg)
 
-*Figure 3. Successful execution. Calls have filled arrowheads and returns are dashed.
+*Successful execution. Calls have filled arrowheads and returns are dashed.
 Constructor activations start below the newly created object boxes. Formatting internals,
 logging, the confirmation check, and application printing are omitted.*
 [PlantUML source](diagrams/peilingggg/add-recipe/execution.puml)
@@ -859,7 +859,7 @@ in shared holders and retained across sessions.
 
 ![Class diagram of the dietary update collaborators](images/peilingggg/dietary/classes.svg)
 
-*Figure 6. Stored references used to apply a dietary update. Each arrow points to one
+*Stored references used to apply a dietary update. Each arrow points to one
 retained object; unrelated members and references are omitted. `SetDietCommand` also
 implements `Command` and stores the proposed `DietaryPreferences`.*
 [PlantUML source](diagrams/peilingggg/dietary/classes.puml)
@@ -901,14 +901,14 @@ requires agreement. Declining skips execution and preserves all state.
 
 #### Repairing conflicting days
 
-Figures 7 and 8 split one confirmed `SetDietCommand.execute` into planning and publication.
+The repair and publication sequence diagrams split one confirmed `SetDietCommand.execute` into planning and publication.
 This example has conflicting days, a retained generation request, and existing groceries.
 
 ![Sequence diagram of repairing incompatible days](images/peilingggg/dietary/repair.svg)
 
-*Figure 7. Building a replacement plan. Parameters are abbreviated with `...`;
+*Building a replacement plan. Parameters are abbreviated with `...`;
 compatibility checks, filtering, and day assembly are summarized in notes. The original
-plan is unchanged during this sequence. Figure 8 continues the same execution.*
+plan is unchanged during this sequence. The publication diagram continues the same execution.*
 [PlantUML source](diagrams/peilingggg/dietary/repair.puml)
 
 1. The command reads the active plan and its original `GeneratePlanRequest`, then calls
@@ -930,7 +930,7 @@ bounded candidate search. Three eligible recipes alone do not guarantee a feasib
 
 ![Sequence diagram of publishing a repaired plan and groceries](images/peilingggg/dietary/execution.svg)
 
-*Figure 8. Continuing Figure 7 when groceries already exist. The grocery generator is
+*Continuing the repair sequence when groceries already exist. The grocery generator is
 created at its constructor message. Optional handling, validation, and formatting are
 omitted and arguments abbreviated with `...`; dashed arrows show returns.*
 [PlantUML source](diagrams/peilingggg/dietary/execution.puml)
@@ -1015,12 +1015,12 @@ change the recipe book, active plan, original generation request, or grocery sna
 `DietaryPreferences.describe()` prints the named diet and sorted explicit category and
 ingredient exclusions on three lines, using `none` for empty lists.
 
-Figure 11 ([source](diagrams/peilingggg/dietary/viewing.puml)) shows parsing and execution-time
+The viewing sequence diagram ([source](diagrams/peilingggg/dietary/viewing.puml)) shows parsing and execution-time
 profile lookup without changing session data.
 
-![Figure 11. Sequence for viewing current dietary preferences.](images/peilingggg/dietary/viewing.svg)
+![Sequence for viewing current dietary preferences.](images/peilingggg/dietary/viewing.svg)
 
-*Figure 11: The lambda captures the shared settings holder and reads its current profile during
+*The lambda captures the shared settings holder and reads its current profile during
 execution. Parsing helpers and formatting internals are condensed; no session data is changed.*
 
 #### Invalid input and verification
@@ -1189,13 +1189,13 @@ execution reads or changes session data. A new model class, `MealLog`, holds the
 `ActiveMealPlan`, it is session data shared between commands, but it is separate from the plan: the plan
 holds meals the user intends to eat, and the log holds meals the user has eaten.
 
-Figure 17 separates command collaborators from the stored model relationships.
+The class diagrams separate command collaborators from stored model relationships.
 
-![Figure 17a. Meal-recording commands and collaborators.](images/record-meal/classes.svg)
+![Meal-recording commands and collaborators.](images/record-meal/classes.svg)
 
-![Figure 17b. Meal-recording model relationships.](images/record-meal/model-classes.svg)
+![Meal-recording model relationships.](images/record-meal/model-classes.svg)
 
-*Figure 17: Only members relevant to this enhancement are shown. Solid arrows are navigable
+*Only members relevant to this enhancement are shown. Solid arrows are navigable
 associations with private role names and multiplicities; dashed arrows with an open head show
 dependencies, and dashed arrows with a hollow triangle show interface realization.
 `NutritionTotals` is the existing value record that `DayPlan` also uses for daily totals, and `MealLog`
@@ -1222,17 +1222,17 @@ reuses it; its values are `long` so that adding many recipes cannot overflow.*
 
 #### Recording a meal
 
-Figure 18 is split into parsing and execution so both remain readable at guide width. Figure 18a
+Separate sequence diagrams show parsing and execution at a readable size. The parsing diagram
 follows the successful parsing of `record-meal 2`; command dispatch is condensed into the parser
 lifeline.
 
-![Figure 18a. Parsing a valid record-meal command.](images/record-meal/record-meal-parsing.svg)
+![Parsing a valid record-meal command.](images/record-meal/record-meal-parsing.svg)
 
-Figure 18b starts with the command returned by parsing and follows its successful execution.
+The execution diagram starts with the command returned by parsing and follows its successful execution.
 
-![Figure 18b. Recording and displaying the selected meal.](images/record-meal/record-meal.svg)
+![Recording and displaying the selected meal.](images/record-meal/record-meal.svg)
 
-*Figure 18: Parsing returns a command without reading application data, and Figure 18b refers to it
+*Parsing returns a command without reading application data, and the execution diagram refers to it
 with a `ref` frame. The inherited confirmation step is omitted because the command returns an empty
 `Optional`. Invalid indexes are described below rather than combined with either successful
 interaction. The `X` marks objects that are no longer used once the command has returned.*
@@ -1253,9 +1253,9 @@ Recording a meal needs no confirmation: it is quick to repeat, and it changes on
 
 #### Viewing recorded meals and totals
 
-![Figure 19. Sequence for viewing recorded meals.](images/record-meal/view-meals.svg)
+![Sequence for viewing recorded meals.](images/record-meal/view-meals.svg)
 
-*Figure 19: Parsing mirrors `record-meal` and is omitted. The sequence follows a non-empty log; the
+*Parsing mirrors `record-meal` and is omitted. The sequence follows a non-empty log; the
 empty-log result is described below.*
 
 `view-meals` accepts one optional `date/` field; anything else is rejected with its usage line. A date
@@ -1281,11 +1281,11 @@ recorded again.
 
 The recoverable errors reuse the existing path: `Parser` or the command throws `MishMashException`,
 `MishMash.executeCommand` catches it, displays the message, and prompts for another command.
-Figure 20 shows where `record-meal` can be rejected; every rejection happens before the log changes.
+The activity diagram shows where `record-meal` can be rejected; every rejection happens before the log changes.
 
-![Figure 20. Activity diagram of the record-meal workflow.](images/record-meal/flow.svg)
+![Activity diagram of the record-meal workflow.](images/record-meal/flow.svg)
 
-*Figure 20: Diamonds are decisions, with their guards in square brackets. The first decision is made by
+*Diamonds are decisions, with their guards in square brackets. The first decision is made by
 `Parser`, the other two by `RecordMealCommand`.*
 
 | Boundary or invalid condition | Behavior |
