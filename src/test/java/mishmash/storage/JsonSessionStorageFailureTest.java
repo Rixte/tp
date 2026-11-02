@@ -3,18 +3,21 @@ package mishmash.storage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.channels.FileChannel;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +59,67 @@ class JsonSessionStorageFailureTest {
             assertThrows(StorageException.class,
                     () -> JsonSessionStorage.open(directory.resolve("state.json"), Clock.systemUTC(), files));
             assertFalse(files.channel.isOpen());
+        }
+    }
+
+    @Test
+    void open_acquisitionAndCleanupFail_keepsOriginalCauseAndSuppressesCleanup() {
+        FaultyFiles files = new FaultyFiles();
+        files.failAcquisition = true;
+        files.failCloseOnOpen = true;
+
+        StorageException error = assertThrows(StorageException.class,
+                () -> JsonSessionStorage.open(directory.resolve("state.json"), Clock.systemUTC(), files));
+
+        assertSame(files.channel.acquisitionFailure, error.getCause());
+        assertEquals(1, error.getCause().getSuppressed().length);
+        assertEquals("Close failed", error.getCause().getSuppressed()[0].getMessage());
+        assertFalse(files.channel.isOpen());
+    }
+
+    @TestFactory
+    Stream<DynamicTest> open_runtimeAcquisitionAndCleanupFail_preservesOriginalException() {
+        return Stream.of(new IllegalStateException("Acquisition failed"), new OverlappingFileLockException())
+                .map(failure -> DynamicTest.dynamicTest(failure.getClass().getSimpleName(), () -> {
+                    FaultyFiles files = new FaultyFiles();
+                    files.acquisitionRuntimeFailure = failure;
+                    files.failCloseOnOpen = true;
+                    StorageException error = assertThrows(StorageException.class,
+                            () -> JsonSessionStorage.open(directory.resolve("state.json"), Clock.systemUTC(), files));
+                    assertSame(failure, error.getCause());
+                    assertEquals(1, failure.getSuppressed().length);
+                    assertEquals("Close failed", failure.getSuppressed()[0].getMessage());
+                    assertFalse(files.channel.isOpen());
+                }));
+    }
+
+    @Test
+    void open_noLockAndCleanupFail_preservesAlreadyRunningExplanation() {
+        FaultyFiles files = new FaultyFiles();
+        files.noLock = true;
+        files.failCloseOnOpen = true;
+        StorageException error = assertThrows(StorageException.class,
+                () -> JsonSessionStorage.open(directory.resolve("state.json"), Clock.systemUTC(), files));
+        assertTrue(error.getMessage().contains("already using this data folder"));
+        assertEquals(1, error.getSuppressed().length);
+        assertEquals("Close failed", error.getSuppressed()[0].getMessage());
+        assertFalse(files.channel.isOpen());
+    }
+
+    @Test
+    void channel_positionAndTruncate_returnWrapperAndKeepFailureInjection() throws Exception {
+        Path file = directory.resolve("channel.bin");
+        Files.write(file, new byte[]{1, 2, 3, 4});
+        try (TestLockChannel channel = new TestLockChannel(FileChannel.open(file, StandardOpenOption.WRITE))) {
+            FileChannel positioned = channel.position(3);
+            assertSame(channel, positioned);
+            assertEquals(3, channel.position());
+            assertSame(channel, positioned.truncate(2));
+            assertEquals(2, channel.size());
+            assertEquals(2, channel.position());
+            channel.failAcquisition = true;
+            assertSame(channel.acquisitionFailure,
+                    assertThrows(IOException.class, () -> channel.position(0).truncate(1).tryLock()));
         }
     }
 
@@ -211,6 +275,8 @@ class JsonSessionStorageFailureTest {
         private TestLockChannel channel;
         private boolean noLock;
         private boolean failAcquisition;
+        private boolean failCloseOnOpen;
+        private RuntimeException acquisitionRuntimeFailure;
         private boolean rejectAtomicMove;
         private boolean failTemporaryOpen;
         private boolean failCleanup;
@@ -223,6 +289,8 @@ class JsonSessionStorageFailureTest {
                 channel = new TestLockChannel(super.open(path, options));
                 channel.returnNoLock = noLock;
                 channel.failAcquisition = failAcquisition;
+                channel.failClose = failCloseOnOpen;
+                channel.acquisitionRuntimeFailure = acquisitionRuntimeFailure;
                 return channel;
             }
             if (failTemporaryOpen) {

@@ -104,21 +104,29 @@ public final class JsonSessionStorage implements SessionStorage {
             try {
                 FileLock lock = channel.tryLock();
                 if (lock == null) {
-                    channel.close();
                     throw alreadyRunning();
                 }
                 return new JsonSessionStorage(normalizedFile, clock, channel, lock, files);
             } catch (OverlappingFileLockException e) {
-                channel.close();
+                closeAfterFailedAcquisition(channel, e);
                 throw alreadyRunning(e);
-            } catch (IOException | RuntimeException e) {
-                channel.close();
+            } catch (StorageException | IOException | RuntimeException e) {
+                closeAfterFailedAcquisition(channel, e);
                 throw e;
             }
         } catch (StorageException e) {
             throw e;
         } catch (IOException | RuntimeException e) {
             throw new StorageException("Could not prepare the MishMash data directory.", e);
+        }
+    }
+
+    /** Closes a failed acquisition's channel without replacing the original diagnostic. */
+    private static void closeAfterFailedAcquisition(FileChannel channel, Exception acquisitionFailure) {
+        try {
+            channel.close();
+        } catch (IOException cleanupFailure) {
+            acquisitionFailure.addSuppressed(cleanupFailure);
         }
     }
 

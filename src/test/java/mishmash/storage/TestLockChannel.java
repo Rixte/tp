@@ -16,6 +16,8 @@ final class TestLockChannel extends FileChannel {
     boolean failClose;
     boolean reportValidAfterClose;
     FileLock acquiredLock;
+    final IOException acquisitionFailure = new IOException("Acquisition failed");
+    RuntimeException acquisitionRuntimeFailure;
     private final FileChannel delegate;
 
     TestLockChannel(FileChannel delegate) {
@@ -28,7 +30,10 @@ final class TestLockChannel extends FileChannel {
             return null;
         }
         if (failAcquisition) {
-            throw new IOException("Acquisition failed");
+            throw acquisitionFailure;
+        }
+        if (acquisitionRuntimeFailure != null) {
+            throw acquisitionRuntimeFailure;
         }
         FileLock acquired = delegate.tryLock(position, size, shared);
         acquiredLock = acquired;
@@ -93,7 +98,8 @@ final class TestLockChannel extends FileChannel {
 
     @Override
     public FileChannel position(long position) throws IOException {
-        return delegate.position(position);
+        delegate.position(position);
+        return this;
     }
 
     @Override
@@ -103,7 +109,8 @@ final class TestLockChannel extends FileChannel {
 
     @Override
     public FileChannel truncate(long size) throws IOException {
-        return delegate.truncate(size);
+        delegate.truncate(size);
+        return this;
     }
 
     @Override
