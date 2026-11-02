@@ -35,6 +35,16 @@ test {
     // Exercise internal invariants during every test run as well as application runs.
     enableAssertions = true
 
+    // Include launcher tests that run the packaged application in independent JVMs.
+    doFirst {
+        delete layout.buildDirectory.dir('jacoco/launcher')
+        if (jacoco.enabled) {
+            systemProperty 'mishmash.test.coverage.agent', jacoco.asJvmArg
+            systemProperty 'mishmash.test.coverage.directory',
+                    layout.buildDirectory.dir('jacoco/launcher').get().asFile.absolutePath
+        }
+    }
+
     testLogging {
         events 'passed', 'skipped', 'failed'
 
@@ -53,20 +63,22 @@ jacoco {
 
 jacocoTestReport {
     dependsOn test
+    executionData fileTree(layout.buildDirectory.dir('jacoco/launcher')) { include '*.exec' }
     reports {
         xml.required = true
         html.required = true
     }
 }
 
-// Guard the plan-changing commands against gaps in both statements and decisions.
+// Guard plan-changing commands and application startup against gaps in statements and decisions.
 jacocoTestCoverageVerification {
     dependsOn test
+    executionData fileTree(layout.buildDirectory.dir('jacoco/launcher')) { include '*.exec' }
     violationRules {
         rule {
             element = 'CLASS'
             includes = ['mishmash.command.ResetPlanCommand', 'mishmash.command.GeneratePlanCommand',
-                        'mishmash.command.SetDietCommand']
+                        'mishmash.command.SetDietCommand', 'mishmash.MishMash']
             limit {
                 counter = 'LINE'
                 minimum = 1.0

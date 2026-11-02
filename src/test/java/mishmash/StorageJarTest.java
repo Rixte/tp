@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -54,13 +57,24 @@ class StorageJarTest {
 
     @Test
     void jar_failedSave_warnsRetainsMemoryAndPreservesLastGoodFile() throws Exception {
+        assertFailedSavePreservesLastGoodFile("bye\n");
+    }
+
+    @Test
+    void jar_failedSaveAtEof_retriesBeforeExitingAndWarnsWithoutGoodbye() throws Exception {
+        String output = assertFailedSavePreservesLastGoodFile("");
+        assertFalse(output.contains("Goodbye!"), output);
+    }
+
+    /** Checks that both exit routes retry unsaved changes without replacing the last recoverable snapshot. */
+    private String assertFailedSavePreservesLastGoodFile(String exitCommand) throws Exception {
         runJar("Tester\n" + ADD_RECIPE + "\nbye\n");
         Path primary = directory.resolve("data/mishmash.json");
         String saved = Files.readString(primary);
         Path backup = directory.resolve("data/mishmash.backup.json");
         Files.delete(backup);
         Files.createDirectory(backup);
-        String output = runJar("Tester\nedit-recipe 1 n/Unsaved\nlist-recipes\nbye\n");
+        String output = runJar("Tester\nedit-recipe 1 n/Unsaved\nlist-recipes\n" + exitCommand);
         assertTrue(output.contains("[WARN] Recipe updated!"), output);
         assertTrue(output.contains("1. Unsaved (100 kcal)"), output);
         assertTrue(output.contains("Exiting with unsaved changes."), output);
@@ -68,6 +82,7 @@ class StorageJarTest {
         assertEquals(saved, Files.readString(primary));
         Files.delete(backup);
         assertTrue(runJar("Tester\nlist-recipes\nbye\n").contains("1. A (100 kcal)"));
+        return output;
     }
 
     @Test
@@ -175,7 +190,25 @@ class StorageJarTest {
         Path java = Path.of(System.getProperty("java.home"), "bin",
                 System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java");
         Path jar = Path.of(System.getProperty("mishmash.test.jar")).toAbsolutePath();
-        return new ProcessBuilder(java.toString(), "-jar", jar.toString())
+        List<String> arguments = new ArrayList<>();
+        arguments.add(java.toString());
+        addCoverageAgent(arguments);
+        arguments.add("-jar");
+        arguments.add(jar.toString());
+        return new ProcessBuilder(arguments)
                 .directory(directory.toFile()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
+    }
+
+    /** Records each normally exiting child JVM separately so parallel runs cannot overwrite coverage data. */
+    private void addCoverageAgent(List<String> arguments) throws Exception {
+        String agent = System.getProperty("mishmash.test.coverage.agent");
+        if (agent == null) {
+            return;
+        }
+        Path coverageDirectory = Path.of(System.getProperty("mishmash.test.coverage.directory"));
+        Files.createDirectories(coverageDirectory);
+        Path recording = Files.createTempFile(coverageDirectory, "launcher-", ".exec");
+        arguments.add(agent.replaceFirst("destfile=[^,]*",
+                Matcher.quoteReplacement("destfile=" + recording.toAbsolutePath())));
     }
 }
