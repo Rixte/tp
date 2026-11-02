@@ -35,18 +35,6 @@ public class RecordMealCommand implements Command {
     private final MealLog mealLog;
 
     /**
-     * Creates a command that records one serving, eaten today, of the recipe at the supplied position.
-     *
-     * @param index The position as typed by the user, where the first recipe is 1.
-     * @param mealLog The log the meal is added to.
-     * @throws IllegalArgumentException If the index is less than 1.
-     * @throws NullPointerException If the meal log is null.
-     */
-    public RecordMealCommand(int index, MealLog mealLog) {
-        this(index, LocalDate.now(), 1, mealLog);
-    }
-
-    /**
      * Creates a command that records the recipe at the supplied position.
      *
      * @param index The position as typed by the user, where the first recipe is 1.
@@ -72,7 +60,7 @@ public class RecordMealCommand implements Command {
      * Recording needs no confirmation, so the inherited confirmation question is not overridden.
      *
      * @param recipeBook The recipe book to look the recipe up in; it is not modified.
-     * @return The recorded meal's nutrition and the totals of every recorded meal so far.
+     * @return The recorded meal's nutrition and the totals for its date.
      * @throws MishMashException If the book is empty or the index is larger than the number of recipes.
      * @throws NullPointerException If the recipe book is null.
      */
@@ -96,7 +84,7 @@ public class RecordMealCommand implements Command {
         MealEntry entry = new MealEntry(recipes.get(index - 1), date, servings);
         mealLog.record(entry);
         LOGGER.fine(() -> "record-meal recorded meal " + mealLog.getEntries().size());
-        return new MealLogViewer().viewRecorded(entry, mealLog.getTotals());
+        return new MealLogViewer().viewRecorded(entry, mealLog.getTotalsOn(date));
     }
 
     @Override

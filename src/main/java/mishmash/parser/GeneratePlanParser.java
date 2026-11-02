@@ -95,7 +95,7 @@ public class GeneratePlanParser {
     private static int parseDays(String value) {
         String error = "DAYS must be a whole number from " + MealPlanGenerator.MIN_DAYS
                 + " to " + MealPlanGenerator.MAX_DAYS + ".";
-        if (!value.matches("[0-9]+")) {
+        if (!isAllDigits(value)) {
             throw new IllegalArgumentException(error);
         }
         int days;
@@ -118,18 +118,27 @@ public class GeneratePlanParser {
             return null;
         }
         String error = label + " must be a positive whole number from 1 to " + Integer.MAX_VALUE + ".";
-        if (!value.matches("[0-9]+")) {
+        if (!isAllDigits(value)) {
             throw new IllegalArgumentException(error);
         }
         int target;
         try {
             target = Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(error, e);
+            // Only digits reach this point, so the number is valid but too large for an int.
+            throw new IllegalArgumentException(label + " must not exceed " + Integer.MAX_VALUE + ".", e);
         }
         if (target <= 0) {
             throw new IllegalArgumentException(error);
         }
         return target;
+    }
+
+    /**
+     * Returns whether the text is only the digits 0 to 9. {@link Integer#parseInt} alone also accepts
+     * a leading sign and digits from other scripts, which the command format does not allow.
+     */
+    private static boolean isAllDigits(String value) {
+        return value.matches("[0-9]+");
     }
 }

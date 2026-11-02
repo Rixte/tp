@@ -33,7 +33,7 @@ class MealLog {
 class MealLogViewer {
   + view(entries: List<MealEntry>, totals: NutritionTotals): String
   + viewDate(entries: List<MealEntry>, date: LocalDate, totals: NutritionTotals): String
-  + viewRecorded(entry: MealEntry, totals: NutritionTotals): String
+  + viewRecorded(entry: MealEntry, dayTotals: NutritionTotals): String
   + viewEdited(entry: MealEntry, dayTotals: NutritionTotals): String
   + viewDeleted(entry: MealEntry, dayTotals: NutritionTotals): String
 }

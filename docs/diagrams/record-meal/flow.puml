@@ -29,7 +29,7 @@ endif
 stop
 
 legend bottom
-  Valid: INDEX is one positive whole number, the date is real and not in the future, and servings are 1 to 100. In range: INDEX does not exceed the recipe count.
+  Valid: INDEX is one positive whole number, the date is real, not in the future and not before 1900, and servings are 1 to 100. In range: INDEX does not exceed the recipe count.
   A rejected command leaves the meal log unchanged.
 endlegend
 @enduml

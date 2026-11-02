@@ -32,6 +32,7 @@ import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
 import mishmash.testutil.LogCapture;
+import mishmash.testutil.TestRecipes;
 
 //@@author Rixte
 /**
@@ -161,7 +162,7 @@ class MishMashResetPlanTest {
         GeneratePlanRequest request = active.getRequest().orElseThrow();
         List<GroceryItem> groceries = active.getGroceryList().orElseThrow();
         List<Recipe> recipes = book.getRecipes();
-        List<Recipe> recordedMeals = meals.getMeals();
+        List<Recipe> recordedMeals = TestRecipes.recordedRecipes(meals);
 
         try (LogCapture logs = new LogCapture(MishMash.class)) {
             String failed = runSession(parser, book, "reset-plan", "yes", "view-plan", "view-list", "view-meals",
@@ -172,12 +173,12 @@ class MishMashResetPlanTest {
             assertSame(request, active.getRequest().orElseThrow());
             assertSame(groceries, active.getGroceryList().orElseThrow());
             assertEquals(recipes, book.getRecipes());
-            assertEquals(recordedMeals, meals.getMeals());
+            assertEquals(recordedMeals, TestRecipes.recordedRecipes(meals));
             assertEquals(savedTargets, parser.parseCommand("view-targets").execute(book));
 
             retryResetAndAssertCleared(parser, book, active);
             assertEquals(recipes, book.getRecipes());
-            assertEquals(recordedMeals, meals.getMeals());
+            assertEquals(recordedMeals, TestRecipes.recordedRecipes(meals));
             assertEquals(savedTargets, parser.parseCommand("view-targets").execute(book));
             assertEquals(0, logs.getRecords().stream().filter(record -> record.getLevel() == Level.SEVERE).count());
         }

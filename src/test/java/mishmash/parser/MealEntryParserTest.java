@@ -29,7 +29,35 @@ class MealEntryParserTest {
     @Test
     void parsePosition_slashInsideNumber_staysInPositionSoItIsRejectedThere() {
         assertEquals("1/2", parser.parsePosition("1/2"));
-        assertEquals("n/Rice", parser.parsePosition("n/Rice"));
+    }
+
+    @Test
+    void parsePosition_letterPrefix_endsThePositionSoItIsReportedAsAField() {
+        assertEquals("", parser.parsePosition("n/Rice"));
+        assertEquals("1", parser.parsePosition("1 x/3"));
+    }
+
+    @Test
+    void parseChanges_unknownPrefixAfterThePosition_namesThatField() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> parser.parseChanges("1 x/3"));
+
+        assertEquals("Unknown field: x/", e.getMessage());
+    }
+
+    @Test
+    void parseChanges_earliestSupportedDate_isAcceptedAndTheDayBeforeIsNot() {
+        assertEquals(MealEntryParser.EARLIEST_DATE, parser.parseChanges("1 date/1900-01-01").date());
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> parser.parseChanges("1 date/1899-12-31"));
+
+        assertEquals("Date must not be before 1900-01-01.", e.getMessage());
+    }
+
+    @Test
+    void parseDate_anyRealDateCanStillBeViewed() {
+        assertEquals(LocalDate.of(1, 1, 1), parser.parseDate("0001-01-01"));
     }
 
     @Test

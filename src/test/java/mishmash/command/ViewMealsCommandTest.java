@@ -63,7 +63,7 @@ class ViewMealsCommandTest {
         ViewMealsCommand command = new ViewMealsCommand(log);
         assertEquals("No meals recorded yet.", command.execute(recipeBook));
 
-        log.record(oatmeal);
+        TestRecipes.recordToday(log, oatmeal);
 
         assertTrue(command.execute(recipeBook).contains("Meal 1: Protein Oatmeal"));
     }
@@ -71,20 +71,20 @@ class ViewMealsCommandTest {
     @Test
     void execute_repeatedViewing_leavesLogAndRecipesUnchanged() {
         recipeBook.add(chickenRice);
-        log.record(chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
         ViewMealsCommand command = new ViewMealsCommand(log);
 
         String first = command.execute(recipeBook);
         String second = command.execute(recipeBook);
 
         assertEquals(first, second);
-        assertEquals(List.of(chickenRice), log.getMeals());
+        assertEquals(List.of(chickenRice), TestRecipes.recordedRecipes(log));
         assertEquals(List.of(chickenRice), recipeBook.getRecipes());
     }
 
     @Test
     void execute_nullRecipeBook_isIgnoredBecauseViewingDoesNotReadRecipes() {
-        log.record(oatmeal);
+        TestRecipes.recordToday(log, oatmeal);
 
         assertTrue(new ViewMealsCommand(log).execute(null).contains("Meal 1: Protein Oatmeal"));
     }

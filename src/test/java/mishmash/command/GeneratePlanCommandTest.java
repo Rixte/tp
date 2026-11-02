@@ -211,4 +211,49 @@ class GeneratePlanCommandTest {
     void activePlan_setNull_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> activePlan.set(null));
     }
+
+    //@@author GauthamNandi
+    @Test
+    void execute_unexpectedFailure_hidesItsDetailsLogsItAndKeepsThePlan() throws MishMashException {
+        createCommand("d/1").execute(recipeBook);
+        MealPlan previousPlan = activePlan.get().orElseThrow();
+        MealPlanGenerator faultyGenerator = new MealPlanGenerator(new Random(1)) {
+            @Override
+            public MealPlan generate(List<Recipe> recipes, int days, NutritionTargets targets) {
+                throw new IllegalArgumentException("internal detail");
+            }
+        };
+        GeneratePlanCommand command = new GeneratePlanCommand(new GeneratePlanParser().parse("d/2"),
+                faultyGenerator, activePlan);
+
+        try (LogCapture logs = new LogCapture(GeneratePlanCommand.class)) {
+            MishMashException error = assertThrows(MishMashException.class, () -> command.execute(recipeBook));
+
+            assertEquals("Command could not be completed.", error.getExplanation());
+            assertTrue(logs.getMessages().contains("Unexpected meal-plan generation failure"));
+        }
+        assertSame(previousPlan, activePlan.get().orElseThrow());
+    }
+
+    @Test
+    void execute_adviceFails_stillShowsTheGenerationError() {
+        // The first read serves generation; the second read, by the advisor, fails.
+        RecipeBook faultyBook = new RecipeBook() {
+            private int reads;
+
+            @Override
+            public List<Recipe> getRecipes() {
+                reads++;
+                if (reads > 1) {
+                    throw new IllegalStateException("advice failure");
+                }
+                return super.getRecipes();
+            }
+        };
+
+        MishMashException error = assertThrows(MishMashException.class, () -> createCommand("d/1").execute(faultyBook));
+
+        assertTrue(error.getExplanation().startsWith("Your recipe book is empty."), error.getExplanation());
+    }
+    //@@author
 }

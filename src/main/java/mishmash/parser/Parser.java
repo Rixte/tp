@@ -1,5 +1,6 @@
 package mishmash.parser;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -193,6 +194,9 @@ public class Parser {
     private TargetSettings targetSettings = new TargetSettings();
     //@@author
 
+    /** Decides what today is for the meal commands; tests replace it so they do not depend on the real date. */
+    private Clock clock = Clock.systemDefaultZone();
+
     /**
      * The meals recorded as eaten; record-meal adds to it and view-meals reads it. It is separate from the
      * active plan, which holds meals the user intends to eat.
@@ -226,6 +230,18 @@ public class Parser {
      */
     public Parser(MealLog mealLog) {
         this(mealLog, new MealPlanGenerator(new Random()), new ActiveMealPlan());
+    }
+
+    /**
+     * Creates a parser like {@link #Parser(MealLog)} with a fixed idea of today, for date-sensitive tests.
+     *
+     * @param mealLog The log that record-meal adds to and view-meals reads.
+     * @param clock The clock that decides today's date.
+     * @throws NullPointerException If an argument is null.
+     */
+    Parser(MealLog mealLog, Clock clock) {
+        this(mealLog);
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     /**
@@ -684,7 +700,7 @@ public class Parser {
      */
     private Command parseRecordMeal(String arguments) throws MishMashException {
         try {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(clock);
             MealEntryParser entryParser = new MealEntryParser(today);
             int index = parseRecipeIndex(entryParser.parsePosition(arguments));
             MealEntryChanges details = entryParser.parseChanges(arguments);
@@ -718,7 +734,7 @@ public class Parser {
         }
         try {
             LOGGER.fine("Parsed view-meals for one date");
-            return new ViewMealsCommand(mealLog, new MealEntryParser(LocalDate.now()).parseDate(matcher.group(1)));
+            return new ViewMealsCommand(mealLog, new MealEntryParser(LocalDate.now(clock)).parseDate(matcher.group(1)));
         } catch (IllegalArgumentException e) {
             throw new MishMashException(e.getMessage(), VIEW_MEALS_USAGE, e);
         }
@@ -733,7 +749,7 @@ public class Parser {
      */
     private Command parseEditMeal(String arguments) throws MishMashException {
         try {
-            MealEntryParser entryParser = new MealEntryParser(LocalDate.now());
+            MealEntryParser entryParser = new MealEntryParser(LocalDate.now(clock));
             int mealNumber = entryParser.parseMealNumber(entryParser.parsePosition(arguments));
             EditMealCommand command = new EditMealCommand(mealNumber, entryParser.parseChanges(arguments), mealLog);
             LOGGER.fine(() -> "Parsed edit-meal for meal " + mealNumber);
@@ -752,7 +768,7 @@ public class Parser {
      */
     private Command parseDeleteMeal(String arguments) throws MishMashException {
         try {
-            int mealNumber = new MealEntryParser(LocalDate.now()).parseMealNumber(arguments);
+            int mealNumber = new MealEntryParser(LocalDate.now(clock)).parseMealNumber(arguments);
             DeleteMealCommand command = new DeleteMealCommand(mealNumber, mealLog);
             LOGGER.fine(() -> "Parsed delete-meal for meal " + mealNumber);
             return command;

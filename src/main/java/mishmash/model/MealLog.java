@@ -17,17 +17,6 @@ public class MealLog {
     private final List<MealEntry> entries = new ArrayList<>();
 
     /**
-     * Adds one serving of a recipe, eaten today, to the end of the log.
-     * Recording the same recipe twice keeps two entries.
-     *
-     * @param recipe The recipe that was eaten.
-     * @throws NullPointerException If the recipe is null.
-     */
-    public void record(Recipe recipe) {
-        record(new MealEntry(recipe, LocalDate.now(), 1));
-    }
-
-    /**
      * Adds an entry to the end of the log.
      *
      * @param entry The meal that was eaten.
@@ -66,14 +55,6 @@ public class MealLog {
      */
     public List<MealEntry> getEntries() {
         return List.copyOf(entries);
-    }
-
-    /**
-     * Returns a read-only snapshot of the recorded recipes, oldest recording first.
-     * Later recordings do not appear in a snapshot that has already been returned.
-     */
-    public List<Recipe> getMeals() {
-        return entries.stream().map(MealEntry::recipe).toList();
     }
 
     /**

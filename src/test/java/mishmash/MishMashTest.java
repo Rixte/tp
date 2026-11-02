@@ -762,7 +762,7 @@ class MishMashTest {
 
     //@@author GauthamNandi
     @Test
-    void main_recordAndViewMeals_showsFeedbackAndCumulativeTotals() {
+    void main_recordAndViewMeals_showsFeedbackAndDailyTotals() {
         String today = " | 1 serving | " + LocalDate.now();
         String output = runCli(createSessionInput(
                 "add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken:200g",
@@ -771,8 +771,9 @@ class MishMashTest {
 
         assertTrue(output.contains("Meal recorded!" + System.lineSeparator()
                 + "Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)" + today + System.lineSeparator()
-                + "Total so far: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g"), output);
-        assertTrue(output.contains("Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g"), output);
+                + "Total for " + LocalDate.now() + ": 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g"), output);
+        assertTrue(output.contains("Total for " + LocalDate.now()
+                + ": 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g"), output);
         assertTrue(output.contains("================ Recorded Meals ================" + System.lineSeparator()
                 + "Meal 1: Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g)" + today + System.lineSeparator()
                 + "Meal 2: Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g)" + today + System.lineSeparator()

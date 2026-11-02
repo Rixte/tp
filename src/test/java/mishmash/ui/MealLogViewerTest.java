@@ -107,11 +107,11 @@ class MealLogViewerTest {
     }
 
     @Test
-    void viewRecorded_laterMeal_showsThatMealButTheCumulativeTotals() {
+    void viewRecorded_laterMeal_showsThatMealAndTheTotalsForItsDate() {
         String expected = String.join(System.lineSeparator(),
                 "Meal recorded!",
                 "Protein Oatmeal (450 kcal | P: 35g, C: 60g, F: 8g) | 1 serving | 2026-03-03",
-                "Total so far: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g");
+                "Total for 2026-03-03: 1100 kcal | Protein: 85g | Carbs: 130g | Fats: 23g");
 
         assertEquals(expected, viewer.viewRecorded(oatmeal, new NutritionTotals(1100, 85, 130, 23)));
     }

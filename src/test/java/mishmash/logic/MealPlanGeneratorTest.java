@@ -133,10 +133,10 @@ class MealPlanGeneratorTest {
 
     @Test
     void generate_largeRecipeBook_samplesAndStaysWithinTolerance() {
-        // 40 recipes give 9880 combinations, more than MAX_CANDIDATES, so the sampling path is used.
+        // 200 recipes give 1,313,400 combinations, more than MAX_CANDIDATES, so the sampling path is used.
         List<Recipe> recipes = new ArrayList<>();
-        for (int i = 1; i <= 40; i++) {
-            recipes.add(TestRecipes.recipe("Recipe " + i, i * 50, i * 3, i * 5, i * 2));
+        for (int i = 1; i <= 200; i++) {
+            recipes.add(TestRecipes.recipe("Recipe " + i, 200 + i * 10, i, i * 5, i * 2));
         }
         NutritionTargets targets = new NutritionTargets(2000, 120, null, null);
 
@@ -155,6 +155,81 @@ class MealPlanGeneratorTest {
                 () -> createSeededGenerator(1).generate(FIVE_RECIPES, 3, targets));
         assertTrue(e.getMessage().contains("within 15%"));
     }
+
+    //@@author GauthamNandi
+    @Test
+    void generate_oneValidCombinationAmong180Recipes_isAlwaysFound() {
+        // With 5,000 random checks, this book reported a false failure almost every time.
+        List<Recipe> recipes = new ArrayList<>();
+        for (int i = 0; i < 180; i++) {
+            recipes.add(TestRecipes.recipe("Recipe " + i, i < 3 ? 1000 : 1, 0, 0, 0));
+        }
+        NutritionTargets targets = new NutritionTargets(3000, null, null, null);
+        Set<Recipe> expected = Set.copyOf(recipes.subList(0, 3));
+
+        for (long seed = 0; seed < 5; seed++) {
+            MealPlan plan = createSeededGenerator(seed).generate(recipes, 1, targets);
+            assertEquals(expected, new HashSet<>(plan.getDays().getFirst().getMeals()));
+        }
+    }
+
+    @Test
+    void generate_moreMatchesThanAreKept_stillBuildsAValidPlan() {
+        // All 161,700 combinations of these identical recipes match, which is more than MAX_MATCHES.
+        List<Recipe> recipes = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            recipes.add(TestRecipes.recipe("Recipe " + i, 500, 10, 10, 10));
+        }
+
+        MealPlan plan = createSeededGenerator(3).generate(recipes, 7, new NutritionTargets(1500, null, null, null));
+
+        assertEquals(7, plan.getNumberOfDays());
+        assertEquals(7, new HashSet<>(plan.getDays().stream().map(DayPlanNames::of).toList()).size());
+    }
+
+    @Test
+    void generate_moreValidCombinationsThanDays_neverRepeatsADay() {
+        // Five equal recipes give ten valid days, so a seven-day plan does not need to repeat one.
+        List<Recipe> recipes = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            recipes.add(TestRecipes.recipe("Recipe " + i, 500, 10, 10, 10));
+        }
+        NutritionTargets targets = new NutritionTargets(1500, null, null, null);
+
+        for (long seed = 0; seed < 50; seed++) {
+            MealPlan plan = createSeededGenerator(seed).generate(recipes, 7, targets);
+            assertEquals(7, new HashSet<>(plan.getDays().stream().map(DayPlanNames::of).toList()).size());
+        }
+    }
+
+    @Test
+    void checksEveryCombination_followsTheCandidateLimit() {
+        assertTrue(MealPlanGenerator.checksEveryCombination(182));
+        assertTrue(!MealPlanGenerator.checksEveryCombination(183));
+    }
+
+    @Test
+    void generationFailures_areDistinguishableFromOtherInvalidArguments() {
+        NutritionTargets targets = new NutritionTargets(10000, null, null, null);
+
+        assertThrows(PlanGenerationException.class, () -> createSeededGenerator(1).generate(FIVE_RECIPES, 3, targets));
+        assertThrows(PlanGenerationException.class,
+                () -> createSeededGenerator(1).generate(List.of(), 3, NutritionTargets.none()));
+        assertThrows(NullPointerException.class, () -> new PlanGenerationException(null));
+    }
+
+    /** Identifies a day by its recipes regardless of their order. */
+    private static final class DayPlanNames {
+        private DayPlanNames() {
+        }
+
+        private static Set<String> of(DayPlan day) {
+            Set<String> names = new HashSet<>();
+            day.getMeals().forEach(meal -> names.add(meal.getName()));
+            return names;
+        }
+    }
+    //@@author
 
     /**
      * Checks every supplied daily target against the generator's permitted tolerance.

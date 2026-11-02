@@ -3,12 +3,14 @@ package mishmash.command;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import mishmash.exception.MishMashException;
 import mishmash.logic.DietaryPlanner;
 import mishmash.logic.MealPlanGenerator;
 import mishmash.logic.PlanFailureAdvisor;
+import mishmash.logic.PlanGenerationException;
 import mishmash.model.ActiveMealPlan;
 import mishmash.model.DietarySettings;
 import mishmash.model.GeneratePlanRequest;
@@ -127,17 +129,21 @@ public class GeneratePlanCommand implements Command {
             throws MishMashException {
         try {
             return new DietaryPlanner(generator).generate(recipeBook.getRecipes(), effective, dietarySettings.get());
-        } catch (IllegalArgumentException e) {
-            // The generator reports user-fixable problems this way; show them like any other input error.
+        } catch (PlanGenerationException e) {
+            // Only this type means the user can fix it, so only this failure gets an explanation and advice.
             LOGGER.fine(() -> "Meal-plan generation rejected for " + request.days() + " days");
             throw describeGenerationFailure(e, recipeBook, effective, usesSavedTargets);
+        } catch (IllegalArgumentException e) {
+            // Anything else is a bug, not bad input: log it, but keep the session and the previous plan alive.
+            LOGGER.log(Level.WARNING, "Unexpected meal-plan generation failure", e);
+            throw new MishMashException(null, GeneratePlanParser.USAGE, e);
         }
     }
 
     /**
      * Preserves the original failure and appends advice for the targets and recipes actually used.
      */
-    private MishMashException describeGenerationFailure(IllegalArgumentException failure, RecipeBook recipeBook,
+    private MishMashException describeGenerationFailure(PlanGenerationException failure, RecipeBook recipeBook,
             GeneratePlanRequest effective, boolean usesSavedTargets) {
         String message = failure.getMessage();
         //@@author neil0618
@@ -147,9 +153,9 @@ public class GeneratePlanCommand implements Command {
         }
         //@@author
         //@@author GauthamNandi
-        List<String> advice = new PlanFailureAdvisor().explain(recipeBook.getRecipes(), effective.targets(),
-                dietarySettings.get());
-        if (message != null && !advice.isEmpty()) {
+        // The advice is specific to this failure, so show the short usage rather than every command.
+        List<String> advice = adviceFor(recipeBook, effective.targets());
+        if (!advice.isEmpty()) {
             message += System.lineSeparator() + String.join(System.lineSeparator(), advice);
         }
         return new MishMashException(message, GeneratePlanParser.USAGE, failure);
@@ -169,6 +175,25 @@ public class GeneratePlanCommand implements Command {
         //@@author
         return confirmation + System.lineSeparator() + "Use 'view-plan' to inspect your planned meals.";
     }
+
+    //@@author GauthamNandi
+    /**
+     * Explains a failed generation. The advice is optional, so a fault while building it is logged
+     * rather than allowed to replace the error the user needs to see.
+     *
+     * @param recipeBook The recipes generation chose from.
+     * @param targets The daily targets that were applied.
+     * @return The advice lines, or an empty list if none could be produced.
+     */
+    private List<String> adviceFor(RecipeBook recipeBook, NutritionTargets targets) {
+        try {
+            return new PlanFailureAdvisor().explain(recipeBook.getRecipes(), targets, dietarySettings.get());
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.WARNING, "Could not explain the failed meal-plan generation", e);
+            return List.of();
+        }
+    }
+    //@@author
 
     @Override
     public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {

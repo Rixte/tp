@@ -47,17 +47,17 @@ public class MealLogViewer {
     }
 
     /**
-     * Returns the feedback shown right after a meal is recorded: the meal, then the running totals.
+     * Returns the feedback shown right after a meal is recorded: the meal, then the totals for its date.
      *
      * @param entry The meal that was just recorded.
-     * @param totals The nutrition summed over every recorded meal, including this one.
+     * @param dayTotals The nutrition summed over every meal on that date, including this one.
      * @return The confirmation without a trailing line separator.
      * @throws NullPointerException If either argument is null.
      */
-    public String viewRecorded(MealEntry entry, NutritionTotals totals) {
+    public String viewRecorded(MealEntry entry, NutritionTotals dayTotals) {
         return "Meal recorded!" + System.lineSeparator()
                 + describe(entry) + System.lineSeparator()
-                + formatTotals("Total so far", totals);
+                + formatTotals("Total for " + entry.date(), dayTotals);
     }
 
     /**

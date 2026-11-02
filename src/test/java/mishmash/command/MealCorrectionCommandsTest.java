@@ -225,5 +225,16 @@ class MealCorrectionCommandsTest {
         assertTrue(help.contains(EditMealCommand.USAGE), help);
         assertTrue(help.contains(DeleteMealCommand.USAGE), help);
     }
+
+    @Test
+    void editMeal_valuesAlreadySet_isANoteAndChangesNothing() throws MishMashException {
+        recordBothMeals();
+
+        Command command = parser.parseCommand("edit-meal 1 s/1 date/2026-03-02");
+
+        assertEquals(CommandResult.note("Meal 1 already has those details. Nothing was changed."),
+                command.executeWithResult(book));
+        assertEquals(List.of(mondayMeal, tuesdayMeal), log.getEntries());
+    }
 }
 //@@author
