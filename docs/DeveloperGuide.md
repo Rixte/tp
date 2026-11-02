@@ -188,7 +188,7 @@ JAR tests also cover forced termination after autosave, lock release, corrupt-pr
 warnings and shutdown retries, failed dietary repair, and unchanged save files after no-ops or cancellation.
 ## Implementation
 
-This section explains the implemented MVP features, followed by v2.0b plan-management features and generation diagnostics.
+This section explains the design and implementation of MishMash’s completed features, including their key components, workflows, and error handling.
 
 <!-- @@author peilingggg -->
 ### Adding a recipe
