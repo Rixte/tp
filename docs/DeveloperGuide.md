@@ -1935,7 +1935,7 @@ The actor is a user who has started a session and entered a name. MSS means Main
 - Invalid syntax or values produce command-specific error/usage feedback, preserve existing data, and allow another command.
 - Viewing and checking commands do not mutate application data.
 - Confirmation accepts only `y` or `yes`, ignoring case and surrounding whitespace. Any other answer, a blank answer, or EOF cancels without applying the pending change; EOF also ends the session.
-- Successful commands return to the prompt unless the user exits. Individual extensions below identify feature-specific conditions and outcomes.
+- Each MSS ends after its final step. Each extension ends the use case after its stated response unless it explicitly resumes an MSS step. The session then accepts another command, except after exit/EOF.
 
 #### UC01 Add a recipe
 
@@ -1943,7 +1943,7 @@ The actor is a user who has started a session and entered a name. MSS means Main
 
 1. The user enters `add-recipe` with a name, nutrition values, and at least one ingredient.
 2. MishMash validates the input.
-3. MishMash adds the recipe, displays its details.
+3. MishMash adds the recipe and displays its details.
 
 **Extensions**
 
@@ -1979,8 +1979,6 @@ The actor is a user who has started a session and entered a name. MSS means Main
 
 #### UC04 Generate a meal plan
 
-**Precondition:** At least three recipe entries are available.
-
 **MSS**
 
 1. The user enters `generate-plan d/DAYS`, optionally including daily nutrition targets.
@@ -2011,8 +2009,6 @@ Recipes may be repeated on different days. With no targets, there are no nutriti
 - 2b. The selected day exceeds the active plan's length: MishMash displays a range error.
 
 #### UC06 Generate a grocery list
-
-**Precondition:** A meal plan is active.
 
 **MSS**
 
@@ -2069,8 +2065,6 @@ unchanged. A shortfall is any amount below a target, even within generation's to
 <!-- @@author oilybikechain -->
 #### UC10 Detect exceeded nutrition targets
 
-**Precondition:** An active plan was generated with at least one daily nutrition target.
-
 **MSS**
 
 1. The user enters `view-plan`, optionally selecting a day.
@@ -2079,7 +2073,7 @@ unchanged. A shortfall is any amount below a target, even within generation's to
 
 **Extensions**
 
-- 2a. A target is omitted, equal to the total, or above it: no warning is shown for that nutrient.
+- 2a. A target is omitted, equal to the total, or above it: skip that nutrient and resume step 3 for the remaining nutrients.
 - 2b. No generation request is retained, or the plan was generated without targets: only the normal plan display is shown.
 - 2c. No plan exists or a selected day is invalid: the existing `view-plan` messages apply.
 
@@ -2091,8 +2085,6 @@ the retained generation targets. Clearing the plan removes the warnings.
 <!-- @@author -->
 <!-- @@author GauthamNandi -->
 #### UC11 Record a meal eaten
-
-**Precondition:** At least one recipe exists.
 
 **MSS**
 
@@ -2167,8 +2159,8 @@ The command does not change the recipe book or an existing meal plan. The saved 
 **Extensions**
 
 - 2a. Syntax or values are invalid: reject the command.
-- 3a. No active plan exists: save the profile for future generation.
-- 3b. The complete plan is compatible: preserve the plan and groceries.
+- 3a. No active plan exists: save the profile for future generation and display the outcome.
+- 3b. The complete plan is compatible: save the profile, preserve the plan and groceries, and display the outcome.
 - 3c. The user declines confirmation: preserve the profile, plan, and groceries.
 - 3d. Replacement fails or the original request is unavailable: save the profile, clear
   the plan and groceries, and explain how to generate again.
@@ -2212,7 +2204,8 @@ The command does not change the recipe book or an existing meal plan. The saved 
 **Extensions**
 
 - 2a. The index or a supplied field is invalid, or no edits are supplied: reject the edit.
-- Existing meal plans and recorded meals keep their previous recipe snapshots.
+
+Existing meal plans and recorded meals keep their previous recipe snapshots.
 
 <!-- @@author GauthamNandi -->
 #### UC19 Correct a recorded meal
@@ -2292,8 +2285,8 @@ The source recipe, other occurrences, saved targets, dietary profile, and record
 - 2a. No plan exists: ask the user to generate one first.
 - 2b. Arguments, positions, quantities, or dietary compatibility are invalid: reject the change.
 - 3a. The effective ingredients are unchanged: report a no-op and preserve groceries.
-- 3b. Ingredients match the source recipe again: remove the customization.
-- 3c. Named-diet or avoided-category rules are active: warn that replacement names are not reclassified; the occurrence keeps its source food categories.
+- 3b. Ingredients match the source recipe again: remove the customization, then complete step 3.
+- 3c. Named-diet or avoided-category rules are active: complete step 3 with a warning that replacement names are not reclassified; the occurrence keeps its source food categories.
 
 Nutrition and portion count remain unchanged. Grocery generation scales the replacement quantities by the portion count. The source recipe and other occurrences remain unchanged.
 
