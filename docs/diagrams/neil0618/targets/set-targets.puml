@@ -28,9 +28,10 @@ deactivate Updated
 Changes --> Cmd : updated
 deactivate Changes
 
-Cmd -> Cmd : hasSameTargets(current, updated)
-activate Cmd
-deactivate Cmd
+note right of Cmd
+  hasSameTargets(current, updated), a static helper,
+  compares every nutrient of the two targets.
+end note
 
 alt updated equals the saved targets
   note right of Cmd : Return a note: Daily targets are unchanged.
