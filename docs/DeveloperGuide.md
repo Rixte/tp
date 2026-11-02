@@ -402,7 +402,7 @@ The parser does not receive the recipe book, so whether the index exists is deci
 | No index, empty book | `ListRecipeCommand.execute` | Normal message, not an error. |
 | Command word with a different case or spelling (`List-Recipes`, `list-recipe`) | `Parser.parseNamedCommand` | `Unknown command` error. |
 
-Syntax errors start as an `IllegalArgumentException`. `parseListRecipe` wraps it in a `MishMashException` that keeps the original cause and ends with the list-recipes usage, so `MishMash.displayError` does not print the general command list. The two execution-time errors carry no `Format:` line, so `displayError` adds the format of every command. In every case the session continues and the recipe book is unchanged.
+Syntax errors start as an `IllegalArgumentException`. `parseListRecipe` wraps it in a `MishMashException` that keeps the original cause and ends with the list-recipes usage, so `MishMash.displayError` does not print the general command list. The two execution-time errors pass `ListRecipeCommand.USAGE` as well, so they also show only the list-recipes format. In every case the session continues and the recipe book is unchanged.
 
 #### Design choices and alternatives
 
@@ -545,7 +545,7 @@ The activity diagram shows which step decides each outcome.
 | Input or state | Where it is decided | Result |
 | --- | --- | --- |
 | Missing, non-numeric, zero, or oversized index | `Parser.parseRecipeIndex` | Error ending with `Format: delete-recipe INDEX`; no question. |
-| Empty book, or index above the recipe count | `DeleteRecipeCommand.confirmationPrompt` | Error without a `Format:` line, so every command's format follows; no question. |
+| Empty book, or index above the recipe count | `DeleteRecipeCommand.confirmationPrompt` | Error followed by the delete-recipe usage; no question. |
 | Valid index, answered `y` or `yes` | `MishMash.userConfirms`, then `execute` | Recipe removed and confirmation shown. |
 | Valid index, any other answer or end of input | `MishMash.userConfirms` | `Cancelled. Nothing was changed.` |
 
@@ -842,7 +842,7 @@ the replacement value.
 
 *The execution diagram refers to the parsing diagram with a `ref` frame.*
 
-`SetTargetsCommand.execute` reads the saved targets, asks `TargetChanges.applyTo` for the updated targets, and stores them. `applyTo` builds a new `NutritionTargets` and does not modify the old one. The reply lists every target now saved, or says `All daily targets cleared.` when none remain, and reminds the user that an existing plan is unchanged.
+`SetTargetsCommand.execute` reads the saved targets, asks `TargetChanges.applyTo` for the updated targets, and stores them. `applyTo` builds a new `NutritionTargets` and does not modify the old one. If the updated targets equal the saved ones, it stores nothing and returns a `NOTE`, `Daily targets are unchanged. Nothing was changed.`, as `ClearDietCommand` does. Otherwise the reply lists every target now saved, or says `All daily targets cleared.` when none remain, and reminds the user that an existing plan is unchanged.
 
 #### Using the targets in `generate-plan`
 
@@ -2145,6 +2145,7 @@ Without a date, the totals cover every retained recorded meal.
 **Extensions**
 
 - 2a. No argument is given, a prefix is unknown or repeated, a value is missing, or a value is neither `none` nor a positive whole number up to 2147483647: reject the update.
+- 3a. The result equals the targets already saved: display `Daily targets are unchanged. Nothing was changed.` and save nothing.
 
 The command does not change the recipe book or an existing meal plan. The saved targets are used by later `generate-plan` commands (UC04) and remain available after restarting from the same working directory.
 
@@ -2580,7 +2581,7 @@ Use exactly the sample recipes in a fresh directory; follow rows in order.
 | `set-targets cal/none c/none f/none p/none`; view targets; generate again | All cleared; no saved targets and no applied-target summary. |
 | Try bare `set-targets`; then try it with `cal/0`, `cal/-5`, `cal/abc`, `cal/1.5`, `cal/`, `x/5`, `2000`, or `cal/1 cal/2`; also try `view-targets now` | Recoverable error with matching usage. |
 | `set-targets p/5 f/oops`; `view-targets` | Invalid update is atomic: protein was not saved. |
-| `set-targets cal/NONE`; `set-targets CAL/5`; `Set-Targets cal/5` | Uppercase NONE accepted; uppercase prefix and command rejected. |
+| `set-targets cal/NONE`; `set-targets CAL/5`; `Set-Targets cal/5` | Uppercase NONE accepted (a no-change note when no calorie target was saved); uppercase prefix and command rejected. |
 | `set-targets cal/2000`; exit and restart; `view-targets` | 2000 kcal restored. |
 
 <!-- @@author -->

@@ -1237,6 +1237,7 @@ They apply to the next 'generate-plan'; your current meal plan is unchanged.
 
 - Each target must be a positive whole number up to 2147483647. Calories are in kcal; protein, carbohydrates, and fats are in grams.
 - `set-targets` changes only the nutrients you name. To replace a target, set it again. To remove one, write `none` (any letter case) as its value. When the last saved target is removed, MishMash replies `All daily targets cleared.`
+- If a command would leave every saved target as it is, for example `cal/none` when no calorie target is saved, or the same value entered again, MishMash replies `[NOTE] Daily targets are unchanged. Nothing was changed.`
 - Each nutrient may appear only once in a command.
 - The next [`generate-plan`](#generating-a-meal-plan) uses a saved target for every nutrient you leave out of that command. A target typed in `generate-plan` replaces the saved one for that plan only; it does not change what is saved.
 - Saved targets do not affect [`check-shortfall`](#checking-nutrition-shortfalls), which always uses the targets you type in that command.

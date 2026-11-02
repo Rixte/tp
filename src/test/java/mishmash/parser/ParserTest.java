@@ -324,7 +324,7 @@ class ParserTest {
 
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> command.execute(book));
-        assertEquals("Recipe index must be between 1 and 2.", exception.getMessage());
+        assertEquals("Recipe index must be between 1 and 2.", exception.getExplanation());
         assertEquals(2, book.getRecipes().size());
     }
 
@@ -433,7 +433,7 @@ class ParserTest {
 
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> command.execute(book));
-        assertEquals("Recipe index must be between 1 and 2.", exception.getMessage());
+        assertEquals("Recipe index must be between 1 and 2.", exception.getExplanation());
     }
 
     @Test

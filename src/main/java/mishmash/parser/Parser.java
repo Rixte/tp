@@ -81,24 +81,17 @@ public class Parser {
     /**
      * Describes how to choose the recipe to delete.
      */
-    public static final String DELETE_RECIPE_USAGE = "Format: delete-recipe INDEX";
+    public static final String DELETE_RECIPE_USAGE = DeleteRecipeCommand.USAGE;
 
     /**
      * Describes partial recipe edits and complete ingredient-list replacement.
      */
-    public static final String EDIT_RECIPE_USAGE =
-            "Format: edit-recipe INDEX [n/DISHNAME] [cal/CALORIES] [p/PROTEIN] [c/CARBS] [f/FATS]"
-                    + " [i/INGREDIENT:QUANTITYUNIT ...] [food/TAG[,TAG...]]"
-                    + System.lineSeparator()
-                    + "Supply at least one field. Omitted fields are unchanged."
-                    + " Each i/ supplies one item in the entire replacement ingredient list."
-                    + System.lineSeparator()
-                    + "Example: edit-recipe 1 p/55 i/Chicken:220g i/Rice:150g";
+    public static final String EDIT_RECIPE_USAGE = EditRecipeCommand.USAGE;
 
     /**
      * Describes how to list all recipes or show one in full.
      */
-    public static final String LIST_RECIPE_USAGE = "Format: list-recipes [INDEX]";
+    public static final String LIST_RECIPE_USAGE = ListRecipeCommand.USAGE;
 
     public static final String VIEW_PLAN_USAGE = ViewPlanCommand.USAGE;
     public static final String ADJUST_PORTION_USAGE = AdjustPortionParser.USAGE;
@@ -515,7 +508,7 @@ public class Parser {
             TargetChanges changes = new SetTargetsParser().parse(arguments);
             return new SetTargetsCommand(changes, targetSettings);
         } catch (IllegalArgumentException e) {
-            throw new MishMashException(e.getMessage() + System.lineSeparator() + SET_TARGETS_USAGE, e);
+            throw new MishMashException(e.getMessage(), SET_TARGETS_USAGE, e);
         }
     }
 
@@ -528,8 +521,8 @@ public class Parser {
      */
     private Command parseViewTargets(String arguments) throws MishMashException {
         if (!arguments.isBlank()) {
-            throw new MishMashException(ViewTargetsCommand.COMMAND_WORD + " does not accept arguments."
-                    + System.lineSeparator() + VIEW_TARGETS_USAGE);
+            throw new MishMashException(ViewTargetsCommand.COMMAND_WORD + " does not accept arguments.",
+                    VIEW_TARGETS_USAGE, null);
         }
         return new ViewTargetsCommand(targetSettings);
     }

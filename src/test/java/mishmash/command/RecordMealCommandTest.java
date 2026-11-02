@@ -100,7 +100,7 @@ class RecordMealCommandTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> new RecordMealCommand(1, log).execute(new RecipeBook()));
 
-        assertEquals("There are no recipes to record. Use 'add-recipe' to add one.", error.getMessage());
+        assertEquals("There are no recipes to record. Use 'add-recipe' to add one.", error.getExplanation());
         assertTrue(log.getMeals().isEmpty());
     }
 
@@ -113,7 +113,7 @@ class RecordMealCommandTest {
         assertThrows(MishMashException.class,
                 () -> new RecordMealCommand(Integer.MAX_VALUE, log).execute(book));
 
-        assertEquals("Recipe index must be between 1 and 3.", error.getMessage());
+        assertEquals("Recipe index must be between 1 and 3.", error.getExplanation());
         assertTrue(log.getMeals().isEmpty());
     }
 
