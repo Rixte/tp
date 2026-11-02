@@ -1,49 +1,59 @@
-# Samantha Sam - Project Portfolio Page
+# Samantha Sam's Project Portfolio Page
 
-**GitHub:** [Rixte](https://github.com/Rixte) | **Draft updated:** 28 October 2026
+### Project: MishMash
 
-## Overview
+MishMash is a Java command-line meal-prep planner. Users manage recipes, generate meal plans and grocery lists, track meals and nutrition targets, and save their data between sessions.
 
-MishMash is a Java command-line application for meal-prep planning. Users can manage recipes, generate meal plans and grocery lists, and compare planned nutrition with daily targets.
+Given below are my contributions to the project.
 
-## Summary of Contributions
+- **Code contributed:** [My individual tP Code Dashboard report](https://nus-cs2113-ay2627-s1.github.io/tp-dashboard/?search=rixte&breakdown=true).
 
-**Code contributed:** [My individual tP Code Dashboard report](https://nus-cs2113-ay2627-s1.github.io/tp-dashboard/?search=rixte&breakdown=true).
+- **New feature: Meal-plan and grocery-list viewing (v1.0)** ([#15](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/15), [#23](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/23)).
+  - **What it does:** `view-plan` displays all days or a selected day, meals and nutrition totals; `view-list` displays generated groceries with quantities and item counts.
+  - **Justification:** Users can inspect their plan and shopping needs without regenerating or changing data.
+  - **Highlights:** Implemented viewers, commands and parsing. Execution-time suppliers prevent stale results; absent groceries differ from a generated empty list. Added selection, precision and repeated-use regressions ([#22](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/22)).
 
-### Enhancements implemented
+- **New feature: Daily nutrition shortfall checking (v2.0)** ([#65](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/65), [#68](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/68)).
+  - **What it does:** `check-shortfall` reports each day's deficits against supplied calorie and macronutrient targets; omitted nutrients remain unchecked.
+  - **Justification:** Users can identify under-planned days before preparing meals.
+  - **Highlights:** Reused the team's nutrition models while implementing strict comparisons independent of generation tolerance. Kept days independent and used long arithmetic. Added 144 regression cases in #68, including all 24 target orders, 15 target combinations, numeric boundaries and recovery.
 
-- **Daily nutrition shortfall checking - merged.** I implemented `check-shortfall` to report each day's calorie and macronutrient deficits against user-supplied targets. This helps users identify meals that need adjustment. The command reuses existing nutrition models, checks days independently, and uses long arithmetic to prevent integer overflow. It preserves existing plans and groceries, supports omitted targets, and provides recoverable validation errors. Evidence: [#65](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/65), [#68](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/68).
-- **Recipe editing - merged.** I implemented `edit-recipe` so users can update selected fields without re-entering a whole recipe. Supplied ingredients replace the complete ingredient list. The design uses immutable changes, execution-time recipe lookup, and replacement after validation and confirmation formatting. Existing plans retain their original recipes; regeneration uses the edits. This required checking interactions with dietary filtering, nutrition warnings, and grocery snapshots. Evidence: [#76](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/76).
-- **Meal-plan and grocery-list viewing - merged.** I added the viewers and command handling for `view-plan`, optional day selection, and `view-list`. They display meals, daily nutrition totals, or generated groceries, with guidance for missing data. Viewing reads the latest supplied data without generating or modifying it. Evidence: [#15](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/15), [#23](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/23).
-- **Meal-plan reset - merged.** I implemented `reset-plan` to clear the active plan, its generation request, and groceries while preserving recipes, dietary preferences, saved personal targets, and recorded meals. The command reuses the shared plan holder, rejects arguments before changing state, and reports clearing failures as recoverable errors. Integration tests distinguish removed plan-specific targets from saved targets used for future generation. Evidence: [#88](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/88).
+- **New feature: Partial recipe editing (v2.0)** ([#76](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/76)).
+  - **What it does:** `edit-recipe` updates selected fields, including nutrition, ingredients and food classifications, while retaining omitted fields.
+  - **Justification:** Users can correct recipes without deleting and re-entering them.
+  - **Highlights:** Introduced immutable `RecipeChanges`, reused recipe validation and constructed the replacement and feedback before publication. This avoids partial updates while existing plans, groceries and recorded meals retain their snapshots. Tested command reuse and failed regeneration.
 
-- **Plan-change confirmation - merged.** I implemented confirmation before resetting or replacing a plan and before dietary changes can repair or clear incompatible meals. Cancellation preserves the current plan, groceries, and other session settings. The implementation reuses the existing command confirmation hook rather than introducing console input into commands. Only `y` or `yes` confirms; other answers and end of input cancel. Evidence: [#91](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/91), addressing [#61](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/61).
+- **New feature: Meal-plan reset (v2.0b)** ([#88](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/88), [#117](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/117)).
+  - **What it does:** `reset-plan` clears the active plan, generation request and groceries, retaining recipes, dietary preferences, saved personal targets and recorded meals.
+  - **Justification:** Users can restart planning without losing unrelated work.
+  - **Highlights:** Made resets repeatable and failures recoverable. Added 92 reset-specific cases covering commands, parsing, diagnostics and integrated workflows, including the distinction between discarded plan targets and retained personal targets.
 
-### Testing and code quality
+- **Enhancement: Confirmation before plan changes (v2.0b)** ([#91](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/91)).
+  - **What it does:** Requests agreement before reset, replacement generation or dietary changes that can repair or clear a plan.
+  - **Justification:** Prevents accidental loss of the current plan and groceries.
+  - **Highlights:** Kept prompting separate from execution; only `y`/`yes` confirms, while other answers and EOF cancel. Added 41 cases for cancellation, invalid syntax, failed generation and dietary repair.
+  - **Credits:** Extended the team's [existing confirmation workflow](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/25).
 
-I added regression tests for viewing, validation boundaries, large nutrition totals, repeated meals, command reuse, and recovery after errors. This includes 144 additional shortfall test cases in [#68](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/68) and 57 additional editing cases in [#76](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/76). I also improved null checks, exception-cause preservation, assertions, and unexpected-failure logging in [#35](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/35).
+- **New feature: Interactive command entry (v2.1)** ([#116](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/116), [#130](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/130)).
+  - **What it does:** Provides Tab completion, editable input and session history for long commands.
+  - **Justification:** Reduces repeated typing and makes corrections easier.
+  - **Highlights:** Preserving syntax and confirmation safety across terminal modes required separate console adapters. Implemented usage-derived completion, plain-input fallback and interruption/EOF handling. Kept greeting and confirmation answers out of history/completion; tested the real editor using in-memory terminals.
+  - **Credits:** Integrated [JLine](https://jline.org/), which supplies the editing and history engine; my contribution covers its application-specific integration and tests.
 
-In [#83](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/83), I separated application execution from console setup, stored usage separately from error wording, and added feature-specific diagnostics and integration tests. Recoverable failures preserve session data, and CLI tests check responses in command order.
+- **Enhancements to existing features:**
+  - Added startup branding ([#17](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/17)), diagnostic logging and package organisation ([#26](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/26), [#31](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/31)). Refactored shared parsing, help, formatting and storage workflows, and strengthened Checkstyle enforcement ([#33](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/33), [#130](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/130)).
+  - Separated session execution from global console/logging setup; preserved error causes and introduced reusable logging and response-order test helpers ([#35](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/35), [#83](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/83)). Added assertion-enabled/disabled regressions ([#114](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/114)).
+  - Introduced 100% line/branch coverage gates for three plan-changing commands ([#91](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/91)); collected separate-JVM coverage, tested EOF save failures and terminal fallback, and extended the gates to `MishMash` and `ConsoleInputs` ([#135](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/135)). At #135, those two files reached 100% line/branch coverage.
 
-[#88](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/88) adds 92 reset-specific JUnit cases. Its validation snapshot has 1,423 project tests and both Checkstyle checks passing with Java 25. A local audit measured 100% line and branch coverage for `ResetPlanCommand` and `Parser.parseResetPlan`; this is feature coverage, not whole-project coverage. Reset cases and packaged workflows also pass with assertions disabled.
+- **Documentation:**
+  - **User Guide:** Created the shared guide structure, quick start and troubleshooting ([#27](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/27)). Wrote [plan viewing](../UserGuide.md#viewing-a-meal-plan), [grocery viewing](../UserGuide.md#viewing-a-grocery-list), [shortfall](../UserGuide.md#checking-nutrition-shortfalls), [editing](../UserGuide.md#editing-a-recipe), [reset](../UserGuide.md#resetting-a-meal-plan), [confirmation](../UserGuide.md#confirming-plan-changes) and [interactive-input](../UserGuide.md#interactive-command-entry) instructions. Updated worked examples, persistence, meal workflows and recovery guidance ([#66](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/66), [#130](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/130)).
+  - **Developer Guide:** Wrote design, alternatives and verification for [editing](../DeveloperGuide.md#editing-a-recipe), [shortfalls](../DeveloperGuide.md#checking-nutrition-shortfalls), [reset](../DeveloperGuide.md#resetting-a-meal-plan), [confirmation](../DeveloperGuide.md#confirming-plan-changes), [plan viewing](../DeveloperGuide.md#viewing-a-meal-plan) and [grocery viewing](../DeveloperGuide.md#viewing-a-grocery-list). Maintained [ten UML diagrams](../diagrams/rixte/README.md): two class, six sequence, one activity and one state machine, with editable sources and SVGs ([#97](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/97), [#101](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/101)). Reorganised the guides to the AB3 structure, added [developer setup](../SettingUp.md) and documented [terminal testing](../DeveloperGuide.md#interactive-command-entry) ([#101](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/101), [#130](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/130)).
 
-[#91](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/91) adds 41 confirmation-specific JUnit cases covering accepted and rejected answers, EOF, invalid syntax, current-state lookup, state preservation, and confirmed failures. Its validation snapshot has 1,464 project tests and both Checkstyle checks passing with Java 25. `ResetPlanCommand`, `GeneratePlanCommand`, and `SetDietCommand` have 100% line and branch coverage, enforced by Gradle's `check` task. Confirmation cases and packaged workflows also pass with assertions disabled. These measurements cover the affected feature, not the whole application.
+- **Project management:**
+  - Created team checklists for [guide corrections](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/102), [final UG work](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/129), [PPP completion](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/132) and [per-file coverage](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/133).
+  - Cross-checked original commits and restored teammates' attribution after file moves and refactoring ([#48](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/48)).
 
-### Contributions to documentation
-
-- **User Guide:** I created the shared guide structure and contributed setup instructions, command navigation, and viewing documentation in [#27](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/27). I documented shortfall syntax, limits, error recovery, and verified examples in [#65](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/65) and [#66](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/66). Recipe-editing instructions are included in [#76](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/76).
-- **Developer Guide:** I documented shortfall responsibilities, design alternatives, and verification, with [focused class and execution diagrams](../diagrams/rixte/shortfall/README.md) for shortfall state, targets, and per-day comparison. For editing, [#76](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/76) added the design explanations and four original diagrams. The readability revision in [#91](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/91) separates replacement construction into a fifth view. The current guide keeps [two editing views](../diagrams/rixte/edit-recipe/README.md). Diagram sources and rendered SVGs are supplied together.
-- **Reset documentation:** I added [User Guide instructions](../UserGuide.md#resetting-a-meal-plan), [Developer Guide design explanations](../DeveloperGuide.md#resetting-a-meal-plan), and [a focused reset execution diagram](../diagrams/rixte/reset-plan/README.md). These explain retained data, saved-target integration, failure recovery, and regeneration.
-
-- **Confirmation and diagram readability - merged:** In [#91](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/91), I added [confirmation instructions](https://github.com/AY2627S1-CS2113-W13-4/tp/blob/master/docs/UserGuide.md#confirming-plan-changes), [DG design details](https://github.com/AY2627S1-CS2113-W13-4/tp/blob/master/docs/DeveloperGuide.md#confirming-plan-changes), and [the shared confirmation sequence](../diagrams/rixte/confirm-plan/README.md). I revised all 19 shortfall, editing, reset, and confirmation diagrams for readable text and checked rendered images and DG links. Editable sources retain bounded authorship annotations, and the corresponding SVGs are supplied.
-
-- **Focused viewing documentation:** I added implementation sections and execution sequences for [view-plan](../diagrams/rixte/view-plan/README.md) and [view-list](../diagrams/rixte/view-list/README.md). The current guide uses eight diagrams across my six feature sections, with spots hidden and common error paths described in tables.
-
-### Team tasks and review contributions
-
-- I introduced application logging and package organisation in [#31](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/31), then standardised Java conventions, Javadocs, helper methods, and Checkstyle enforcement in [#33](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/33).
-- I restored teammates' original RepoSense attribution after refactoring, using bounded author annotations checked against the original commits: [#48](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/48).
-- I reviewed and merged teammates' nutrition-warning and guide updates. My reviews checked test results, documented examples, and attribution: [#74 review](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/74#pullrequestreview-5637936219), [#75 review](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/75#pullrequestreview-5637959754). These are review and integration contributions; the feature implementations belong to their authors.
-- I verified the Adding a Recipe guide against the application using 50 documentation checks and reviewed its syntax, example output, and error messages: [#87 review](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/87#pullrequestreview-5671727641). I also created the shared [PPP task and checklist](https://github.com/AY2627S1-CS2113-W13-4/tp/issues/77).
-
-**Current scope:** Viewing, shortfall checking, recipe editing, meal-plan reset, and plan-change confirmation are merged. This portfolio remains a draft; test totals above record the validation results of the linked feature PRs.
+- **Community:**
+  - Suggested [checking unchanged state when formatting fails](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/34#discussion_r4318110743) and [asserting meal counts rather than relying on sets](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/112#discussion_r4432780025).
+  - Flagged [broken DG references](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/127#pullrequestreview-5733262068) and clarified [empty-log versus unmatched-date output](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/134#discussion_r4442449031).
+  - Identified [lost acquisition errors during cleanup](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/138#discussion_r4443858492) and [test-channel chaining defects](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/138#discussion_r4443872190); verified the fixes and regression tests before approval.
