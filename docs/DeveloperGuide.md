@@ -1910,7 +1910,7 @@ The Gradle build packages the application as `build/libs/MishMash.jar`. Release 
 
 ## Appendix B: User Stories
 
-Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional. Grey rows are the v1.0 MVP; green rows are the v2.0 MVP. Text labels retain that meaning when colour is unavailable. Owners record the team's planned responsibility, rather than attributing every later integration change. Uncoloured rows cover implemented v2.0b and v2.1 stories, with owners left blank for assignment. Release labels follow the [team milestones](https://github.com/AY2627S1-CS2113-W13-4/tp/milestones).
+Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional. Grey rows are the v1.0 MVP; green rows are the v2.0 MVP. Text labels retain that meaning when colour is unavailable. Owners identify the feature contributors; the v2.0b and v2.1 owners are based on the authors of the merged feature PRs in the team repository. Uncoloured rows cover implemented v2.0b and v2.1 stories. Release labels follow the [team milestones](https://github.com/AY2627S1-CS2113-W13-4/tp/milestones).
 
 <table>
 <thead><tr><th>Release</th><th>Priority</th><th>As a ...</th><th>I want to ...</th><th>So that I can ...</th><th>Owner</th><th>Current support</th></tr></thead>
@@ -1932,18 +1932,18 @@ Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Detect meal plans that exceed nutrition targets</td><td>Identify days above my exact generation targets</td><td>Justin</td><td><code>view-plan</code> warnings</td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User tracking nutrition</td><td>Detect meal plans that fall short of nutrition targets</td><td>Identify deficits against the targets I supply</td><td>Samantha</td><td><code>check-shortfall</code></td></tr>
 <tr style="background-color: #d9ead3; color: #111111;"><td>v2.0 MVP</td><td>***</td><td>User managing recipes</td><td>Edit an existing recipe</td><td>Keep its details consistent with how I prepare it</td><td>Samantha</td><td><code>edit-recipe</code></td></tr>
-<tr><td>v2.0b</td><td>**</td><td>Returning user</td><td>Reset my active plan and groceries</td><td>Start again while keeping recipes, settings, and intake records</td><td></td><td><code>reset-plan</code></td></tr>
-<tr><td>v2.0b</td><td>**</td><td>Meal prep user</td><td>Customise one planned meal's ingredients</td><td>Adapt one occurrence without editing its source recipe</td><td></td><td><code>customize-meal</code>; nutrition is not recalculated from ingredients</td></tr>
-<tr><td>v2.0b</td><td>**</td><td>Returning user</td><td>Confirm plan removal or replacement</td><td>Avoid accidentally losing my plan</td><td></td><td>confirmation before reset, replacement generation, and incompatible dietary changes</td></tr>
-<tr><td>v2.0b</td><td>**</td><td>User with dietary requirements</td><td>View my dietary settings</td><td>Check which restrictions apply</td><td></td><td><code>view-diet</code></td></tr>
-<tr><td>v2.1</td><td>**</td><td>Returning user</td><td>Retain my data between sessions</td><td>Continue planning after restarting</td><td></td><td>local JSON autosave, restoration, backup recovery, and process locking</td></tr>
-<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Replace an individual planned meal</td><td>Adapt the plan to what I want to eat</td><td></td><td><code>replace-meal</code>; one portion, source ingredients, and current dietary checks</td></tr>
-<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Adjust a planned meal's portion</td><td>Scale nutrition and groceries to my intended quantity</td><td></td><td><code>adjust-portion</code>; positive whole-recipe portions only</td></tr>
-<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Understand unsuccessful plan generation</td><td>Know what to change before retrying</td><td></td><td>generation failure advice for eligible recipes and nutrition targets</td></tr>
-<tr><td>v2.1</td><td>**</td><td>User tracking intake</td><td>Review recorded meals by date</td><td>Understand intake for a selected day</td><td></td><td>dated records, servings, and <code>view-meals date/YYYY-MM-DD</code></td></tr>
-<tr><td>v2.1</td><td>**</td><td>User tracking intake</td><td>Correct or remove recorded meals</td><td>Keep intake records accurate</td><td></td><td><code>edit-meal</code> and confirmed <code>delete-meal</code></td></tr>
-<tr><td>v2.1</td><td>**</td><td>User with dietary requirements</td><td>Clear my dietary restrictions</td><td>Generate without restrictions</td><td></td><td><code>clear-diet</code></td></tr>
-<tr><td>v2.1</td><td>**</td><td>CLI user</td><td>Edit commands and use completion and history</td><td>Enter long commands more easily</td><td></td><td>JLine editing, Tab completion, in-memory history, and plain-input fallback</td></tr>
+<tr><td>v2.0b</td><td>**</td><td>Returning user</td><td>Reset my active plan and groceries</td><td>Start again while keeping recipes, settings, and intake records</td><td>Samantha</td><td><code>reset-plan</code></td></tr>
+<tr><td>v2.0b</td><td>**</td><td>Meal prep user</td><td>Customise one planned meal's ingredients</td><td>Adapt one occurrence without editing its source recipe</td><td>Justin</td><td><code>customize-meal</code>; nutrition is not recalculated from ingredients</td></tr>
+<tr><td>v2.0b</td><td>**</td><td>Returning user</td><td>Confirm plan removal or replacement</td><td>Avoid accidentally losing my plan</td><td>Samantha</td><td>confirmation before reset, replacement generation, and incompatible dietary changes</td></tr>
+<tr><td>v2.0b</td><td>**</td><td>User with dietary requirements</td><td>View my dietary settings</td><td>Check which restrictions apply</td><td>Pei Ling</td><td><code>view-diet</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>Returning user</td><td>Retain my data between sessions</td><td>Continue planning after restarting</td><td>Justin</td><td>local JSON autosave, restoration, backup recovery, and process locking</td></tr>
+<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Replace an individual planned meal</td><td>Adapt the plan to what I want to eat</td><td>Neil</td><td><code>replace-meal</code>; one portion, source ingredients, and current dietary checks</td></tr>
+<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Adjust a planned meal's portion</td><td>Scale nutrition and groceries to my intended quantity</td><td>Justin</td><td><code>adjust-portion</code>; positive whole-recipe portions only</td></tr>
+<tr><td>v2.1</td><td>**</td><td>Meal prep user</td><td>Understand unsuccessful plan generation</td><td>Know what to change before retrying</td><td>Gautham</td><td>generation failure advice for eligible recipes and nutrition targets</td></tr>
+<tr><td>v2.1</td><td>**</td><td>User tracking intake</td><td>Review recorded meals by date</td><td>Understand intake for a selected day</td><td>Gautham</td><td>dated records, servings, and <code>view-meals date/YYYY-MM-DD</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>User tracking intake</td><td>Correct or remove recorded meals</td><td>Keep intake records accurate</td><td>Gautham</td><td><code>edit-meal</code> and confirmed <code>delete-meal</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>User with dietary requirements</td><td>Clear my dietary restrictions</td><td>Generate without restrictions</td><td>Justin</td><td><code>clear-diet</code></td></tr>
+<tr><td>v2.1</td><td>**</td><td>CLI user</td><td>Edit commands and use completion and history</td><td>Enter long commands more easily</td><td>Samantha</td><td>JLine editing, Tab completion, in-memory history, and plain-input fallback</td></tr>
 </tbody>
 </table>
 
