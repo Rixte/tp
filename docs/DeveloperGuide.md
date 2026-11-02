@@ -1944,7 +1944,10 @@ The actor is a user who has started a session and entered a name. MSS means Main
 
 - Invalid syntax or values produce command-specific error/usage feedback, preserve existing data, and allow another command.
 - Viewing and checking commands do not mutate application data.
-- Confirmation accepts only `y` or `yes`, ignoring case and surrounding whitespace. Any other answer, a blank answer, or EOF cancels without applying the pending change; EOF also ends the session.
+- Confirmation accepts only `y` or `yes`, ignoring case and surrounding whitespace. Any other answer, a blank
+  answer, or EOF cancels without applying the pending change. EOF from piped or redirected input also ends
+  the session. In interactive editing, Ctrl+D at an empty confirmation cancels the action and returns to the
+  command prompt.
 - Each MSS ends after its final step. Each extension ends the use case after its stated response unless it explicitly resumes an MSS step. The session then accepts another command, except after exit/EOF.
 
 #### UC01 Add a recipe
@@ -2623,7 +2626,11 @@ All three recipes are classified and contain no `Forbidden` ingredient, so they 
 3. Enter `reset-plan` and answer `n`. Check all views are unchanged. Enter `reset-plan extra`: expect syntax rejection without a confirmation.
 4. Enter `reset-plan` and answer `y`. Both `view-plan` and `view-list` must report absent data. `list-recipes`, `view-diet`, `view-targets`, and `view-meals` must retain their previous values.
 5. Enter `reset-plan` again. Expect a no-plan note without a confirmation.
-6. Regenerate a plan and groceries, then request reset and end input at the confirmation. Restart from the same working directory: the plan and groceries must still exist. Repeat for replacement generation. EOF cancels the pending operation and ends the session.
+6. Regenerate a plan and groceries, then exit with `bye`. Relaunch using piped or redirected input containing
+   a name followed by `reset-plan`, with no confirmation answer. EOF must cancel the pending reset and end
+   the session. Restart from the same working directory: the plan and groceries must still exist. Repeat for
+   replacement generation, using `generate-plan d/2` as the final input command. This check uses stream EOF;
+   interactive Ctrl+D at an empty confirmation instead cancels the action and returns to the command prompt.
 7. Test dietary-change cancellation and failed repair separately with [Set, View, and Clear Dietary Preferences](#set-view-and-clear-dietary-preferences).
 
 ### Session Data
