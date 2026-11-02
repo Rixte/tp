@@ -1,0 +1,64 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+title Executing generate-plan: combining typed and saved targets
+
+participant ":MishMash" as App
+participant "cmd:GeneratePlanCommand" as Gen
+participant "settings:TargetSettings" as Settings
+participant "saved:NutritionTargets" as Saved
+participant "planner:DietaryPlanner" as Planner
+participant "activePlan:ActiveMealPlan" as Active
+
+note over App, Gen
+  Parsing has already built the request from the number of days
+  and the targets typed in the command (a target left out is null).
+end note
+
+App -> Gen : executeWithResult(recipeBook)
+activate Gen
+
+Gen -> Gen : execute(recipeBook)
+activate Gen
+
+Gen -> Settings : get()
+activate Settings
+Settings --> Gen : saved
+deactivate Settings
+
+opt saved.hasAnyTarget()
+  Gen -> Saved : overriddenBy(request.targets())
+  activate Saved
+  Saved --> Gen : merged
+  deactivate Saved
+  Gen -> Gen : effective = request with merged targets
+end
+
+create Planner
+Gen -> Planner : DietaryPlanner(...)
+Gen -> Planner : generate(recipes, effective, ...)
+activate Planner
+Planner --> Gen : plan
+deactivate Planner
+Planner -[hidden]-> Gen
+destroy Planner
+
+Gen -> Active : setGenerated(plan, effective, ...)
+activate Active
+Active --> Gen
+deactivate Active
+
+Gen --> Gen : confirmation
+deactivate Gen
+
+Gen --> App : result
+deactivate Gen
+Gen -[hidden]-> App
+destroy Gen
+
+note over Gen, Active
+  If no acceptable plan exists, generate throws and the active plan is not changed.
+  The stored request holds the effective targets, so view-plan and set-diet use them.
+  TargetSettings is never modified here. executeWithResult wraps the confirmation
+  in a CommandResult with status done.
+end note
+@enduml
