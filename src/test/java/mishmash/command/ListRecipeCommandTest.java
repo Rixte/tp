@@ -133,7 +133,7 @@ class ListRecipeCommandTest {
         for (int index : new int[] {3, 4, Integer.MAX_VALUE}) {
             MishMashException exception = assertThrows(MishMashException.class,
                     () -> new ListRecipeCommand(index).execute(book));
-            assertEquals("Recipe index must be between 1 and 2.", exception.getMessage());
+            assertEquals("Recipe index must be between 1 and 2.", exception.getExplanation());
         }
 
         assertEquals(List.of(rice, oats), book.getRecipes());
@@ -144,7 +144,7 @@ class ListRecipeCommandTest {
         MishMashException exception = assertThrows(MishMashException.class,
                 () -> new ListRecipeCommand(1).execute(new RecipeBook()));
 
-        assertEquals("There are no recipes to show. Use 'add-recipe' to add one.", exception.getMessage());
+        assertEquals("There are no recipes to show. Use 'add-recipe' to add one.", exception.getExplanation());
     }
 
     @Test

@@ -20,7 +20,7 @@ class ViewMealsCommand
 class EditMealCommand
 class DeleteMealCommand
 class MealLookup {
-  + {static} find(mealLog: MealLog, mealNumber: int, usage: String): MealEntry
+  ~ {static} find(mealLog: MealLog, mealNumber: int, usage: String): MealEntry
 }
 class MealLog {
   + record(entry: MealEntry): void

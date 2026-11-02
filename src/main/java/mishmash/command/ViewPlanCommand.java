@@ -29,7 +29,9 @@ public class ViewPlanCommand implements Command {
     private final Supplier<List<List<MealSummary>>> mealPlanSource;
     //@@author
 
-    /** Reads daily targets belonging to the current plan at execution time. */
+    /**
+     * Reads daily targets belonging to the current plan at execution time.
+     */
     private final Supplier<NutritionTargets> targetsSource;
 
     //@@author Rixte

@@ -1,0 +1,35 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+title Parsing list-recipes 2
+
+participant ":MishMash" as App
+participant ":Parser" as Parser
+participant "cmd:ListRecipeCommand" as Cmd
+
+App -> Parser : parseCommand("list-recipes 2")
+activate Parser
+
+Parser -> Parser : parseListRecipe("2")
+activate Parser
+
+Parser -> Parser : parseRecipeIndex("2")
+activate Parser
+Parser --> Parser : 2
+deactivate Parser
+
+create Cmd
+Parser -> Cmd : ListRecipeCommand(2)
+activate Cmd
+deactivate Cmd
+
+Parser --> Parser : cmd
+deactivate Parser
+
+Parser --> App : cmd
+deactivate Parser
+
+note over Parser, Cmd
+  parseCommand first dispatches on the command word. A blank argument skips
+  the index and creates ListRecipeCommand() for the list-all form.
+end note
+@enduml

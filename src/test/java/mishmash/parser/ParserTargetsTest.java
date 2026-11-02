@@ -1,6 +1,7 @@
 package mishmash.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,8 +72,8 @@ class ParserTargetsTest {
         for (String input : new String[] {"set-targets", "set-targets cal/0", "set-targets x/1",
                 "set-targets cal/1 cal/2", "set-targets 2000"}) {
             MishMashException error = assertThrows(MishMashException.class, () -> parser.parseCommand(input), input);
-            assertTrue(error.getMessage().endsWith(Parser.SET_TARGETS_USAGE), error.getMessage());
-            assertEquals(1, error.getMessage().split("Format:", -1).length - 1, error.getMessage());
+            assertEquals(Parser.SET_TARGETS_USAGE, error.getUsage().orElseThrow(), input);
+            assertFalse(error.getExplanation().contains("Format:"), error.getExplanation());
         }
     }
 
@@ -81,8 +82,8 @@ class ParserTargetsTest {
         MishMashException error = assertThrows(MishMashException.class,
                 () -> parser.parseCommand("view-targets now"));
 
-        assertEquals("view-targets does not accept arguments." + System.lineSeparator()
-                + Parser.VIEW_TARGETS_USAGE, error.getMessage());
+        assertEquals("view-targets does not accept arguments.", error.getExplanation());
+        assertEquals(Parser.VIEW_TARGETS_USAGE, error.getUsage().orElseThrow());
     }
 
     @Test

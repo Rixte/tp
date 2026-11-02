@@ -32,13 +32,16 @@ import mishmash.testutil.TestRecipes;
 class GeneratePlanCommandTest {
     private final MealPlanGenerator generator = new MealPlanGenerator(new Random(1));
     private final ActiveMealPlan activePlan = new ActiveMealPlan();
-    private final RecipeBook recipeBook = bookOf(
+    private final RecipeBook recipeBook = createRecipeBook(
             TestRecipes.recipe("Oatmeal", 500, 20, 80, 10),
             TestRecipes.recipe("Chicken Rice", 600, 40, 70, 15),
             TestRecipes.recipe("Salmon Bowl", 700, 45, 60, 25),
             TestRecipes.recipe("Apple", 100, 1, 25, 0));
 
-    private static RecipeBook bookOf(Recipe... recipes) {
+    /**
+     * Creates a recipe book preserving the supplied recipes' order for command-level checks.
+     */
+    private static RecipeBook createRecipeBook(Recipe... recipes) {
         RecipeBook book = new RecipeBook();
         for (Recipe recipe : recipes) {
             book.add(recipe);
@@ -46,8 +49,11 @@ class GeneratePlanCommandTest {
         return book;
     }
 
-    private GeneratePlanCommand command(String args) {
-        return new GeneratePlanCommand(new GeneratePlanParser().parse(args), generator, activePlan);
+    /**
+     * Creates a command connected to this test's generator and active plan.
+     */
+    private GeneratePlanCommand createCommand(String arguments) {
+        return new GeneratePlanCommand(new GeneratePlanParser().parse(arguments), generator, activePlan);
     }
 
     @Test
@@ -57,7 +63,7 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_success_setsActivePlan() throws MishMashException {
-        String message = command("d/3").execute(recipeBook);
+        String message = createCommand("d/3").execute(recipeBook);
 
         assertEquals(3, activePlan.get().orElseThrow().getNumberOfDays());
         assertEquals("Meal plan successfully generated for 3 day(s)!" + System.lineSeparator()
@@ -66,10 +72,10 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_secondPlan_replacesFirst() throws MishMashException {
-        command("d/2").execute(recipeBook);
+        createCommand("d/2").execute(recipeBook);
         MealPlan first = activePlan.get().orElseThrow();
 
-        command("d/5").execute(recipeBook);
+        createCommand("d/5").execute(recipeBook);
         MealPlan second = activePlan.get().orElseThrow();
 
         assertNotSame(first, second);
@@ -78,7 +84,7 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_failure_keepsPreviousPlan() throws MishMashException {
-        command("d/2").execute(recipeBook);
+        createCommand("d/2").execute(recipeBook);
         new GenerateListCommand(activePlan).execute(recipeBook);
         MealPlan previous = activePlan.get().orElseThrow();
         GeneratePlanRequest previousRequest = activePlan.getRequest().orElseThrow();
@@ -88,7 +94,7 @@ class GeneratePlanCommandTest {
 
         for (RecipeBook source : List.of(recipeBook, emptyBook)) {
             String arguments = source == recipeBook ? "d/3 cal/99999" : "d/3";
-            assertThrows(MishMashException.class, () -> command(arguments).execute(source));
+            assertThrows(MishMashException.class, () -> createCommand(arguments).execute(source));
 
             assertSame(previous, activePlan.get().orElseThrow());
             assertSame(previousRequest, activePlan.getRequest().orElseThrow());
@@ -100,7 +106,7 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_failureWithoutMessage_preservesCauseAndPreviousState() throws MishMashException {
-        command("d/1").execute(recipeBook);
+        createCommand("d/1").execute(recipeBook);
         new GenerateListCommand(activePlan).execute(recipeBook);
         MealPlan previousPlan = activePlan.get().orElseThrow();
         GeneratePlanRequest previousRequest = activePlan.getRequest().orElseThrow();
@@ -129,7 +135,7 @@ class GeneratePlanCommandTest {
     @Test
     void execute_emptyRecipeBook_reportsHowToFix() {
         MishMashException e = assertThrows(MishMashException.class,
-                () -> command("d/3").execute(new RecipeBook()));
+                () -> createCommand("d/3").execute(new RecipeBook()));
 
         assertTrue(e.getMessage().contains("recipe book is empty"));
         assertInstanceOf(IllegalArgumentException.class, e.getCause());
@@ -138,14 +144,14 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_failedGeneration_logsRejectionWithoutClaimingSuccess() throws MishMashException {
-        command("d/1").execute(recipeBook);
+        createCommand("d/1").execute(recipeBook);
         MealPlan savedPlan = activePlan.get().orElseThrow();
         GeneratePlanRequest savedRequest = activePlan.getRequest().orElseThrow();
         var savedGroceries = activePlan.getGroceryList();
         List<Recipe> originalRecipes = recipeBook.getRecipes();
         try (LogCapture logs = new LogCapture(GeneratePlanCommand.class)) {
             MishMashException error = assertThrows(MishMashException.class,
-                    () -> command("d/2 cal/99999").execute(recipeBook));
+                    () -> createCommand("d/2 cal/99999").execute(recipeBook));
 
             assertSame(savedPlan, activePlan.get().orElseThrow());
             assertSame(savedRequest, activePlan.getRequest().orElseThrow());
@@ -161,7 +167,7 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_success_messageConfirmsAndPointsToViewPlan() throws MishMashException {
-        String message = command("d/2").execute(recipeBook);
+        String message = createCommand("d/2").execute(recipeBook);
 
         assertEquals("Meal plan successfully generated for 2 day(s)!" + System.lineSeparator()
                 + "Use 'view-plan' to inspect your planned meals.", message);
@@ -169,18 +175,18 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_laterRecipeAdded_isConsideredNextTime() throws MishMashException {
-        RecipeBook small = bookOf(
+        RecipeBook small = createRecipeBook(
                 TestRecipes.recipe("A", 100, 1, 1, 1),
                 TestRecipes.recipe("B", 100, 1, 1, 1));
         List<Recipe> originalRecipes = small.getRecipes();
-        assertThrows(MishMashException.class, () -> command("d/1").execute(small));
+        assertThrows(MishMashException.class, () -> createCommand("d/1").execute(small));
         assertTrue(activePlan.get().isEmpty());
         assertTrue(activePlan.getRequest().isEmpty());
         assertTrue(activePlan.getGroceryList().isEmpty());
         assertEquals(originalRecipes, small.getRecipes());
 
         small.add(TestRecipes.recipe("C", 100, 1, 1, 1));
-        command("d/1").execute(small);
+        createCommand("d/1").execute(small);
 
         assertEquals(1, activePlan.get().orElseThrow().getNumberOfDays());
     }
@@ -196,7 +202,7 @@ class GeneratePlanCommandTest {
 
     @Test
     void execute_nullRecipeBook_throwsNullPointerException() {
-        GeneratePlanCommand command = command("d/1");
+        GeneratePlanCommand command = createCommand("d/1");
 
         assertThrows(NullPointerException.class, () -> command.execute(null));
     }

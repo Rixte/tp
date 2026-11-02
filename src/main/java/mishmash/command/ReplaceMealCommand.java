@@ -87,13 +87,26 @@ public final class ReplaceMealCommand implements Command {
         }
 
         PlannedMeal newMeal = PlannedMeal.onePortionOf(chosenRecipe);
-        MealPlan updatedPlan;
+        MealPlan updatedPlan = replaceMeal(currentPlan, dayIndex, mealIndex, newMeal);
+        return publishReplacement(updatedPlan, newMeal, chosenRecipe);
+    }
+
+    /**
+     * Builds a replacement plan while keeping overflow failures recoverable and the current plan untouched.
+     */
+    private MealPlan replaceMeal(MealPlan currentPlan, int dayIndex, int mealIndex, PlannedMeal newMeal)
+            throws MishMashException {
         try {
-            updatedPlan = currentPlan.withReplacedMeal(dayIndex, mealIndex, newMeal);
+            return currentPlan.withReplacedMeal(dayIndex, mealIndex, newMeal);
         } catch (ArithmeticException e) {
             throw new MishMashException("That recipe makes the day's nutrition totals too large.", USAGE, e);
         }
+    }
 
+    /**
+     * Publishes a validated recipe replacement and reports how to obtain its groceries.
+     */
+    private CommandResult publishReplacement(MealPlan updatedPlan, PlannedMeal newMeal, Recipe chosenRecipe) {
         boolean hadGroceryList = activeMealPlan.getGroceryList().isPresent();
         activeMealPlan.update(updatedPlan);
         LOGGER.fine(() -> "Replaced Day " + replacement.dayNumber() + ", Meal " + replacement.mealNumber()

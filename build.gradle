@@ -35,6 +35,16 @@ test {
     // Exercise internal invariants during every test run as well as application runs.
     enableAssertions = true
 
+    // Include launcher tests that run the packaged application in independent JVMs.
+    doFirst {
+        delete layout.buildDirectory.dir('jacoco/launcher')
+        if (jacoco.enabled) {
+            systemProperty 'mishmash.test.coverage.agent', jacoco.asJvmArg
+            systemProperty 'mishmash.test.coverage.directory',
+                    layout.buildDirectory.dir('jacoco/launcher').get().asFile.absolutePath
+        }
+    }
+
     testLogging {
         events 'passed', 'skipped', 'failed'
 
@@ -53,20 +63,43 @@ jacoco {
 
 jacocoTestReport {
     dependsOn test
+    executionData fileTree(layout.buildDirectory.dir('jacoco/launcher')) { include '*.exec' }
     reports {
         xml.required = true
         html.required = true
     }
 }
 
-// Guard the plan-changing commands against gaps in both statements and decisions.
+// Guard plan-changing commands, application startup and terminal selection against coverage gaps.
 jacocoTestCoverageVerification {
     dependsOn test
+    executionData fileTree(layout.buildDirectory.dir('jacoco/launcher')) { include '*.exec' }
     violationRules {
+        // Justin's grocery/nutrition, portions, customization, and storage sources must exceed 95% individually.
+        // SOURCEFILE includes nested DTOs and helpers in their owning file instead of hiding their counters.
+        rule {
+            element = 'SOURCEFILE'
+            includes = ['*GroceryListGenerator.java', '*GenerateListCommand.java', '*ViewListCommand.java',
+                        '*GroceryListViewer.java', '*GroceryItem.java', '*NutritionTotals.java', '*DayPlan.java',
+                        '*NutritionTargets.java', '*MealPlan.java', '*MealPlanViewer.java', '*ActiveMealPlan.java',
+                        '*PortionAdjustment.java', '*PlannedMeal.java', '*IngredientCustomization.java',
+                        '*AdjustPortionCommand.java', '*CustomizeMealCommand.java', '*AdjustPortionParser.java',
+                        '*CustomizeMealParser.java', '*IngredientParser.java', '*ApplicationState.java',
+                        '*JsonSessionStorage.java', '*LoadResult.java', '*SessionData.java', '*SessionPersistence.java',
+                        '*StorageException.java', '*StorageFiles.java']
+            limit {
+                counter = 'LINE'
+                minimum = 0.9501
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 0.9501
+            }
+        }
         rule {
             element = 'CLASS'
             includes = ['mishmash.command.ResetPlanCommand', 'mishmash.command.GeneratePlanCommand',
-                        'mishmash.command.SetDietCommand']
+                        'mishmash.command.SetDietCommand', 'mishmash.MishMash', 'mishmash.ui.ConsoleInputs']
             limit {
                 counter = 'LINE'
                 minimum = 1.0

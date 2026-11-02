@@ -27,15 +27,15 @@ public final class AssertionDisabledClassLoader extends URLClassLoader {
      * Loads the selected class locally; delegates all dependencies to the existing application loader.
      */
     @Override
-    protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    protected synchronized Class<?> loadClass(String name, boolean shouldResolve) throws ClassNotFoundException {
         if (!name.equals(targetClassName)) {
-            return super.loadClass(name, resolve);
+            return super.loadClass(name, shouldResolve);
         }
         Class<?> loadedClass = findLoadedClass(name);
         if (loadedClass == null) {
             loadedClass = findClass(name);
         }
-        if (resolve) {
+        if (shouldResolve) {
             resolveClass(loadedClass);
         }
         return loadedClass;

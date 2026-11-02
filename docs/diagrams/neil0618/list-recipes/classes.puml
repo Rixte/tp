@@ -1,0 +1,49 @@
+@startuml
+!pragma layout smetana
+!include ../../rixte/shortfall/style.iuml
+hide circle
+
+title Listing recipes: selected classes
+top to bottom direction
+skinparam nodesep 60
+skinparam ranksep 85
+hide empty members
+
+class Parser {
+  + parseCommand(input: String): Command
+}
+interface Command <<interface>> {
+  + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
+}
+class CommandResult <<record>>
+class ListRecipeCommand {
+  - index: Integer [0..1]
+  + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
+}
+class RecipeBook {
+  + getRecipes(): List<Recipe>
+}
+class Recipe {
+  + getName(): String
+  + getCalories(): int
+}
+class RecipeViewer {
+  + view(recipe: Recipe): String
+}
+
+Parser ..> ListRecipeCommand : creates
+ListRecipeCommand .up.|> Command
+Command ..> CommandResult : returns
+ListRecipeCommand ..> RecipeBook : execution parameter
+ListRecipeCommand ..> RecipeViewer : creates
+ListRecipeCommand ..> Recipe : reads name and calories
+RecipeBook --> "0..*" Recipe : -recipes\n{ordered}
+RecipeViewer ..> Recipe : reads
+Parser -[hidden]right-> Command
+
+legend bottom
+  Only feature-relevant members are shown.
+endlegend
+@enduml

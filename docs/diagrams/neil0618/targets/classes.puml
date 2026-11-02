@@ -1,0 +1,51 @@
+@startuml
+!pragma layout smetana
+!include ../../rixte/shortfall/style.iuml
+hide circle
+
+title Setting and viewing daily targets: selected classes
+top to bottom direction
+skinparam nodesep 60
+skinparam ranksep 85
+hide empty members
+
+class Parser {
+  + parseCommand(input: String): Command
+}
+class SetTargetsParser {
+  + parse(arguments: String): TargetChanges
+}
+interface Command <<interface>> {
+  + execute(recipeBook: RecipeBook): String
+  + executeWithResult(recipeBook: RecipeBook): CommandResult
+}
+class CommandResult <<record>>
+class SetTargetsCommand
+class ViewTargetsCommand
+class TargetChanges {
+  + applyTo(current: NutritionTargets): NutritionTargets
+}
+class TargetSettings {
+  + get(): NutritionTargets
+  + set(targets: NutritionTargets): void
+}
+class NutritionTargets
+
+Parser ..> SetTargetsParser : parses with
+Parser ..> SetTargetsCommand : creates
+Parser ..> ViewTargetsCommand : creates
+Parser --> "1" TargetSettings : -targetSettings
+SetTargetsParser ..> TargetChanges : creates
+SetTargetsCommand .up.|> Command
+ViewTargetsCommand .up.|> Command
+Command ..> CommandResult : returns
+SetTargetsCommand --> "1" TargetChanges : -changes
+SetTargetsCommand --> "1" TargetSettings : -settings
+ViewTargetsCommand --> "1" TargetSettings : -settings
+TargetSettings --> "1" NutritionTargets : -targets
+TargetChanges ..> NutritionTargets : creates
+
+legend bottom
+  Only feature-relevant members are shown.
+endlegend
+@enduml

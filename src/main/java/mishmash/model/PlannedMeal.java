@@ -173,11 +173,11 @@ public final class PlannedMeal {
         }
         List<GroceryItem> snapshot = List.copyOf(ingredients);
         if (snapshot.isEmpty()) {
-            throw new IllegalArgumentException("At least one customized ingredient is required.");
+            throw new IllegalArgumentException("At least one customised ingredient is required.");
         }
         for (GroceryItem ingredient : snapshot) {
             if (ingredient.getQuantity().signum() <= 0) {
-                throw new IllegalArgumentException("Customized ingredient quantities must be positive.");
+                throw new IllegalArgumentException("Customised ingredient quantities must be positive.");
             }
         }
         return snapshot;

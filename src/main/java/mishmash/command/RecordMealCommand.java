@@ -83,11 +83,13 @@ public class RecordMealCommand implements Command {
         List<Recipe> recipes = recipeBook.getRecipes();
         if (recipes.isEmpty()) {
             LOGGER.fine("record-meal rejected: no recipes");
-            throw new MishMashException("There are no recipes to record. Use 'add-recipe' to add one.");
+            throw new MishMashException("There are no recipes to record. Use 'add-recipe' to add one.",
+                    USAGE, null);
         }
         if (index > recipes.size()) {
             LOGGER.fine(() -> "record-meal rejected: index " + index + " exceeds " + recipes.size() + " recipes");
-            throw new MishMashException("Recipe index must be between 1 and " + recipes.size() + ".");
+            throw new MishMashException("Recipe index must be between 1 and " + recipes.size() + ".",
+                    USAGE, null);
         }
 
         // The user counts from 1, but the list counts from 0.

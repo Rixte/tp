@@ -81,24 +81,17 @@ public class Parser {
     /**
      * Describes how to choose the recipe to delete.
      */
-    public static final String DELETE_RECIPE_USAGE = "Format: delete-recipe INDEX";
+    public static final String DELETE_RECIPE_USAGE = DeleteRecipeCommand.USAGE;
 
     /**
      * Describes partial recipe edits and complete ingredient-list replacement.
      */
-    public static final String EDIT_RECIPE_USAGE =
-            "Format: edit-recipe INDEX [n/DISHNAME] [cal/CALORIES] [p/PROTEIN] [c/CARBS] [f/FATS]"
-                    + " [i/INGREDIENT:QUANTITYUNIT ...] [food/TAG[,TAG...]]"
-                    + System.lineSeparator()
-                    + "Supply at least one field. Omitted fields are unchanged."
-                    + " Each i/ supplies one item in the entire replacement ingredient list."
-                    + System.lineSeparator()
-                    + "Example: edit-recipe 1 p/55 i/Chicken:220g i/Rice:150g";
+    public static final String EDIT_RECIPE_USAGE = EditRecipeCommand.USAGE;
 
     /**
      * Describes how to list all recipes or show one in full.
      */
-    public static final String LIST_RECIPE_USAGE = "Format: list-recipes [INDEX]";
+    public static final String LIST_RECIPE_USAGE = ListRecipeCommand.USAGE;
 
     public static final String VIEW_PLAN_USAGE = ViewPlanCommand.USAGE;
     public static final String ADJUST_PORTION_USAGE = AdjustPortionParser.USAGE;
@@ -168,7 +161,9 @@ public class Parser {
      */
     private final Supplier<List<List<MealSummary>>> mealPlanSource;
 
-    /** Supplies targets corresponding to the meals returned by the viewing source. */
+    /**
+     * Supplies targets corresponding to the meals returned by the viewing source.
+     */
     private final Supplier<NutritionTargets> targetsSource;
 
     /**
@@ -186,11 +181,15 @@ public class Parser {
      * constructors that share it.
      */
     private final ActiveMealPlan activeMealPlan;
-    /** Shares session preferences without changing them during command parsing. */
+    /**
+     * Shares session preferences without changing them during command parsing.
+     */
     private DietarySettings dietarySettings = new DietarySettings();
 
     //@@author neil0618
-    /** Shares the saved daily targets between set-targets, view-targets and generate-plan. */
+    /**
+     * Shares the saved daily targets between set-targets, view-targets and generate-plan.
+     */
     private TargetSettings targetSettings = new TargetSettings();
     //@@author
 
@@ -208,7 +207,9 @@ public class Parser {
         this(new MealPlanGenerator(new Random()), new ActiveMealPlan());
     }
 
-    /** Connects all commands to one restored application state. */
+    /**
+     * Connects all commands to one restored application state.
+     */
     public Parser(ApplicationState state) {
         this(Objects.requireNonNull(state, "state").getMealLog(),
                 new MealPlanGenerator(new Random()), state.getActiveMealPlan());
@@ -343,86 +344,56 @@ public class Parser {
      * @throws MishMashException If the command name or arguments are invalid.
      */
     private Command parseNamedCommand(String commandWord, String arguments) throws MishMashException {
-        if (commandWord.equals("set-diet")) {
-            return parseSetDiet(arguments);
+        return switch (commandWord) {
+            case "set-diet" -> parseSetDiet(arguments);
+            case "view-diet" -> parseViewDiet(arguments);
+            case ClearDietCommand.COMMAND_WORD -> parseClearDiet(arguments);
+            //@@author neil0618
+            case SetTargetsCommand.COMMAND_WORD -> parseSetTargets(arguments);
+            case ViewTargetsCommand.COMMAND_WORD -> parseViewTargets(arguments);
+            //@@author
+            case "help" -> parseHelp(arguments);
+            case COMMAND_GENERATE_LIST -> parseGenerateList(arguments);
+            case COMMAND_VIEW_LIST -> parseViewList(arguments);
+            case COMMAND_VIEW_PLAN -> parseViewPlan(arguments);
+            case AdjustPortionCommand.COMMAND_WORD -> parseAdjustPortion(arguments);
+            case CustomizeMealCommand.COMMAND_WORD -> parseCustomizeMeal(arguments);
+            //@@author neil0618
+            case ReplaceMealCommand.COMMAND_WORD -> parseReplaceMeal(arguments);
+            //@@author
+            //@@author Rixte
+            case ResetPlanCommand.COMMAND_WORD -> parseResetPlan(arguments);
+            //@@author
+            case RecordMealCommand.COMMAND_WORD -> parseRecordMeal(arguments);
+            case ViewMealsCommand.COMMAND_WORD -> parseViewMeals(arguments);
+            case EditMealCommand.COMMAND_WORD -> parseEditMeal(arguments);
+            case DeleteMealCommand.COMMAND_WORD -> parseDeleteMeal(arguments);
+            case COMMAND_GENERATE_PLAN -> parseGeneratePlan(arguments);
+            case CheckShortfallCommand.COMMAND_WORD -> parseCheckShortfall(arguments);
+            case COMMAND_LIST_RECIPE -> parseListRecipe(arguments);
+            case COMMAND_DELETE_RECIPE -> parseDeleteRecipe(arguments);
+            case "edit-recipe" -> parseEditRecipe(arguments);
+            case COMMAND_ADD_RECIPE -> parseAddRecipeCommand(arguments);
+            default -> throw new MishMashException("Unknown command: " + commandWord);
+        };
+    }
+
+    /**
+     * Creates read-only dietary output after rejecting unexpected arguments.
+     */
+    private Command parseViewDiet(String arguments) throws MishMashException {
+        requireNoDietArguments("view-diet", arguments);
+        return recipeBook -> dietarySettings.get().describe();
+    }
+
+    /**
+     * Creates the command manual without accepting additional arguments.
+     */
+    private Command parseHelp(String arguments) throws MishMashException {
+        if (!arguments.isBlank()) {
+            throw new MishMashException("help does not accept arguments.", "Format: help", null);
         }
-        if (commandWord.equals("view-diet")) {
-            requireNoDietArguments(commandWord, arguments);
-            return recipeBook -> dietarySettings.get().describe();
-        }
-        if (commandWord.equals(ClearDietCommand.COMMAND_WORD)) {
-            return parseClearDiet(arguments);
-        }
-        //@@author neil0618
-        if (commandWord.equals(SetTargetsCommand.COMMAND_WORD)) {
-            return parseSetTargets(arguments);
-        }
-        if (commandWord.equals(ViewTargetsCommand.COMMAND_WORD)) {
-            return parseViewTargets(arguments);
-        }
-        //@@author
-        if (commandWord.equals("help")) {
-            if (!arguments.isBlank()) {
-                throw new MishMashException("help does not accept arguments.", "Format: help", null);
-            }
-            return new HelpCommand();
-        }
-        if (commandWord.equals(COMMAND_GENERATE_LIST)) {
-            return parseGenerateList(arguments);
-        }
-        if (commandWord.equals(COMMAND_VIEW_LIST)) {
-            return parseViewList(arguments);
-        }
-        if (commandWord.equals(COMMAND_VIEW_PLAN)) {
-            return parseViewPlan(arguments);
-        }
-        if (commandWord.equals(AdjustPortionCommand.COMMAND_WORD)) {
-            return parseAdjustPortion(arguments);
-        }
-        if (commandWord.equals(CustomizeMealCommand.COMMAND_WORD)) {
-            return parseCustomizeMeal(arguments);
-        }
-        //@@author neil0618
-        if (commandWord.equals(ReplaceMealCommand.COMMAND_WORD)) {
-            return parseReplaceMeal(arguments);
-        }
-        //@@author
-        //@@author Rixte
-        if (commandWord.equals(ResetPlanCommand.COMMAND_WORD)) {
-            return parseResetPlan(arguments);
-        }
-        //@@author
-        if (commandWord.equals(RecordMealCommand.COMMAND_WORD)) {
-            return parseRecordMeal(arguments);
-        }
-        if (commandWord.equals(ViewMealsCommand.COMMAND_WORD)) {
-            return parseViewMeals(arguments);
-        }
-        if (commandWord.equals(EditMealCommand.COMMAND_WORD)) {
-            return parseEditMeal(arguments);
-        }
-        if (commandWord.equals(DeleteMealCommand.COMMAND_WORD)) {
-            return parseDeleteMeal(arguments);
-        }
-        if (commandWord.equals(COMMAND_GENERATE_PLAN)) {
-            return parseGeneratePlan(arguments);
-        }
-        if (commandWord.equals(CheckShortfallCommand.COMMAND_WORD)) {
-            return parseCheckShortfall(arguments);
-        }
-        if (commandWord.equals(COMMAND_LIST_RECIPE)) {
-            return parseListRecipe(arguments);
-        }
-        if (commandWord.equals(COMMAND_DELETE_RECIPE)) {
-            return parseDeleteRecipe(arguments);
-        }
-        if (commandWord.equals("edit-recipe")) {
-            return parseEditRecipe(arguments);
-        }
-        if (commandWord.equals(COMMAND_ADD_RECIPE)) {
-            return parseAddRecipeCommand(arguments);
-        }
-        throw new MishMashException("Unknown command: " + commandWord);
+        return new HelpCommand();
     }
 
     //@@author Rixte
@@ -537,7 +508,7 @@ public class Parser {
             TargetChanges changes = new SetTargetsParser().parse(arguments);
             return new SetTargetsCommand(changes, targetSettings);
         } catch (IllegalArgumentException e) {
-            throw new MishMashException(e.getMessage() + System.lineSeparator() + SET_TARGETS_USAGE, e);
+            throw new MishMashException(e.getMessage(), SET_TARGETS_USAGE, e);
         }
     }
 
@@ -550,8 +521,8 @@ public class Parser {
      */
     private Command parseViewTargets(String arguments) throws MishMashException {
         if (!arguments.isBlank()) {
-            throw new MishMashException(ViewTargetsCommand.COMMAND_WORD + " does not accept arguments."
-                    + System.lineSeparator() + VIEW_TARGETS_USAGE);
+            throw new MishMashException(ViewTargetsCommand.COMMAND_WORD + " does not accept arguments.",
+                    VIEW_TARGETS_USAGE, null);
         }
         return new ViewTargetsCommand(targetSettings);
     }

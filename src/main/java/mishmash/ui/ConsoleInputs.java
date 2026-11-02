@@ -3,6 +3,7 @@ package mishmash.ui;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,9 +27,9 @@ public final class ConsoleInputs {
      * @return An input adapter whose resources must be closed by the application launcher.
      */
     public static ConsoleInput open() {
-        boolean isInteractive = supportsEditing(System.console() != null, System.getenv("TERM"));
-        return open(isInteractive, System.in, System.out,
-                () -> TerminalBuilder.builder().system(true).dumb(false).provider("jni").build());
+        boolean isInteractive = supportsEditing(Objects.nonNull(System.console()), System.getenv("TERM"));
+        TerminalBuilder terminalBuilder = TerminalBuilder.builder().system(true).dumb(false).provider("jni");
+        return open(isInteractive, System.in, System.out, terminalBuilder::build);
     }
 
     /**

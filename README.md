@@ -29,8 +29,26 @@ and recorded meals. Keep the whole `data` folder when moving or backing up your 
 
 ### JUnit tests
 
+Run Java 25 `./gradlew check jacocoTestReport` to execute JUnit, Checkstyle, and coverage verification.
+The report is `build/reports/jacoco/test/html/index.html`, with XML alongside it. Coverage includes the
+packaged-JAR subprocess tests. Justin's grocery/nutrition, portion adjustment, meal customization, and storage
+files are listed explicitly in the `SOURCEFILE` rule in `build.gradle`; each must exceed 95% for both lines
+and branches (a `0.9501` minimum). Nested classes count toward their owning source file; no executable code
+is excluded. Files with no branch instructions have no branch percentage to measure.
+
+Storage failure tests use temporary directories and an injectable file-operation adapter to exercise atomic
+move fallback, failed writes, quarantine failures, cleanup failures, and lock/channel failures consistently
+across operating systems. They verify saved data and preserved causes, not only exception types.
+
 * Tests live under `src/test/java/mishmash` and mirror the production packages. Run them with `./gradlew test` (`.\gradlew.bat test` on Windows).
 * If you are new to JUnit, refer to the [JUnit Tutorial at se-education.org/guides](https://se-education.org/guides/tutorials/junit.html).
+
+JLine is part of the console UI, and its automated tests run with JUnit. `ui/JLineConsoleInputTest`
+checks editing, completion, history, interruption, and EOF using in-memory terminals or a scripted reader;
+`ui/CommandCompleterTest` checks suggestions; `ui/ConsoleInputsTest` checks terminal selection and fallback;
+and `JLineSessionTest` runs application workflows through the real JLine adapter. No native terminal is
+required for these tests. The User Guide describes [interactive command entry](docs/UserGuide.md#interactive-command-entry).
+Check actual terminal keys, display, and native-provider behaviour manually before release.
 
 ## Checkstyle
 

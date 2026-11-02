@@ -155,14 +155,7 @@ class MishMashResetPlanTest {
         MealLog meals = new MealLog();
         RecipeBook book = new RecipeBook();
         Parser parser = new Parser(meals, new MealPlanGenerator(new Random(1)), active);
-        for (String name : List.of("A", "B", "C")) {
-            parser.parseCommand("add-recipe n/" + name + " cal/500 p/20 c/50 f/10 i/Rice:100g food/none").execute(book);
-        }
-        parser.parseCommand("record-meal 1").execute(book);
-        parser.parseCommand("generate-plan d/1 cal/1500").execute(book);
-        parser.parseCommand("generate-list").execute(book);
-        parser.parseCommand("set-diet diet/vegetarian").execute(book);
-        parser.parseCommand("set-targets cal/1600 p/60").execute(book);
+        populateResetSession(parser, book);
         String savedTargets = parser.parseCommand("view-targets").execute(book);
         MealPlan plan = active.get().orElseThrow();
         GeneratePlanRequest request = active.getRequest().orElseThrow();
@@ -174,11 +167,7 @@ class MishMashResetPlanTest {
             String failed = runSession(parser, book, "reset-plan", "yes", "view-plan", "view-list", "view-meals",
                     "view-diet", "view-targets", "list-recipes", "bye");
 
-            assertInOrder(failed, "Error: The meal plan could not be reset. Please try again.", ResetPlanCommand.USAGE,
-                    "Daily Totals: 1500 kcal", "[ ] Rice: 300g", "Meal 1: A", "vegetarian",
-                    "Calories: 1600 kcal", "Protein: 60 g", "1. A (500 kcal)", "Goodbye!");
-            assertEquals(1, countOccurrences(failed, ResetPlanCommand.USAGE));
-            assertFalse(failed.contains("Private model details"), failed);
+            assertRecoverableResetOutput(failed);
             assertSame(plan, active.get().orElseThrow());
             assertSame(request, active.getRequest().orElseThrow());
             assertSame(groceries, active.getGroceryList().orElseThrow());
@@ -186,13 +175,7 @@ class MishMashResetPlanTest {
             assertEquals(recordedMeals, meals.getMeals());
             assertEquals(savedTargets, parser.parseCommand("view-targets").execute(book));
 
-            String retried = runSession(parser, book, "reset-plan", "yes", "view-plan", "view-list", "bye");
-
-            assertInOrder(retried, "Meal plan reset.", "No active meal plan.",
-                    "No grocery list generated.", "Goodbye!");
-            assertTrue(active.get().isEmpty());
-            assertTrue(active.getRequest().isEmpty());
-            assertTrue(active.getGroceryList().isEmpty());
+            retryResetAndAssertCleared(parser, book, active);
             assertEquals(recipes, book.getRecipes());
             assertEquals(recordedMeals, meals.getMeals());
             assertEquals(savedTargets, parser.parseCommand("view-targets").execute(book));
@@ -201,19 +184,55 @@ class MishMashResetPlanTest {
     }
 
     /**
+     * Populates each independently owned session domain before testing a recoverable reset failure.
+     */
+    private void populateResetSession(Parser parser, RecipeBook book) throws MishMashException {
+        for (String name : List.of("A", "B", "C")) {
+            parser.parseCommand("add-recipe n/" + name + " cal/500 p/20 c/50 f/10 i/Rice:100g food/none").execute(book);
+        }
+        parser.parseCommand("record-meal 1").execute(book);
+        parser.parseCommand("generate-plan d/1 cal/1500").execute(book);
+        parser.parseCommand("generate-list").execute(book);
+        parser.parseCommand("set-diet diet/vegetarian").execute(book);
+        parser.parseCommand("set-targets cal/1600 p/60").execute(book);
+    }
+
+    /**
+     * Checks that a failed reset explains recovery without exposing the underlying model's private details.
+     */
+    private void assertRecoverableResetOutput(String output) {
+        assertInOrder(output, "Error: The meal plan could not be reset. Please try again.", ResetPlanCommand.USAGE,
+                "Daily Totals: 1500 kcal", "[ ] Rice: 300g", "Meal 1: A", "vegetarian",
+                "Calories: 1600 kcal", "Protein: 60 g", "1. A (500 kcal)", "Goodbye!");
+        assertEquals(1, countOccurrences(output, ResetPlanCommand.USAGE));
+        assertFalse(output.contains("Private model details"), output);
+    }
+
+    /**
+     * Retries the failed operation and checks both user feedback and the cleared planning state.
+     */
+    private void retryResetAndAssertCleared(Parser parser, RecipeBook book, ActiveMealPlan active) {
+        String output = runSession(parser, book, "reset-plan", "yes", "view-plan", "view-list", "bye");
+        assertInOrder(output, "Meal plan reset.", "No active meal plan.", "No grocery list generated.", "Goodbye!");
+        assertTrue(active.get().isEmpty());
+        assertTrue(active.getRequest().isEmpty());
+        assertTrue(active.getGroceryList().isEmpty());
+    }
+
+    /**
      * Simulates either a failed clear or an incomplete clear once, followed by a normal retry.
      */
     private ActiveMealPlan failsFirstReset(String scenario) {
         return new ActiveMealPlan() {
-            private boolean firstReset = true;
+            private boolean isFirstReset = true;
 
             @Override
             public void clear() {
-                if (!firstReset) {
+                if (!isFirstReset) {
                     super.clear();
                     return;
                 }
-                firstReset = false;
+                isFirstReset = false;
                 if (!scenario.equals("incomplete clear")) {
                     throw new IllegalStateException(scenario.equals("null-message failure")
                             ? null : "Private model details");

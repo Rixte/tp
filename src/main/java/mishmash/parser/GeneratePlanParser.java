@@ -95,6 +95,9 @@ public class GeneratePlanParser {
     private static int parseDays(String value) {
         String error = "DAYS must be a whole number from " + MealPlanGenerator.MIN_DAYS
                 + " to " + MealPlanGenerator.MAX_DAYS + ".";
+        if (!value.matches("[0-9]+")) {
+            throw new IllegalArgumentException(error);
+        }
         int days;
         try {
             days = Integer.parseInt(value);
@@ -114,7 +117,10 @@ public class GeneratePlanParser {
         if (value == null) {
             return null;
         }
-        String error = label + " must be a positive whole number.";
+        String error = label + " must be a positive whole number from 1 to " + Integer.MAX_VALUE + ".";
+        if (!value.matches("[0-9]+")) {
+            throw new IllegalArgumentException(error);
+        }
         int target;
         try {
             target = Integer.parseInt(value);

@@ -31,7 +31,7 @@ class EditRecipeCommandTest {
     /**
      * Builds a protein-only change for direct command tests.
      */
-    private RecipeChanges proteinChange() {
+    private RecipeChanges createProteinChange() {
         return new RecipeChanges(null, null, 25, null, null, List.of(), null);
     }
 
@@ -46,7 +46,7 @@ class EditRecipeCommandTest {
         book.add(third);
         List<Recipe> before = book.getRecipes();
 
-        String result = new EditRecipeCommand(2, proteinChange()).execute(book);
+        String result = new EditRecipeCommand(2, createProteinChange()).execute(book);
 
         assertEquals(3, book.size());
         assertSame(first, book.getRecipes().getFirst());
@@ -69,8 +69,8 @@ class EditRecipeCommandTest {
         book.add(middle);
         book.add(TestRecipes.recipe("Last", 3, 3, 3, 3));
 
-        new EditRecipeCommand(1, proteinChange()).execute(book);
-        new EditRecipeCommand(3, proteinChange()).execute(book);
+        new EditRecipeCommand(1, createProteinChange()).execute(book);
+        new EditRecipeCommand(3, createProteinChange()).execute(book);
 
         assertEquals(25, book.getRecipes().getFirst().getProtein());
         assertSame(middle, book.getRecipes().get(1));
@@ -96,24 +96,24 @@ class EditRecipeCommandTest {
     void execute_missingTarget_reportsErrorAndLeavesBookUnchanged() {
         RecipeBook book = new RecipeBook();
         MishMashException empty = assertThrows(MishMashException.class,
-                () -> new EditRecipeCommand(1, proteinChange()).execute(book));
-        assertEquals("There are no recipes to edit.", empty.getMessage());
+                () -> new EditRecipeCommand(1, createProteinChange()).execute(book));
+        assertEquals("There are no recipes to edit.", empty.getExplanation());
         Recipe recipe = TestRecipes.recipe("Rice", 200, 4, 45, 1);
         book.add(recipe);
         for (int index : new int[] {2, Integer.MAX_VALUE}) {
             MishMashException error = assertThrows(MishMashException.class,
-                    () -> new EditRecipeCommand(index, proteinChange()).execute(book));
-            assertEquals("Recipe index must be between 1 and 1.", error.getMessage());
+                    () -> new EditRecipeCommand(index, createProteinChange()).execute(book));
+            assertEquals("Recipe index must be between 1 and 1.", error.getExplanation());
         }
         assertEquals(List.of(recipe), book.getRecipes());
     }
 
     @Test
     void constructorAndExecute_invalidDependencies_failClearly() {
-        assertThrows(IllegalArgumentException.class, () -> new EditRecipeCommand(0, proteinChange()));
-        assertThrows(IllegalArgumentException.class, () -> new EditRecipeCommand(-1, proteinChange()));
+        assertThrows(IllegalArgumentException.class, () -> new EditRecipeCommand(0, createProteinChange()));
+        assertThrows(IllegalArgumentException.class, () -> new EditRecipeCommand(-1, createProteinChange()));
         assertThrows(NullPointerException.class, () -> new EditRecipeCommand(1, null));
-        assertThrows(NullPointerException.class, () -> new EditRecipeCommand(1, proteinChange()).execute(null));
+        assertThrows(NullPointerException.class, () -> new EditRecipeCommand(1, createProteinChange()).execute(null));
     }
 
     @Test
@@ -176,7 +176,7 @@ class EditRecipeCommandTest {
         book.add(first);
         book.add(second);
         book.add(third);
-        EditRecipeCommand pending = new EditRecipeCommand(2, proteinChange());
+        EditRecipeCommand pending = new EditRecipeCommand(2, createProteinChange());
 
         book.remove(0);
         pending.execute(book);
@@ -202,7 +202,7 @@ class EditRecipeCommandTest {
 
         MishMashException error = assertThrows(MishMashException.class, () -> pending.execute(book));
 
-        assertEquals("Recipe index must be between 1 and 1.", error.getMessage());
+        assertEquals("Recipe index must be between 1 and 1.", error.getExplanation());
         assertEquals(List.of(kept), book.getRecipes());
         assertEquals(1, kept.getProtein());
     }
@@ -210,7 +210,7 @@ class EditRecipeCommandTest {
     @Test
     void execute_failedOnEmptyBook_canBeReusedAfterAddingRecipe() throws MishMashException {
         RecipeBook book = new RecipeBook();
-        EditRecipeCommand command = new EditRecipeCommand(1, proteinChange());
+        EditRecipeCommand command = new EditRecipeCommand(1, createProteinChange());
         assertThrows(MishMashException.class, () -> command.execute(book));
         book.add(TestRecipes.recipe("Added Later", 100, 1, 10, 2));
 
@@ -223,7 +223,7 @@ class EditRecipeCommandTest {
 
     @Test
     void execute_reusedAcrossBooks_doesNotCarryOverOmittedFields() throws MishMashException {
-        EditRecipeCommand command = new EditRecipeCommand(1, proteinChange());
+        EditRecipeCommand command = new EditRecipeCommand(1, createProteinChange());
         RecipeBook firstBook = new RecipeBook();
         RecipeBook secondBook = new RecipeBook();
         firstBook.add(TestRecipes.recipe("Rice", 200, 4, 45, 1));

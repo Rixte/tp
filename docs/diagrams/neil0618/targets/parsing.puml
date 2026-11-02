@@ -1,0 +1,60 @@
+@startuml
+!include ../../rixte/shortfall/style.iuml
+title Parsing set-targets cal/2000 p/none
+
+participant ":MishMash" as App
+participant ":Parser" as Parser
+participant ":SetTargetsParser" as SParser
+participant "changes:TargetChanges" as Changes
+participant "cmd:SetTargetsCommand" as Cmd
+
+App -> Parser : parseCommand("set-targets cal/2000 p/none")
+activate Parser
+
+Parser -> Parser : parseSetTargets("cal/2000 p/none")
+activate Parser
+
+create SParser
+Parser -> SParser : SetTargetsParser()
+activate SParser
+SParser --> Parser
+deactivate SParser
+
+Parser -> SParser : parse("cal/2000 p/none")
+activate SParser
+
+loop for each token
+  SParser -> SParser : readToken(token)
+  activate SParser
+  deactivate SParser
+end
+
+create Changes
+SParser -> Changes : TargetChanges(...)
+activate Changes
+Changes --> SParser
+deactivate Changes
+
+SParser --> Parser : changes
+deactivate SParser
+SParser -[hidden]-> Parser
+destroy SParser
+
+create Cmd
+Parser -> Cmd : SetTargetsCommand(changes, ...)
+activate Cmd
+Cmd --> Parser
+deactivate Cmd
+
+Parser --> Parser : cmd
+deactivate Parser
+
+Parser --> App : cmd
+deactivate Parser
+
+note over Parser, Cmd
+  parseCommand first dispatches on the command word. That step is omitted.
+  A token that is not valid stops parsing before TargetChanges or the command
+  exists (see the activity diagram).
+end note
+@enduml

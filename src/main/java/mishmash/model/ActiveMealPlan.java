@@ -15,7 +15,9 @@ import java.util.Optional;
  */
 public class ActiveMealPlan {
     private MealPlan plan;
-    /** Original generation settings; absent for no plan or a legacy supplied plan. */
+    /**
+     * Retains the original generation settings; absent for no plan or a legacy supplied plan.
+     */
     private Optional<GeneratePlanRequest> request = Optional.empty();
     // Absence means groceries have not been generated for the current plan.
     private Optional<List<GroceryItem>> groceryList = Optional.empty();
@@ -93,7 +95,7 @@ public class ActiveMealPlan {
         Optional<List<GroceryItem>> snapshot = Objects.requireNonNull(groceries, "groceries").map(List::copyOf);
         this.plan = plan;
         this.request = Optional.of(request);
-        this.groceryList = snapshot;
+        groceryList = snapshot;
     }
 
     /**

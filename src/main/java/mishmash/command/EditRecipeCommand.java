@@ -15,6 +15,17 @@ import mishmash.ui.RecipeViewer;
  */
 public class EditRecipeCommand implements Command {
     /**
+     * Describes partial recipe edits and complete ingredient-list replacement.
+     */
+    public static final String USAGE =
+            "Format: edit-recipe INDEX [n/DISHNAME] [cal/CALORIES] [p/PROTEIN] [c/CARBS] [f/FATS]"
+                    + " [i/INGREDIENT:QUANTITYUNIT ...] [food/TAG[,TAG...]]"
+                    + System.lineSeparator()
+                    + "Supply at least one field. Omitted fields are unchanged."
+                    + " Each i/ supplies one item in the entire replacement ingredient list."
+                    + System.lineSeparator()
+                    + "Example: edit-recipe 1 p/55 i/Chicken:220g i/Rice:150g";
+    /**
      * Records successful edits and rejected positions without including recipe contents.
      */
     private static final Logger LOGGER = Logger.getLogger(EditRecipeCommand.class.getName());
@@ -53,11 +64,12 @@ public class EditRecipeCommand implements Command {
         int originalSize = recipeBook.size();
         if (originalSize == 0) {
             LOGGER.fine("Recipe edit rejected: recipe book is empty");
-            throw new MishMashException("There are no recipes to edit.");
+            throw new MishMashException("There are no recipes to edit.", USAGE, null);
         }
         if (index > originalSize) {
             LOGGER.fine(() -> "Recipe edit rejected: index " + index + "; recipe count: " + originalSize);
-            throw new MishMashException("Recipe index must be between 1 and " + originalSize + ".");
+            throw new MishMashException("Recipe index must be between 1 and " + originalSize + ".",
+                    USAGE, null);
         }
 
         Recipe edited = changes.applyTo(recipeBook.getRecipes().get(index - 1));

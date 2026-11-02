@@ -38,24 +38,24 @@ public final class PlanFailureAdvisor {
         Objects.requireNonNull(preferences, "preferences");
         List<Recipe> eligible = recipes.stream().filter(preferences::isAllowed).toList();
         // Diet advice only helps if the diet actually removed recipes.
-        boolean dietExcludedRecipes = eligible.size() < recipes.size();
+        boolean hasDietaryExclusions = eligible.size() < recipes.size();
         long unclassified = recipes.stream().filter(recipe -> !recipe.getFoodInfo().isClassified()).count();
 
         List<String> reasons = new ArrayList<>();
         List<String> nextSteps = new ArrayList<>();
-        if (dietExcludedRecipes) {
+        if (hasDietaryExclusions) {
             reasons.add(describeDietFilter(recipes.size(), eligible.size(), unclassified));
         }
         if (eligible.size() < MealPlanGenerator.MEALS_PER_DAY) {
             int missing = MealPlanGenerator.MEALS_PER_DAY - eligible.size();
             nextSteps.add("Add " + missing + " more suitable recipe(s) with 'add-recipe'.");
-            if (dietExcludedRecipes && unclassified > 0) {
+            if (hasDietaryExclusions && unclassified > 0) {
                 nextSteps.add("Declare food tags on existing recipes with 'edit-recipe INDEX food/TAG'.");
             }
         } else if (targets.hasAnyTarget()) {
             addTargetAdvice(eligible, targets, reasons, nextSteps);
         }
-        if (dietExcludedRecipes) {
+        if (hasDietaryExclusions) {
             nextSteps.add("Widen your diet with 'set-diet' or 'clear-diet' to allow more recipes.");
         }
         return format(reasons, nextSteps);

@@ -16,6 +16,16 @@ public class HelpCommand implements Command {
                 "MISHMASH KITCHEN MANUAL",
                 "Available commands (names are case-sensitive):",
                 "",
+                describeRecipes(), "", describePlanning(), "", describePlanChanges(), "",
+                describeShopping(), "", describeDiet(), "", describeTargets(), "",
+                describeMealTracking(), "", describeGeneralActions());
+    }
+
+    /**
+     * Describes recipe creation, inspection, editing, and deletion.
+     */
+    private String describeRecipes() {
+        return String.join(System.lineSeparator(),
                 "[ RECIPES ]",
                 "add-recipe - Add a recipe with nutrition and ingredients.",
                 Parser.ADD_RECIPE_USAGE,
@@ -28,8 +38,14 @@ public class HelpCommand implements Command {
                 "Existing plans and groceries keep their snapshots; regenerate them to use the edit.",
                 "",
                 "delete-recipe - Delete a recipe by its displayed index, after confirmation.",
-                Parser.DELETE_RECIPE_USAGE,
-                "",
+                Parser.DELETE_RECIPE_USAGE);
+    }
+
+    /**
+     * Describes generation, viewing, portions, and occurrence-specific ingredients.
+     */
+    private String describePlanning() {
+        return String.join(System.lineSeparator(),
                 "[ MEAL PLANNING ]",
                 "generate-plan - Generate a meal plan with optional daily nutrition targets.",
                 Parser.GENERATE_PLAN_USAGE,
@@ -45,8 +61,14 @@ public class HelpCommand implements Command {
                 CustomizeMealCommand.COMMAND_WORD
                         + " - Replace the ingredients of one planned meal occurrence.",
                 Parser.CUSTOMIZE_MEAL_USAGE,
-                "Quantities describe one portion. Source recipes and nutrition values are unchanged.",
-                "",
+                "Quantities describe one portion. Source recipes and nutrition values are unchanged.");
+    }
+
+    /**
+     * Describes replacement, reset, and nutrition checking for an active plan.
+     */
+    private String describePlanChanges() {
+        return String.join(System.lineSeparator(),
                 //@@author neil0618
                 ReplaceMealCommand.COMMAND_WORD
                         + " - Replace one planned meal with a recipe from your recipe book.",
@@ -64,15 +86,27 @@ public class HelpCommand implements Command {
                 CheckShortfallCommand.COMMAND_WORD
                         + " - Check each day's planned nutrition against explicit daily targets.",
                 Parser.CHECK_SHORTFALL_USAGE,
-                "Supply at least one target; omitted nutrients are not checked.",
-                "",
+                "Supply at least one target; omitted nutrients are not checked.");
+    }
+
+    /**
+     * Describes grocery generation and viewing.
+     */
+    private String describeShopping() {
+        return String.join(System.lineSeparator(),
                 "[ SHOPPING ]",
                 "generate-list - Generate a grocery list from the active meal plan.",
                 Parser.GENERATE_LIST_USAGE,
                 "",
                 "view-list - View the generated grocery list.",
-                Parser.VIEW_LIST_USAGE,
-                "",
+                Parser.VIEW_LIST_USAGE);
+    }
+
+    /**
+     * Describes dietary profiles, classifications, and ingredient exclusions.
+     */
+    private String describeDiet() {
+        return String.join(System.lineSeparator(),
                 "[ DIET AND TARGETS ]",
                 "set-diet - Replace dietary preferences and update conflicting planned days.",
                 DietaryPreferencesParser.USAGE,
@@ -88,8 +122,14 @@ public class HelpCommand implements Command {
                 "",
                 ClearDietCommand.COMMAND_WORD + " - Remove all dietary preferences and restrictions.",
                 Parser.CLEAR_DIET_USAGE,
-                "Recipes, plans, groceries, targets, and recorded meals are unchanged.",
-                "",
+                "Recipes, plans, groceries, targets, and recorded meals are unchanged.");
+    }
+
+    /**
+     * Describes saved daily targets and their precedence during generation.
+     */
+    private String describeTargets() {
+        return String.join(System.lineSeparator(),
                 //@@author neil0618
                 SetTargetsCommand.COMMAND_WORD
                         + " - Save daily calorie and macronutrient targets for future meal plans.",
@@ -98,9 +138,15 @@ public class HelpCommand implements Command {
                 "generate-plan uses saved targets for nutrients you leave out; targets typed in it take priority.",
                 "",
                 ViewTargetsCommand.COMMAND_WORD + " - View your saved daily targets.",
-                Parser.VIEW_TARGETS_USAGE,
-                //@@author
-                "",
+                Parser.VIEW_TARGETS_USAGE);
+        //@@author
+    }
+
+    /**
+     * Describes recorded meals and date-specific intake corrections.
+     */
+    private String describeMealTracking() {
+        return String.join(System.lineSeparator(),
                 "[ MEAL TRACKING ]",
                 RecordMealCommand.COMMAND_WORD + " - Record a recipe you have eaten, by its displayed index.",
                 Parser.RECORD_MEAL_USAGE,
@@ -115,8 +161,14 @@ public class HelpCommand implements Command {
                 "Supply at least one field. Meal numbers come from view-meals.",
                 "",
                 DeleteMealCommand.COMMAND_WORD + " - Remove a recorded meal, after confirmation.",
-                Parser.DELETE_MEAL_USAGE,
-                "",
+                Parser.DELETE_MEAL_USAGE);
+    }
+
+    /**
+     * Describes help, exit, and the notation shared by command formats.
+     */
+    private String describeGeneralActions() {
+        return String.join(System.lineSeparator(),
                 "[ GENERAL ]",
                 "help - Show all commands and what they do.",
                 "Format: help",
