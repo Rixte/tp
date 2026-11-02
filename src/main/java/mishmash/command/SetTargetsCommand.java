@@ -61,6 +61,13 @@ public class SetTargetsCommand implements Command {
                 + "They apply to the next 'generate-plan'; your current meal plan is unchanged.");
     }
 
+    /**
+     * Returns whether two sets of targets hold the same value for every nutrient.
+     *
+     * @param first The first targets.
+     * @param second The second targets.
+     * @return True if no nutrient differs between them.
+     */
     private static boolean hasSameTargets(NutritionTargets first, NutritionTargets second) {
         for (Nutrient nutrient : Nutrient.values()) {
             if (!Objects.equals(first.get(nutrient), second.get(nutrient))) {
