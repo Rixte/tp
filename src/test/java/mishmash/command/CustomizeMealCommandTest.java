@@ -30,7 +30,7 @@ import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 
 /**
- * Checks atomic ingredient customisation, no-op behaviour, positions, and dietary safety.
+ * Checks atomic ingredient customization, no-op behavior, positions, and dietary safety.
  */
 class CustomizeMealCommandTest {
     private final GroceryItem rice = new GroceryItem("Rice", new BigDecimal("100"), "g");
@@ -210,7 +210,7 @@ class CustomizeMealCommandTest {
     }
 
     /**
-     * Creates a customisation command connected to this test's shared state.
+     * Creates a customization command connected to this test's shared state.
      */
     private CustomizeMealCommand command(int dayNumber, int mealNumber, GroceryItem... ingredients) {
         IngredientCustomization customization =

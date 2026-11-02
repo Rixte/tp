@@ -336,7 +336,7 @@ class JsonSessionStorageTest {
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(root);
     }
 
-    /** Builds snapshots with dated servings, duplicates, decimals, and a case-only customisation. */
+    /** Builds snapshots with dated servings, duplicates, decimals, and a case-only customization. */
     static ApplicationState populatedState() {
         ApplicationState state = new ApplicationState();
         GroceryItem rice = new GroceryItem("Rice", new BigDecimal("100.00100"), "g");

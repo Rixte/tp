@@ -321,7 +321,7 @@ public final class JsonSessionStorage implements SessionStorage {
     }
 
     /**
-     * Validates serialised bytes using the same strict conversion used at startup.
+     * Validates serialized bytes using the same strict conversion used at startup.
      */
     private ApplicationState validateBytes(byte[] bytes) throws IOException {
         if (bytes.length > MAX_FILE_SIZE_BYTES) {

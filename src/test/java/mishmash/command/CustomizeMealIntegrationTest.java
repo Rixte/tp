@@ -22,7 +22,7 @@ import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
 
 /**
- * Checks parsed customisation together with portions, viewing, and grocery generation.
+ * Checks parsed customization together with portions, viewing, and grocery generation.
  */
 class CustomizeMealIntegrationTest {
     private final GroceryItem rice = new GroceryItem("Rice", new BigDecimal("100"), "g");
