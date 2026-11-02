@@ -75,6 +75,27 @@ jacocoTestCoverageVerification {
     dependsOn test
     executionData fileTree(layout.buildDirectory.dir('jacoco/launcher')) { include '*.exec' }
     violationRules {
+        // Justin's grocery/nutrition, portions, customization, and storage sources must exceed 95% individually.
+        // SOURCEFILE includes nested DTOs and helpers in their owning file instead of hiding their counters.
+        rule {
+            element = 'SOURCEFILE'
+            includes = ['*GroceryListGenerator.java', '*GenerateListCommand.java', '*ViewListCommand.java',
+                        '*GroceryListViewer.java', '*GroceryItem.java', '*NutritionTotals.java', '*DayPlan.java',
+                        '*NutritionTargets.java', '*MealPlan.java', '*MealPlanViewer.java', '*ActiveMealPlan.java',
+                        '*PortionAdjustment.java', '*PlannedMeal.java', '*IngredientCustomization.java',
+                        '*AdjustPortionCommand.java', '*CustomizeMealCommand.java', '*AdjustPortionParser.java',
+                        '*CustomizeMealParser.java', '*IngredientParser.java', '*ApplicationState.java',
+                        '*JsonSessionStorage.java', '*LoadResult.java', '*SessionData.java', '*SessionPersistence.java',
+                        '*StorageException.java', '*StorageFiles.java']
+            limit {
+                counter = 'LINE'
+                minimum = 0.9501
+            }
+            limit {
+                counter = 'BRANCH'
+                minimum = 0.9501
+            }
+        }
         rule {
             element = 'CLASS'
             includes = ['mishmash.command.ResetPlanCommand', 'mishmash.command.GeneratePlanCommand',

@@ -54,17 +54,19 @@ public final class JsonSessionStorage implements SessionStorage {
     private final JsonMapper mapper;
     private final FileChannel lockChannel;
     private final FileLock lock;
+    private final StorageFiles files;
     private boolean isClosed;
 
     /**
      * Creates storage after its caller has acquired the process lock.
      */
-    private JsonSessionStorage(Path dataFile, Clock clock, FileChannel lockChannel, FileLock lock) {
+    private JsonSessionStorage(Path dataFile, Clock clock, FileChannel lockChannel, FileLock lock, StorageFiles files) {
         this.dataFile = dataFile;
         backupFile = siblingWithSuffix(dataFile, ".backup.json");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.lockChannel = Objects.requireNonNull(lockChannel, "lockChannel");
         this.lock = Objects.requireNonNull(lock, "lock");
+        this.files = files;
         mapper = createMapper();
     }
 
@@ -83,6 +85,13 @@ public final class JsonSessionStorage implements SessionStorage {
      * Opens storage with an injectable clock for deterministic recovery tests.
      */
     static JsonSessionStorage open(Path dataFile, Clock clock) throws StorageException {
+        return open(dataFile, clock, new StorageFiles());
+    }
+
+    /** Opens storage with explicit file operations for deterministic I/O failure tests. */
+    static JsonSessionStorage open(Path dataFile, Clock clock, StorageFiles files) throws StorageException {
+        Objects.requireNonNull(clock, "clock");
+        Objects.requireNonNull(files, "files");
         Path normalizedFile = Objects.requireNonNull(dataFile, "dataFile").toAbsolutePath().normalize();
         Path parent = normalizedFile.getParent();
         if (parent == null || normalizedFile.getFileName() == null) {
@@ -91,25 +100,33 @@ public final class JsonSessionStorage implements SessionStorage {
         try {
             Files.createDirectories(parent);
             Path lockFile = siblingWithSuffix(normalizedFile, ".lock");
-            FileChannel channel = FileChannel.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            FileChannel channel = files.open(lockFile, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             try {
                 FileLock lock = channel.tryLock();
                 if (lock == null) {
-                    channel.close();
                     throw alreadyRunning();
                 }
-                return new JsonSessionStorage(normalizedFile, clock, channel, lock);
+                return new JsonSessionStorage(normalizedFile, clock, channel, lock, files);
             } catch (OverlappingFileLockException e) {
-                channel.close();
+                closeAfterFailedAcquisition(channel, e);
                 throw alreadyRunning(e);
-            } catch (IOException | RuntimeException e) {
-                channel.close();
+            } catch (StorageException | IOException | RuntimeException e) {
+                closeAfterFailedAcquisition(channel, e);
                 throw e;
             }
         } catch (StorageException e) {
             throw e;
         } catch (IOException | RuntimeException e) {
             throw new StorageException("Could not prepare the MishMash data directory.", e);
+        }
+    }
+
+    /** Closes a failed acquisition's channel without replacing the original diagnostic. */
+    private static void closeAfterFailedAcquisition(FileChannel channel, Exception acquisitionFailure) {
+        try {
+            channel.close();
+        } catch (IOException cleanupFailure) {
+            acquisitionFailure.addSuppressed(cleanupFailure);
         }
     }
 
@@ -404,7 +421,7 @@ public final class JsonSessionStorage implements SessionStorage {
         String uniqueName = stem(source) + "." + reason + "-" + timestamp + "-" + UUID.randomUUID() + ".json";
         Path destination = source.resolveSibling(uniqueName);
         try {
-            return Files.move(source, destination);
+            return files.move(source, destination);
         } catch (IOException e) {
             throw new StorageException("Could not preserve invalid saved data safely.", e);
         }
@@ -422,10 +439,10 @@ public final class JsonSessionStorage implements SessionStorage {
             // Read back the flushed file before publishing it, rather than trusting only the input bytes.
             readState(temporary);
             try {
-                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE,
+                files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
             } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+                files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
             }
             temporary = null;
         } catch (IOException | RuntimeException e) {
@@ -433,7 +450,7 @@ public final class JsonSessionStorage implements SessionStorage {
         } finally {
             if (temporary != null) {
                 try {
-                    Files.deleteIfExists(temporary);
+                    files.deleteIfExists(temporary);
                 } catch (IOException ignored) {
                     // The save failure remains primary; a later startup can safely ignore an unreferenced temp file.
                 }
@@ -445,7 +462,7 @@ public final class JsonSessionStorage implements SessionStorage {
      * Writes all snapshot bytes and flushes the temporary file before validation and publication.
      */
     private void writeAndFlush(Path temporary, byte[] bytes) throws IOException {
-        try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE,
+        try (FileChannel channel = files.open(temporary, StandardOpenOption.WRITE,
                 StandardOpenOption.TRUNCATE_EXISTING)) {
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
             while (buffer.hasRemaining()) {
