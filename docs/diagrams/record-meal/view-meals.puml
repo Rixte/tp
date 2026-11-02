@@ -35,8 +35,9 @@ destroy Command
 note over Command, Log
   result is a CommandResult holding the text and an info status.
   With an empty log the command returns a note status with "No meals
-  recorded yet." without creating a viewer. With date/, the command
-  calls getTotalsOn(date) and viewDate(entries, date, totals) instead,
-  or returns a note status if no meal was recorded on that date.
+  recorded yet." without creating a viewer, even with date/. With date/
+  and a non-empty log, the command calls getTotalsOn(date) and
+  viewDate(entries, date, totals) instead, or returns a note status
+  if no meal was recorded on that date.
 end note
 @enduml
