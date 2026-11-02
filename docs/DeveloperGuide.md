@@ -1890,7 +1890,14 @@ Priorities follow the AB3 convention: `***` essential, `**` useful, `*` optional
 
 ### Use Cases
 
-The actor in each use case is the user. A command session has already started and the user has entered a name. MSS means Main Success Scenario.
+The actor is a user who has started a session and entered a name. MSS means Main Success Scenario.
+
+**Shared rules**
+
+- Invalid syntax or values produce command-specific error/usage feedback, preserve existing data, and allow another command.
+- Viewing and checking commands do not mutate application data.
+- Confirmation accepts only `y` or `yes`, ignoring case and surrounding whitespace. Any other answer, a blank answer, or EOF cancels without applying the pending change; EOF also ends the session.
+- Successful commands return to the prompt unless the user exits. Individual extensions below identify feature-specific conditions and outcomes.
 
 #### UC01 Add a recipe
 
@@ -1898,11 +1905,11 @@ The actor in each use case is the user. A command session has already started an
 
 1. The user enters `add-recipe` with a name, nutrition values, and at least one ingredient.
 2. MishMash validates the input.
-3. MishMash adds the recipe, displays its details, and prompts for another command.
+3. MishMash adds the recipe, displays its details.
 
 **Extensions**
 
-- 2a. A field is missing, blank, repeated, or invalid: MishMash displays an error and the add-recipe format. Existing recipes remain unchanged. The use case ends.
+- 2a. A field is missing, blank, repeated, or invalid: reject the addition.
 
 #### UC02 List recipes
 
@@ -1913,7 +1920,7 @@ The actor in each use case is the user. A command session has already started an
 
 **Extensions**
 
-- 1a. The index syntax is invalid: MishMash displays an error and the command format.
+- 1a. The index syntax is invalid: reject the command.
 - 2a. The book is empty: MishMash displays guidance to add a recipe.
 - 2b. The selected index does not exist: MishMash displays an index-range error.
 
@@ -1929,8 +1936,8 @@ The actor in each use case is the user. A command session has already started an
 **Extensions**
 
 - 1a. The index syntax is invalid: MishMash displays an error.
-- 2a. The book is empty or the index does not exist: MishMash displays an error without asking for confirmation.
-- 3a. The response is anything other than `y` or `yes`, ignoring case and surrounding whitespace, or input ends: the deletion is cancelled and the book remains unchanged.
+- 2a. The book is empty or the index does not exist: reject before confirmation.
+- 3a. Confirmation is declined: cancel deletion.
 
 #### UC04 Generate a meal plan
 
@@ -1947,7 +1954,7 @@ The actor in each use case is the user. A command session has already started an
 **Extensions**
 
 - 2a. Days are outside 1 to 7, a target is not a positive integer, or arguments are malformed: MishMash rejects the command.
-- 3a. The user declines, submits a blank or unrecognised answer, or input ends: cancel replacement and preserve the plan and groceries.
+- 3a. Confirmation is declined: cancel replacement.
 - 4a. Fewer than three recipe entries are available, or no acceptable plan is found: MishMash displays an error, the likely cause, and what to try next. The previous plan and groceries remain available.
 
 Recipes may be repeated on different days. With no targets, there are no nutrition constraints on the selection. Targets saved with `set-targets` (UC13) apply to every nutrient that the command leaves out, and a target typed in the command replaces the saved one for that plan.
@@ -1961,7 +1968,7 @@ Recipes may be repeated on different days. With no targets, there are no nutriti
 
 **Extensions**
 
-- 1a. The day argument is malformed: MishMash displays an error and the command format.
+- 1a. The day argument is malformed: reject the command.
 - 2a. No plan is active: MishMash asks the user to generate one first.
 - 2b. The selected day exceeds the active plan's length: MishMash displays a range error.
 
@@ -2010,14 +2017,12 @@ Viewing does not regenerate groceries. The displayed `[ ]` markers cannot be tic
 2. MishMash validates the target arguments and obtains the active plan.
 3. MishMash compares each day's planned totals with the supplied targets.
 4. MishMash displays each day's deficient nutrients and amounts, or a no-shortfalls
-   message for that day, then prompts for another command.
+   message for that day.
 
 **Extensions**
 
-- 2a. Targets are missing, repeated, unknown, or invalid: MishMash displays an error and
-  the check-shortfall format. The use case ends without changing application data.
-- 2b. No plan exists or the plan has no days: MishMash asks the user to generate a plan.
-  The use case ends.
+- 2a. Targets are missing, repeated, unknown, or invalid: reject the check.
+- 2b. No plan exists or the plan has no days: ask the user to generate a plan.
 
 Omitted nutrients and excesses are not checked. All plan, recipe, and grocery data remains
 unchanged. A shortfall is any amount below a target, even within generation's tolerance.
@@ -2056,12 +2061,12 @@ the retained generation targets. Clearing the plan removes the warnings.
 1. The user enters `record-meal INDEX`, using an index shown by `list-recipes`, optionally with a date and servings.
 2. MishMash validates the input and finds the recipe at that position.
 3. MishMash adds the recipe, date and servings to the recorded meals. The date defaults to today and the servings default to 1.
-4. MishMash displays the meal and the totals of all recorded meals, then prompts for another command.
+4. MishMash displays the meal and the totals of all recorded meals.
 
 **Extensions**
 
-- 2a. The index is missing or is not a single positive whole number, or the date or servings are invalid: MishMash displays an error and the `record-meal` format. The use case ends without recording anything.
-- 2b. There are no recipes, or the index is larger than the number of recipes: MishMash displays an error. The use case ends without recording anything.
+- 2a. The index is missing or is not a single positive whole number, or the date or servings are invalid: reject without recording.
+- 2b. There are no recipes, or the index is larger than the number of recipes: reject without recording.
 
 No confirmation is requested. Recording changes only the recorded meals; recipes, the meal plan, and groceries are unchanged. Recording the same recipe again adds another entry.
 
@@ -2071,15 +2076,15 @@ No confirmation is requested. Recording changes only the recorded meals; recipes
 
 1. The user enters `view-meals`, optionally with a date.
 2. MishMash reads the recorded meals and sums their nutrition, for that date if one was given.
-3. MishMash displays each meal in the order recorded with its calories, macronutrients, servings and date, followed by the totals, then prompts for another command.
+3. MishMash displays each meal in the order recorded with its calories, macronutrients, servings and date, followed by the totals.
 
 **Extensions**
 
-- 1a. The user adds anything other than one valid date: MishMash displays an error and the `view-meals` format. The use case ends.
-- 2a. No meal has been recorded: MishMash displays `No meals recorded yet.` The use case ends.
-- 2b. No meal was recorded on the given date: MishMash displays `No meals recorded on DATE.` The use case ends.
+- 1a. The user adds anything other than one valid date: reject the command.
+- 2a. No meal has been recorded: display `No meals recorded yet.`
+- 2b. No meal was recorded on the given date: display `No meals recorded on DATE.`
 
-Viewing leaves the recorded meals unchanged. Without a date, the totals cover every retained recorded meal.
+Without a date, the totals cover every retained recorded meal.
 
 <!-- @@author -->
 <!-- @@author neil0618 -->
@@ -2090,11 +2095,11 @@ Viewing leaves the recorded meals unchanged. Without a date, the totals cover ev
 1. The user enters `set-targets` with one or more of `cal/`, `p/`, `c/`, and `f/`, each followed by a positive whole number or `none`.
 2. MishMash validates every argument.
 3. MishMash replaces the target of each nutrient given a number, removes the target of each nutrient given `none`, and keeps the targets of the other nutrients.
-4. MishMash displays the targets now saved, or `All daily targets cleared.` if none remain, then prompts for another command.
+4. MishMash displays the targets now saved, or `All daily targets cleared.` if none remain.
 
 **Extensions**
 
-- 2a. No argument is given, a prefix is unknown or repeated, a value is missing, or a value is neither `none` nor a positive whole number up to 2147483647: MishMash displays an error and the `set-targets` format. The use case ends and the saved targets are unchanged.
+- 2a. No argument is given, a prefix is unknown or repeated, a value is missing, or a value is neither `none` nor a positive whole number up to 2147483647: reject the update.
 
 The command does not change the recipe book or an existing meal plan. The saved targets are used by later `generate-plan` commands (UC04) and remain available after restarting from the same working directory.
 
@@ -2103,12 +2108,12 @@ The command does not change the recipe book or an existing meal plan. The saved 
 **MSS**
 
 1. The user enters `view-targets`.
-2. MishMash displays the saved target of each nutrient, with `not set` for a nutrient that has none, then prompts for another command.
+2. MishMash displays the saved target of each nutrient, with `not set` for a nutrient that has none.
 
 **Extensions**
 
-- 1a. The user adds an argument: MishMash displays an error and the `view-targets` format. The use case ends.
-- 2a. No target is saved: MishMash displays `No daily targets saved. Use 'set-targets' to set them.` The use case ends.
+- 1a. The user adds an argument: reject the command.
+- 2a. No target is saved: display `No daily targets saved. Use 'set-targets' to set them.`
 
 <!-- @@author -->
 <!-- @@author peilingggg -->
@@ -2123,7 +2128,7 @@ The command does not change the recipe book or an existing meal plan. The saved 
 
 **Extensions**
 
-- 2a. Syntax or values are invalid: display an error and usage; preserve all data.
+- 2a. Syntax or values are invalid: reject the command.
 - 3a. No active plan exists: save the profile for future generation.
 - 3b. The complete plan is compatible: preserve the plan and groceries.
 - 3c. The user declines confirmation: preserve the profile, plan, and groceries.
@@ -2139,10 +2144,8 @@ The command does not change the recipe book or an existing meal plan. The saved 
 
 **Extensions**
 
-- 1a. Arguments are supplied: display an error and `Format: view-diet`; preserve all data.
+- 1a. Arguments are supplied: reject the command.
 - 2a. No restrictions are active: display `none` for the diet and both lists.
-
-Viewing never changes the profile or generated data.
 
 <!-- @@author -->
 
@@ -2157,7 +2160,7 @@ Viewing never changes the profile or generated data.
 
 **Extensions**
 
-- 1a. Arguments are supplied: display an error and `Format: clear-diet`; preserve all data.
+- 1a. Arguments are supplied: reject the command.
 - 2a. The profile is already unrestricted: report that nothing changed and preserve all data.
 
 #### UC18 Edit a recipe
@@ -2170,7 +2173,7 @@ Viewing never changes the profile or generated data.
 
 **Extensions**
 
-- 2a. The index or a supplied field is invalid, or no edits are supplied: MishMash displays an error and leaves the recipe unchanged. The use case ends.
+- 2a. The index or a supplied field is invalid, or no edits are supplied: reject the edit.
 - Existing meal plans and recorded meals keep their previous recipe snapshots.
 
 <!-- @@author GauthamNandi -->
@@ -2182,12 +2185,12 @@ Viewing never changes the profile or generated data.
 
 1. The user enters `edit-meal MEAL_NUMBER` with a new date, new servings or both, using a number shown by `view-meals`.
 2. MishMash validates the input and replaces the meal, keeping its number.
-3. MishMash displays the corrected meal and the totals for its date, then prompts for another command.
+3. MishMash displays the corrected meal and the totals for its date.
 
 **Extensions**
 
-- 1a. The number or a supplied field is invalid, or no field is supplied: MishMash displays an error and the `edit-meal` format. The use case ends without changing anything.
-- 2a. The number is larger than the number of recorded meals: MishMash displays an error and the `edit-meal` format. The use case ends without changing anything.
+- 1a. The number or a supplied field is invalid, or no field is supplied: reject the correction.
+- 2a. The number is larger than the number of recorded meals: reject the correction.
 
 #### UC20 Delete a recorded meal
 
@@ -2202,8 +2205,8 @@ Viewing never changes the profile or generated data.
 
 **Extensions**
 
-- 1a. The number is missing, invalid or larger than the number of recorded meals: MishMash displays an error and the `delete-meal` format without asking for confirmation. The use case ends.
-- 3a. The user does not confirm: MishMash reports that nothing was changed. The use case ends.
+- 1a. The number is missing, invalid or larger than the number of recorded meals: reject before confirmation.
+- 3a. The user does not confirm: cancel deletion.
 
 <!-- @@author -->
 
@@ -2218,9 +2221,9 @@ Viewing never changes the profile or generated data.
 
 **Extensions**
 
-- 1a. Arguments are supplied: reject the command without changing data.
+- 1a. Arguments are supplied: reject the command.
 - 2a. No plan state exists: report that there is no active plan to reset.
-- 3a. Any other answer, a blank answer, or EOF: cancel and preserve all data. Confirmation accepts case-insensitive answers with surrounding whitespace.
+- 3a. Confirmation is declined: cancel reset.
 
 #### UC22 Adjust a planned meal's portions
 
@@ -2233,7 +2236,7 @@ Viewing never changes the profile or generated data.
 **Extensions**
 
 - 2a. No plan exists: ask the user to generate one first.
-- 2b. Syntax, positions, count, or resulting totals are invalid: reject without changing the plan or groceries.
+- 2b. Syntax, positions, count, or resulting totals are invalid: reject the change.
 - 3a. The count is unchanged: report a no-op and preserve groceries.
 
 The source recipe, other occurrences, saved targets, dietary profile, and recorded meals are unchanged. Run `generate-list` to obtain updated groceries.
@@ -2249,7 +2252,7 @@ The source recipe, other occurrences, saved targets, dietary profile, and record
 **Extensions**
 
 - 2a. No plan exists: ask the user to generate one first.
-- 2b. Arguments, positions, quantities, or dietary compatibility are invalid: reject and preserve all data.
+- 2b. Arguments, positions, quantities, or dietary compatibility are invalid: reject the change.
 - 3a. The effective ingredients are unchanged: report a no-op and preserve groceries.
 - 3b. Ingredients match the source recipe again: remove the customization.
 - 3c. Named-diet or avoided-category rules are active: warn that replacement names are not reclassified; the occurrence keeps its source food categories.
@@ -2267,7 +2270,7 @@ Nutrition and portion count remain unchanged. Grocery generation scales the repl
 **Extensions**
 
 - 2a. No plan exists: ask the user to generate one first.
-- 2b. Arguments, positions, recipe selection, compatibility, or totals are invalid: reject and preserve all data.
+- 2b. Arguments, positions, recipe selection, compatibility, or totals are invalid: reject the change.
 - 3a. The occurrence already uses that exact recipe at one portion without customization: report a no-op and preserve groceries.
 
 Other occurrences, source recipes, recorded meals, and settings remain unchanged. Replacement does not enforce generation's distinct-recipe rule or target tolerance; displayed totals and warnings reflect the changed plan.
