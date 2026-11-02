@@ -30,6 +30,7 @@ import mishmash.testutil.TestRecipes;
 class SetTargetsCommandTest {
     private static final String NEWLINE = System.lineSeparator();
     private static final String NOTE = "They apply to the next 'generate-plan'; your current meal plan is unchanged.";
+    private static final String UNCHANGED = "Daily targets are unchanged. Nothing was changed.";
 
     private final TargetSettings settings = new TargetSettings();
     private final RecipeBook book = new RecipeBook();
@@ -97,8 +98,36 @@ class SetTargetsCommandTest {
     }
 
     @Test
-    void execute_clearingWhenNothingSaved_isHarmless() {
-        assertEquals("All daily targets cleared." + NEWLINE + NOTE, set("f/none").execute(book));
+    void execute_clearingWhenNothingSaved_changesNothing() {
+        SetTargetsCommand command = set("f/none");
+
+        CommandResult result = command.executeWithResult(book);
+
+        assertEquals(CommandResult.Status.NOTE, result.status());
+        assertEquals(UNCHANGED, result.feedback());
+        assertTrue(!settings.get().hasAnyTarget());
+    }
+
+    @Test
+    void execute_sameValueAgain_changesNothing() {
+        set("cal/1500 p/80").execute(book);
+
+        CommandResult result = set("p/80 cal/1500").executeWithResult(book);
+
+        assertEquals(CommandResult.Status.NOTE, result.status());
+        assertEquals(UNCHANGED, result.feedback());
+        assertEquals(1500, settings.get().getCalories());
+        assertEquals(80, settings.get().getProtein());
+    }
+
+    @Test
+    void execute_changeMixedWithSameValue_isStillSaved() {
+        set("cal/1500").execute(book);
+
+        CommandResult result = set("cal/1500 p/80").executeWithResult(book);
+
+        assertEquals(CommandResult.Status.DONE, result.status());
+        assertTrue(result.feedback().startsWith("Daily targets saved: 1500 kcal, 80 g protein."));
     }
 
     @Test
