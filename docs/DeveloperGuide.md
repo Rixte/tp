@@ -107,6 +107,13 @@ or message prefix. The first three render as `[DONE]`, `[NOTE]`, and `[WARN]`; `
 The default is `INFO`, so a new command cannot accidentally claim success. This keeps command execution and
 presentation testable without an interactive terminal.
 
+The command loop passes original input to `Parser`, which rejects unsupported control characters before
+trimming. Exit matching accepts only `bye` and its ordinary surrounding whitespace; NUL-padded text cannot
+silently become an exit request. `CliFormatter` escapes untrusted terminal controls before adding its own
+ANSI styles, including text restored from saved data. Printable Unicode, tabs and multiline feedback remain
+intact. `HostileCommandTest`, formatter tests, session tests and `StorageJarTest` cover malformed numbers,
+literal symbols, Unicode, recovery after rejected commands, and retained data after JAR restarts.
+
 ### Logic Component
 
 The logic covers command parsing, application actions, and generation. A normal command follows this flow:
@@ -1928,6 +1935,7 @@ The supported plan length is 1 to 7 days. Each generated day contains exactly th
 GitHub Actions runs `./gradlew check` for pushes and pull requests on Ubuntu, macOS, and Windows using Java 25. Check the resulting reports before merging changes.
 
 The Gradle build packages the application as `build/libs/MishMash.jar`. Release documentation should use that filename and describe the features included in the actual release.
+
 ## Appendix A: Product Scope
 
 **Target user profile:** Users who prepare meals in advance, want to organise recipes and review calorie or macronutrient totals, and are comfortable entering text commands. Users provide their own recipes and nutrition information.

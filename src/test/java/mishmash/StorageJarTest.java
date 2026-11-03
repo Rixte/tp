@@ -32,6 +32,31 @@ class StorageJarTest {
     Path directory;
 
     @Test
+    void jar_uncommonInputsAndUnicode_remainRecoverableAndRetainLiteralData() throws Exception {
+        String name = "\u7C73\u996D \uD83E\uDD55 Caf\u00E9 literal_\";$(whoami)|&<>{}[]";
+        String ingredient = "\u7C73\u0301";
+        String first = runJar(String.join("\n", "Tester\u001B[2J",
+                "add-recipe n/" + name + " cal/2147483647 p/0 c/0 f/0 i/" + ingredient + ":0.125g food/none",
+                ADD_RECIPE.replace("n/A", "n/B"), ADD_RECIPE.replace("n/A", "n/C"),
+                "generate-plan d/2", "generate-list", "record-meal 1",
+                "adjust-portion d/1 m/1 portions/-1", "replace-meal d/1 m/1 r/2147483648",
+                "customize-meal d/1 m/1 i/Test:NaNg", "record-meal 1 date/2026-02-30",
+                "set-targets cal/\uFF11", "list-recipes\u001B[2J", "bye\u0000", "help", "bye", ""));
+        assertTrue(first.contains("\\u001B[2J"), first);
+        assertFalse(first.contains("\u001B[2J"), first);
+        assertTrue(first.contains("[ERROR]"), first);
+        assertTrue(first.contains("MISHMASH KITCHEN MANUAL"), first);
+
+        String restored = runJar("Tester\nlist-recipes\nview-plan\nview-list\nview-meals\nbye\n");
+        assertFalse(restored.contains("[ERROR]"), restored);
+        assertFalse(restored.contains("[WARN]"), restored);
+        assertTrue(restored.contains(name), restored);
+        assertTrue(restored.contains(ingredient + ": 0.25g"), restored);
+        assertTrue(restored.contains("Meal 1: " + name), restored);
+        assertTrue(restored.contains("Day 2"), restored);
+    }
+
+    @Test
     void jar_existingProcessLock_refusesSecondSession() throws Exception {
         try (JsonSessionStorage storage = JsonSessionStorage.open(directory.resolve("data/mishmash.json"))) {
             assertTrue(storage.load().warning().isEmpty());
@@ -205,6 +230,9 @@ class StorageJarTest {
         Path jar = Path.of(System.getProperty("mishmash.test.jar")).toAbsolutePath();
         List<String> arguments = new ArrayList<>();
         arguments.add(java.toString());
+        // The transcript is read as UTF-8; Windows otherwise selects its native redirected-output code page.
+        arguments.add("-Dstdout.encoding=UTF-8");
+        arguments.add("-Dstderr.encoding=UTF-8");
         addCoverageAgent(arguments);
         arguments.add("-jar");
         arguments.add(jar.toString());

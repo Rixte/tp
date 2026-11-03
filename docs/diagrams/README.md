@@ -109,6 +109,12 @@ such metadata. That comparison does not establish whether included styles or Jav
 changed; it does not replace code comparison, PlantUML validation or visual inspection.
 Each feature README gives SVG output paths.
 
+Markdown heading checks are heuristic: they cannot establish which headings Pandoc actually renders.
+For submission exports, also check the generated HTML with `--html PATH` as shown below. This catches
+contents links to heading-looking text that rendered as an ordinary paragraph. Repeat `--html` to check
+multiple exported documents. Run the validator's regression tests, including the missing-blank-line case,
+with `python -m unittest discover -s docs/diagrams -p test_verify.py`.
+
 ## PDF export
 
 The guide follows the [AB3 structure](https://se-education.org/addressbook-level3/DeveloperGuide.html),
@@ -118,6 +124,9 @@ Use Pandoc and Chrome/Chromium to produce a self-contained HTML preview and prin
 ```powershell
 New-Item -ItemType Directory -Force build/diagram-review
 pandoc docs/DeveloperGuide.md --standalone --embed-resources --resource-path=docs --metadata "title=MishMash Developer Guide" --css=docs/styles/guide-print.css --lua-filter=docs/styles/pdf-links.lua --output=build/diagram-review/DeveloperGuide.html
+if ($LASTEXITCODE -ne 0) { throw "Pandoc export failed." }
+python docs/diagrams/verify.py --html build/diagram-review/DeveloperGuide.html
+if ($LASTEXITCODE -ne 0) { throw "Exported HTML verification failed; do not print the PDF." }
 $workspacePath = (Get-Location).Path
 $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 $arguments = @("--headless", "--disable-gpu", "--no-pdf-header-footer",

@@ -1,6 +1,7 @@
 package mishmash.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,33 @@ import mishmash.command.CommandResult;
 class CliFormatterTest {
     private static final String ESCAPE = "\u001B[";
     private static final String RESET = ESCAPE + "0m";
+
+    @Test
+    void userText_terminalControls_areVisibleInsteadOfExecutable() {
+        String unsafe = "\u001B[2J\u009B2J\u009D0;Title\u0007\u0000\u007F\rX";
+        String safe = "\\u001B[2J\\u009B2J\\u009D0;Title\\u0007\\u0000\\u007F\\u000DX";
+        for (CommandResult.Status status : CommandResult.Status.values()) {
+            String actual = CliFormatter.feedback(new CommandResult(unsafe, status));
+            assertTrue(actual.contains(safe), status.name());
+            assertFalse(actual.replaceAll("\u001B\\[[;\\d]*m", "").contains("\u001B"));
+        }
+        assertTrue(CliFormatter.greeting(unsafe).contains(safe));
+        assertTrue(CliFormatter.error(unsafe).contains(safe));
+        assertTrue(CliFormatter.usage(unsafe).contains(safe));
+        assertTrue(CliFormatter.confirmation(unsafe).contains(safe));
+    }
+
+    @Test
+    void userText_printableUnicodeAndLineBreaks_preservesTextAndApplicationStyling() {
+        String text = "\u7C73\u996D \uD83E\uDD55 Caf\u00E9 Cafe\u0301 %s ' $(whoami)\tA\r\nB\nC";
+        assertTrue(CliFormatter.greeting(text).contains(text));
+        assertTrue(CliFormatter.feedback(CommandResult.done(text)).contains(text));
+        assertTrue(CliFormatter.feedback(CommandResult.info(text)).contains(text));
+        assertTrue(CliFormatter.error(text).contains(text));
+        assertTrue(CliFormatter.confirmation(text).contains(text));
+        assertTrue(CliFormatter.usage(text).contains(text));
+        assertTrue(CliFormatter.feedback(CommandResult.info("end\r")).contains("end\\u000D"));
+    }
 
     @Test
     void banner_stylesEveryGraphicSectionAndResetsAfterTheBowl() {

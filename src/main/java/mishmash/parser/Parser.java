@@ -156,6 +156,10 @@ public class Parser {
 
     private static final Pattern VIEW_MEALS_DATE_PATTERN = Pattern.compile("date/\\s*(\\S+)");
 
+    /** Rejects terminal controls while retaining the whitespace already supported by command syntax. */
+    private static final Pattern UNSUPPORTED_CONTROL_PATTERN =
+            Pattern.compile("[\\p{Cc}&&[^\\t\\r\\n\\f\\x0B]]");
+
     /**
      * Supplies the active plan at command execution, so view-plan always shows the latest generated plan.
      */
@@ -327,6 +331,9 @@ public class Parser {
     public Command parseCommand(String input) throws MishMashException {
         if (input == null || input.isBlank()) {
             throw new MishMashException("Enter a command.");
+        }
+        if (UNSUPPORTED_CONTROL_PATTERN.matcher(input).find()) {
+            throw new MishMashException("Commands must not contain control characters.");
         }
 
         String[] parts = input.trim().split("\\s+", 2);

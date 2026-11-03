@@ -158,6 +158,19 @@ entry with `delete-meal`. Meal numbers come from `view-meals`; recipe numbers co
 - `/` is reserved for argument prefixes and is not accepted inside recipe field values.
 <!-- @@author -->
 
+Printable Unicode, including accented letters, non-Latin names, and emoji, is preserved in names.
+Numeric arguments use the digits `0`–`9`; ingredient units use letters `A`–`Z` or `a`–`z`.
+Quotes, percent signs, and shell-like text are treated as literal data when valid in a field.
+Unsupported control characters, such as NUL and terminal escape codes, are rejected in commands.
+Controls in displayed names or saved text are shown visibly (for example, `\u001B`) rather than
+interpreted as terminal instructions.
+Use a UTF-8-capable terminal to display these characters. For UTF-8 redirected output, launch with
+the following command on one line:
+
+```text
+java -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -jar MishMash.jar
+```
+
 | Prefix or Abbreviation | Meaning |
 | --- | --- |
 | `n/` | Recipe name. |
@@ -341,7 +354,7 @@ mishmash >
 | `delete-recipe abc`, `delete-recipe -1`, `delete-recipe 1.5`, or `delete-recipe 1 2` | `[ERROR] Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `delete-recipe 2`. |
 | You answer something other than `y` or `yes` | `[NOTE] Cancelled. Nothing was changed.` | Enter `delete-recipe` again and answer `y`. |
 
-An index problem is reported before MishMash asks you to confirm, so nothing is deleted. The "no recipes" and "between 1 and N" errors are followed by the list of all command formats. The other errors show only `Format: delete-recipe INDEX`. Enter the corrected command at the next prompt.
+An index problem is reported before MishMash asks you to confirm, so nothing is deleted. These errors show `Format: delete-recipe INDEX`. Enter the corrected command at the next prompt.
 <!-- @@author -->
 
 
@@ -416,7 +429,7 @@ Food tags: poultry
 | `list-recipes 0` | `[ERROR] Error: Recipe index must be at least 1.` | Recipe numbers start at 1. |
 | `list-recipes abc`, `list-recipes -1`, `list-recipes 1.5`, or `list-recipes 1 2` | `[ERROR] Error: Recipe index must be a single positive whole number.` | Enter one whole number, for example `list-recipes 2`. |
 
-The "no recipes" and "between 1 and N" errors are followed by the list of all command formats. The other errors show only `Format: list-recipes [INDEX]`. Enter the corrected command at the next prompt; errors never change your recipes.
+Index errors show `Format: list-recipes [INDEX]`. Enter the corrected command at the next prompt; errors never change your recipes.
 <!-- @@author -->
 
 

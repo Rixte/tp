@@ -48,6 +48,24 @@ import mishmash.testutil.LogCapture;
  * Checks isolated application execution, borrowed resource ownership, structured help, and failure diagnostics.
  */
 class MishMashSessionTest {
+    @TestFactory
+    Stream<DynamicTest> run_controlPaddedExit_reportsErrorAndContinuesToNextCommand() {
+        return Stream.of(0, 7, 27, 28, 31, 127, 155, 157).map(code -> DynamicTest.dynamicTest(
+                "exit suffix U+" + Integer.toHexString(code), () -> {
+                    String output = runSession("Tester\nbye" + (char) code.intValue() + "\nhelp\nbye\n", new Parser());
+                    assertInOrder(output, "Commands must not contain control characters.",
+                            "MISHMASH KITCHEN MANUAL", "Goodbye!");
+                }));
+    }
+
+    @Test
+    void run_terminalControlsInName_escapesThemAndKeepsTheSessionUsable() {
+        String output = runSession("\u7C73\u996D\u001B[2J\nhelp\nbye\n", new Parser());
+        assertTrue(output.contains("\u7C73\u996D\\u001B[2J"));
+        assertFalse(output.contains("\u001B[2J"));
+        assertInOrder(output, "MISHMASH KITCHEN MANUAL", "Goodbye!");
+    }
+
     //@@author Rixte
     @Test
     void main_missingLogDirectory_warnsAndKeepsSessionUsable(@TempDir Path directory) {

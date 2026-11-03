@@ -1,11 +1,13 @@
 """Check diagram pairs, relative includes, and documentation links without dependencies.
 
 Run from any directory with Python 3: python docs/diagrams/verify.py.
+Pass --html PATH after exporting to check actual rendered in-document links as well.
 PlantUML syntax and visual inspection remain separate checks.
 """
 
 from collections import Counter
 import argparse
+from html.parser import HTMLParser
 from pathlib import Path
 import re
 import subprocess
@@ -77,7 +79,7 @@ def check_diagrams(errors):
 
 def check_links(errors):
     """Check local Markdown/image links and anchors throughout the guides and READMEs."""
-    documents = [DOCS / "DeveloperGuide.md", DOCS / "UserGuide.md"]
+    documents = [DOCS / "DeveloperGuide.md", DOCS / "UserGuide.md", DOCS / "AboutUs.md"]
     documents += sorted(DIAGRAMS.rglob("*.md"))
     documents += sorted((DOCS / "team").glob("*.md"))
     count = 0
@@ -98,16 +100,69 @@ def check_links(errors):
     return count
 
 
+class ExportedHtml(HTMLParser):
+    """Collect actual HTML targets and links instead of guessing rendered IDs from Markdown."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.ids = Counter()
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        if values.get("id"):
+            self.ids[values["id"]] += 1
+        if tag == "a":
+            if values.get("name") and values.get("name") != values.get("id"):
+                self.ids[values["name"]] += 1
+            if "href" in values:
+                self.links.append(values["href"])
+
+
+def check_exported_html(path, errors):
+    """Verify fragment links within an exported document, including same-file relative links."""
+    document = Path(path).resolve()
+    parser = ExportedHtml()
+    try:
+        parser.feed(document.read_text(encoding="utf-8"))
+        parser.close()
+    except (OSError, UnicodeError) as error:
+        errors.append(f"{document}: could not read exported HTML: {error}")
+        return 0
+    for anchor, count in parser.ids.items():
+        if count > 1:
+            errors.append(f"{document}: duplicate exported HTML anchor #{anchor}")
+    checked = 0
+    for link in parser.links:
+        try:
+            url = urlsplit(link)
+        except ValueError as error:
+            errors.append(f"{document}: invalid exported HTML link {link!r}: {error}")
+            continue
+        if url.scheme or url.netloc or not url.fragment:
+            continue
+        target = (document.parent / unquote(url.path)).resolve() if url.path else document
+        if target != document:
+            continue
+        checked += 1
+        if unquote(url.fragment) not in parser.ids:
+            errors.append(f"{document}: missing exported HTML anchor #{unquote(url.fragment)}")
+    return checked
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plantuml-jar", type=Path,
                         help="Also compare SVG embedded sources using this local renderer and Java 25.")
+    parser.add_argument("--html", type=Path, action="append", default=[], metavar="PATH",
+                        help="Check actual in-document links in this exported HTML file; may be repeated.")
     options = parser.parse_args()
     if options.plantuml_jar is not None and not options.plantuml_jar.is_file():
         parser.error("--plantuml-jar must name an existing local JAR")
     errors = []
     sources, styles = check_diagrams(errors)
     links = check_links(errors)
+    html_links = sum(check_exported_html(path, errors) for path in options.html)
     metadata_count = 0
     missing_metadata = 0
     if options.plantuml_jar is not None and not errors:
@@ -144,6 +199,10 @@ def main():
         print("\n".join(errors), file=sys.stderr)
         return 1
     print(f"Verified {sources} source/SVG pairs, {styles} included styles, and {links} local links/anchors.")
+    if options.html:
+        print(f"Verified {html_links} in-document links in {len(options.html)} exported HTML files.")
+    else:
+        print("Rendered HTML not checked; use --html PATH after export to verify actual navigation targets.")
     if options.plantuml_jar is not None:
         print(f"All {metadata_count} available SVG embedded sources match their PlantUML sources.")
         if missing_metadata:
