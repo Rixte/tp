@@ -8,7 +8,7 @@ The [Developer Guide](../DeveloperGuide.md) embeds the checked-in SVGs directly.
 | Contributor or feature | Sources and rendering instructions | Matching SVG folder | Pairs |
 | --- | --- | --- | --- |
 | oilybikechain: groceries, nutrition, warnings, diagnostics | [oilybikechain](oilybikechain/README.md) | [images/oilybikechain](../images/oilybikechain) | 14 |
-| GauthamNandi: dated meal recording, viewing, corrections and deletion | [record-meal](record-meal/README.md) | [images/record-meal](../images/record-meal) | 6 |
+| GauthamNandi: dated meal recording, viewing, corrections and deletion | [gauthamnandi](gauthamnandi/README.md) | [images/record-meal](../images/gauthamnandi) | 6 |
 | neil0618: listing recipes | [list-recipes](neil0618/list-recipes/README.md) | [images/neil0618/list-recipes](../images/neil0618/list-recipes) | 3 |
 | neil0618: deleting recipes | [delete-recipe](neil0618/delete-recipe/README.md) | [images/neil0618/delete-recipe](../images/neil0618/delete-recipe) | 3 |
 | neil0618: nutrition targets | [targets](neil0618/targets/README.md) | [images/neil0618/targets](../images/neil0618/targets) | 6 |
@@ -33,7 +33,7 @@ plus this documentation change. This completes the technical review requested by
 
 - **GauthamNandi:** [merged PR #134](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/134)
   explicitly confirms organisation, source/SVG pairs, links and implementation checks.
-  The established `record-meal` folder is retained.
+  The meal-recording diagrams are organised under `gauthamnandi`.
 - **neil0618:** [merged PR #139](https://github.com/AY2627S1-CS2113-W13-4/tp/pull/139)
   organises all 12 diagrams under `neil0618/`, updates includes and incoming links,
   and integrates the no-op target-setting outcome. This review rechecks those paths.

@@ -1591,9 +1591,9 @@ holds meals the user intends to eat, and the log holds meals the user has eaten.
 
 The class diagrams separate command collaborators from stored model relationships.
 
-![Meal-recording commands and collaborators.](images/record-meal/classes.svg)
+![Meal-recording commands and collaborators.](images/gauthamnandi/classes.svg)
 
-![Meal-recording model relationships.](images/record-meal/model-classes.svg)
+![Meal-recording model relationships.](images/gauthamnandi/model-classes.svg)
 
 *Only members relevant to this enhancement are shown. Solid arrows are navigable
 associations with private role names and multiplicities; dashed arrows with an open head show
@@ -1626,11 +1626,11 @@ Separate sequence diagrams show parsing and execution at a readable size. The pa
 follows the successful parsing of `record-meal 2`; command dispatch is condensed into the parser
 lifeline.
 
-![Parsing a valid record-meal command.](images/record-meal/record-meal-parsing.svg)
+![Parsing a valid record-meal command.](images/gauthamnandi/record-meal-parsing.svg)
 
 The execution diagram starts with the command returned by parsing and follows its successful execution.
 
-![Recording and displaying the selected meal.](images/record-meal/record-meal.svg)
+![Recording and displaying the selected meal.](images/gauthamnandi/record-meal.svg)
 
 *Parsing returns a command without reading application data, and the execution diagram refers to it
 with a `ref` frame. The inherited confirmation step is omitted because the command returns an empty
@@ -1653,7 +1653,7 @@ Recording a meal needs no confirmation: it is quick to repeat, and it changes on
 
 #### Viewing recorded meals and totals
 
-![Sequence for viewing recorded meals.](images/record-meal/view-meals.svg)
+![Sequence for viewing recorded meals.](images/gauthamnandi/view-meals.svg)
 
 *Parsing mirrors `record-meal` and is omitted. The sequence follows a non-empty log; the
 empty-log result is described below.*
@@ -1685,7 +1685,7 @@ The recoverable errors reuse the existing path: `Parser` or the command throws `
 `MishMash.executeCommand` catches it, displays the message, and prompts for another command.
 The activity diagram shows where `record-meal` can be rejected; every rejection happens before the log changes.
 
-![Activity diagram of the record-meal workflow.](images/record-meal/flow.svg)
+![Activity diagram of the record-meal workflow.](images/gauthamnandi/flow.svg)
 
 *Diamonds are decisions, with their guards in square brackets. The first decision is made by
 `Parser`, the other two by `RecordMealCommand`.*
@@ -1739,8 +1739,8 @@ UC11, UC12, UC19 and UC20.
 #### Diagram maintenance
 
 The six editable diagram sources are under
-[`docs/diagrams/record-meal`](diagrams/record-meal/README.md). Rendered SVGs are checked in under
-`docs/images/record-meal` so the diagrams display without a plugin. The source README gives the
+[`docs/diagrams/gauthamnandi`](diagrams/gauthamnandi/README.md). Rendered SVGs are checked in under
+`docs/images/gauthamnandi` so the diagrams display without a plugin. The source README gives the
 regeneration commands. Check every depicted call, branch and message against the code after any change, and
 update the sources and images together.
 
