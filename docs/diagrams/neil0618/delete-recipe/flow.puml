@@ -16,11 +16,11 @@ if (Valid\nINDEX?) then ([no])
 else ([yes])
 endif
 if (INDEX in\nrange?) then ([no])
-  :confirmationPrompt rejects;\nMishMash shows all formats;
+  :confirmationPrompt rejects;\nShow the delete-recipe format;
   stop
 else ([yes])
 endif
-:MishMash asks\nAre you sure? (y/n);
+:MishMash asks for\ndelete confirmation;
 if (Answer is\ny or yes?) then ([yes])
   :execute removes\nthe recipe;
   :Show its name and the\nrecipes remaining;

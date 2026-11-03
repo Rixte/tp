@@ -205,8 +205,9 @@ public class MishMash {
                 flushPendingChanges();
                 return;
             }
-            String commandLine = nextLine.get().trim();
-            if (commandLine.equals("bye")) {
+            // Keep the original text for validation: trim() would silently remove NUL and other controls.
+            String commandLine = nextLine.get();
+            if (commandLine.matches("\\s*bye\\s*")) {
                 LOGGER.fine("Exit requested with bye");
                 flushPendingChanges();
                 output.println(CliFormatter.goodbye());
@@ -220,7 +221,7 @@ public class MishMash {
      * Executes one command and displays recoverable errors so the session can continue.
      * A command that cannot be undone, such as a delete, is only run after the user agrees.
      *
-     * @param input The trimmed command input.
+     * @param input The original command input, validated by the parser before trimming.
      */
     private void executeCommand(String input) {
         try {

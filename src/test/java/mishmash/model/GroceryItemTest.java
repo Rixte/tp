@@ -44,6 +44,10 @@ class GroceryItemTest {
                         () -> new GroceryItem("Rice", BigDecimal.ONE, ""))),
                 DynamicTest.dynamicTest("blank unit", () -> assertThrows(IllegalArgumentException.class,
                         () -> new GroceryItem("Rice", BigDecimal.ONE, " \t "))),
+                DynamicTest.dynamicTest("Unicode blank name", () -> assertThrows(IllegalArgumentException.class,
+                        () -> new GroceryItem("\u2003\u3000", BigDecimal.ONE, "g"))),
+                DynamicTest.dynamicTest("Unicode blank unit", () -> assertThrows(IllegalArgumentException.class,
+                        () -> new GroceryItem("Rice", BigDecimal.ONE, "\u2003\u3000"))),
                 DynamicTest.dynamicTest("negative quantity", () -> assertThrows(IllegalArgumentException.class,
                         () -> new GroceryItem("Rice", new BigDecimal("-0.00001"), "g"))));
     }

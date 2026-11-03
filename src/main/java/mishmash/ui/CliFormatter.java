@@ -8,6 +8,7 @@ import mishmash.command.CommandResult;
 /**
  * Formats console messages with MishMash's ANSI kitchen theme.
  * Terminal styling is kept here so commands and models remain independent of console concerns.
+ * Printable Unicode is preserved, and untrusted controls are escaped before application styling is added.
  */
 public final class CliFormatter {
     private static final String ESCAPE = "\u001B[";
@@ -55,7 +56,7 @@ public final class CliFormatter {
     }
 
     /**
-     * Returns a personalized greeting without changing the supplied name.
+     * Returns a personalized greeting with terminal controls displayed as escaped text.
      *
      * @param name The name entered by the user.
      * @return The ANSI-styled greeting.
@@ -112,7 +113,7 @@ public final class CliFormatter {
      */
     public static String error(String explanation) {
         Objects.requireNonNull(explanation, "explanation");
-        return status("ERROR", BOLD_RED) + " Error: " + explanation;
+        return status("ERROR", BOLD_RED) + " Error: " + escapeControls(explanation);
     }
 
     /**
@@ -137,7 +138,7 @@ public final class CliFormatter {
         String conciseQuestion = question.endsWith(" (y/n)")
                 ? question.substring(0, question.length() - " (y/n)".length())
                 : question;
-        return status("CONFIRM", BOLD_RED) + " " + conciseQuestion + " " + style("[y/N]:", YELLOW);
+        return status("CONFIRM", BOLD_RED) + " " + escapeControls(conciseQuestion) + " " + style("[y/N]:", YELLOW);
     }
 
     /**
@@ -193,12 +194,7 @@ public final class CliFormatter {
      * Adds one semantic status label to the first line of a multiline response.
      */
     private static String addStatus(String label, String color, String feedback) {
-        int lineEnd = feedback.indexOf(System.lineSeparator());
-        if (lineEnd < 0) {
-            return status(label, color) + " " + feedback;
-        }
-        return status(label, color) + " " + feedback.substring(0, lineEnd)
-                + feedback.substring(lineEnd);
+        return status(label, color) + " " + escapeControls(feedback);
     }
 
     /**
@@ -212,6 +208,25 @@ public final class CliFormatter {
      * Wraps text in one ANSI style and resets the terminal immediately afterward.
      */
     private static String style(String text, String style) {
-        return style + text + RESET;
+        return style + escapeControls(text) + RESET;
+    }
+
+    /**
+     * Makes untrusted terminal controls visible while preserving Unicode, tabs and multiline output.
+     * Application-owned ANSI styling is added only after this escaping step.
+     */
+    private static String escapeControls(String text) {
+        StringBuilder escaped = new StringBuilder(text.length());
+        for (int index = 0; index < text.length(); index++) {
+            char character = text.charAt(index);
+            boolean isLineBreak = character == '\n'
+                    || (character == '\r' && index + 1 < text.length() && text.charAt(index + 1) == '\n');
+            if (Character.isISOControl(character) && character != '\t' && !isLineBreak) {
+                escaped.append(String.format(Locale.ROOT, "\\u%04X", (int) character));
+            } else {
+                escaped.append(character);
+            }
+        }
+        return escaped.toString();
     }
 }

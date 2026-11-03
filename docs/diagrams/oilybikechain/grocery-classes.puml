@@ -14,9 +14,11 @@ class Parser {
 }
 interface Command <<interface>> {
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(...): CommandResult
 }
 class GenerateListCommand {
   + execute(recipeBook: RecipeBook): String
+  + executeWithResult(...): CommandResult
 }
 class GroceryListGenerator {
   + generateForPlan(plan: MealPlan): List<GroceryItem>
@@ -34,5 +36,6 @@ GenerateListCommand ..> GroceryListGenerator : creates
 GroceryListGenerator ..> MealPlan : reads
 legend bottom
   Only feature-relevant members are shown.
+  ... omits the recipeBook parameter.
 endlegend
 @enduml

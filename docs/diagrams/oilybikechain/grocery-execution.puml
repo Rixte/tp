@@ -1,15 +1,17 @@
 @startuml
 !include ../rixte/shortfall/style.iuml
-title generate-list: aggregate and publish a completed snapshot
+skinparam defaultFontSize 16
+skinparam maxMessageSize 190
+skinparam sequenceReferenceBackgroundColor white
+title generate-list: aggregate and publish\na completed snapshot
 autonumber
 
-participant "mishMash:MishMash" as App
-participant "command:GenerateListCommand" as Command
-participant "generator:GroceryListGenerator" as Generator
-participant "activePlan:ActiveMealPlan" as Active
-participant "plan:MealPlan" as Plan
+participant ":MishMash" as App
+participant ":GenerateListCommand" as Command
+participant ":ActiveMealPlan" as Active
+participant ":GroceryListGenerator" as Generator
 
-App -> Command : execute(recipeBook)
+App -> Command : executeWithResult(...)
 activate Command
 Command -> Active : get()
 activate Active
@@ -22,8 +24,8 @@ Generator --> Command : generator
 deactivate Generator
 Command -> Generator : generateForPlan(plan)
 activate Generator
-ref over Generator, Plan
-  Collect scaled ingredients from each PlannedMeal
+ref over Generator
+  Collect scaled ingredients
 end ref
 Generator --> Command : groceries
 deactivate Generator
@@ -31,6 +33,6 @@ Command -> Active : setGroceryList(groceries)
 activate Active
 Active --> Command : void
 deactivate Active
-Command --> App : generation confirmation
+Command --> App : result (DONE)
 deactivate Command
 @enduml

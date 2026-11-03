@@ -153,6 +153,8 @@ class JsonSessionStorageTest {
                 template.replace("\"quantity\" : \"100.00100\"", "\"quantity\" : \"0\""),
                 template.replace("\"calories\" : 100", "\"calories\" : 2147483648"),
                 template.replace("\"name\" : \"Bowl\"", "\"name\" : \"  \""),
+                template.replace("\"unit\" : \"g\"", "\"unit\" : \"\\u2003\""),
+                template.replace("\"name\" : \"Rice\"", "\"name\" : \"\\u3000\""),
                 template.replace("100.00100", "1E+2147483647"),
                 template.replace("\"schemaVersion\"", "\"unexpected\""))
                 .map(json -> DynamicTest.dynamicTest("reject malformed field", () -> {

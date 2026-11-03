@@ -24,8 +24,8 @@ public class GroceryItem {
         this.name = Objects.requireNonNull(name, "name").trim();
         this.quantity = Objects.requireNonNull(quantity, "quantity");
         this.unit = Objects.requireNonNull(unit, "unit").trim();
-        if (this.name.isEmpty() || this.unit.isEmpty() || quantity.signum() < 0) {
-            throw new IllegalArgumentException("Name and unit must be non-empty and quantity must not be negative.");
+        if (this.name.isBlank() || this.unit.isBlank() || quantity.signum() < 0) {
+            throw new IllegalArgumentException("Name and unit must not be blank and quantity must not be negative.");
         }
     }
 

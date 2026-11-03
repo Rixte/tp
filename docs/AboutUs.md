@@ -1,21 +1,51 @@
-# About us
+# About Us
 
-Display |  Name   |            Github Profile             | Portfolio 
---------|:-------:|:-------------------------------------:|:---------:
+Meet the team behind MishMash, a Java command-line meal-prep planner.
+
+<table>
+<thead>
+<tr><th scope="col">Photo</th><th scope="col">Name</th><th scope="col">GitHub Profile</th><th scope="col">Project Portfolio</th></tr>
+</thead>
+<tbody>
 <!-- @@author neil0618 -->
-<img src="https://upload.wikimedia.org/wikipedia/en/b/b1/Portrait_placeholder.png" alt="Portrait placeholder" width="100" height="150"> |    Neil    | [Github](https://github.com/neil0618) | [Portfolio](team/neil0618.md)
+<tr>
+<td><img src="https://github.com/neil0618.png?size=96" width="72" height="72" alt="GitHub avatar of Neil"></td>
+<td>Neil</td>
+<td><a href="https://github.com/neil0618">@neil0618</a></td>
+<td><a href="https://ay2627s1-cs2113-w13-4.github.io/tp/team/neil0618.html">Neil's portfolio</a></td>
+</tr>
 <!-- @@author -->
 <!-- @@author GauthamNandi -->
-<img src="https://upload.wikimedia.org/wikipedia/en/b/b1/Portrait_placeholder.png" alt="Portrait placeholder" width="100" height="150"> | Gautham | [Github](https://github.com/GauthamNandi) | [Portfolio](team/gauthamnandi.md)
+<tr>
+<td><img src="https://github.com/GauthamNandi.png?size=96" width="72" height="72" alt="GitHub avatar of Gautham"></td>
+<td>Gautham</td>
+<td><a href="https://github.com/GauthamNandi">@GauthamNandi</a></td>
+<td><a href="https://ay2627s1-cs2113-w13-4.github.io/tp/team/gauthamnandi.html">Gautham's portfolio</a></td>
+</tr>
 <!-- @@author -->
 <!-- @@author Rixte -->
-<img src="https://upload.wikimedia.org/wikipedia/en/b/b1/Portrait_placeholder.png" alt="Portrait placeholder" width="100" height="150"> | Samantha Sam | [Github](https://github.com/Rixte) | [Portfolio](team/rixte.md)
+<tr>
+<td><img src="https://github.com/Rixte.png?size=96" width="72" height="72" alt="GitHub avatar of Samantha Sam"></td>
+<td>Samantha Sam</td>
+<td><a href="https://github.com/Rixte">@Rixte</a></td>
+<td><a href="https://ay2627s1-cs2113-w13-4.github.io/tp/team/rixte.html">Samantha's portfolio</a></td>
+</tr>
 <!-- @@author -->
 <!-- @@author peilingggg -->
-<img src="https://upload.wikimedia.org/wikipedia/en/b/b1/Portrait_placeholder.png" alt="Portrait placeholder" width="100" height="150"> | Pei Ling | [Github](https://github.com/peilingggg) | [Portfolio](team/peilingggg.md)
+<tr>
+<td><img src="https://github.com/peilingggg.png?size=96" width="72" height="72" alt="GitHub avatar of Pei Ling"></td>
+<td>Pei Ling</td>
+<td><a href="https://github.com/peilingggg">@peilingggg</a></td>
+<td><a href="https://ay2627s1-cs2113-w13-4.github.io/tp/team/peilingggg.html">Pei Ling's portfolio</a></td>
+</tr>
 <!-- @@author -->
 <!-- @@author oilybikechain -->
-<img src="https://upload.wikimedia.org/wikipedia/en/b/b1/Portrait_placeholder.png" alt="Portrait placeholder" width="100" height="150"> | Justin Lee |   [Github](https://github.com/oilybikechain)   | [Portfolio](team/oilybikechain.md)
+<tr>
+<td><img src="https://github.com/oilybikechain.png?size=96" width="72" height="72" alt="GitHub avatar of Justin Lee"></td>
+<td>Justin Lee</td>
+<td><a href="https://github.com/oilybikechain">@oilybikechain</a></td>
+<td><a href="https://ay2627s1-cs2113-w13-4.github.io/tp/team/oilybikechain.html">Justin's portfolio</a></td>
+</tr>
 <!-- @@author -->
-
-Portrait placeholder: [Wikipedia](https://en.wikipedia.org/wiki/File:Portrait_placeholder.png), available under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+</tbody>
+</table>
