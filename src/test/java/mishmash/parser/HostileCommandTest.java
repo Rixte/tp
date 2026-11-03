@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -117,7 +118,8 @@ class HostileCommandTest {
         state.getActiveMealPlan().setGenerated(new MealPlan(List.of(day, day)),
                 new GeneratePlanRequest(2, NutritionTargets.none()),
                 Optional.of(List.of(new GroceryItem("Rice", new BigDecimal("6"), "g"))));
-        state.getMealLog().record(state.getRecipeBook().getRecipes().getFirst());
+        state.getMealLog().record(new MealEntry(state.getRecipeBook().getRecipes().getFirst(),
+                LocalDate.of(2024, 1, 2), 1));
         return state;
     }
 }

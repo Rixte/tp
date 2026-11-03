@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import verify
 
@@ -55,6 +56,24 @@ class ExportedHtmlTests(unittest.TestCase):
     def test_malformed_url_is_reported_without_raising(self):
         _, errors = self.check_html('<a href="https://[invalid">Broken URL</a>')
         self.assertTrue(any("invalid exported HTML link" in e for e in errors))
+
+    def test_source_html_links_check_local_files_alongside_markdown_links(self):
+        root = Path(self.directory.name)
+        docs = root / "docs"
+        docs.mkdir()
+        for name in ("DeveloperGuide.md", "UserGuide.md"):
+            (docs / name).write_text("", encoding="utf-8")
+        (docs / "AboutUs.md").write_text('<table><tr><td><a href="team/member.md">Portfolio</a>'
+                                        '</td></tr></table>', encoding="utf-8")
+        with patch.multiple(verify, ROOT=root, DOCS=docs, DIAGRAMS=docs / "diagrams"):
+            errors = []
+            self.assertEqual(1, verify.check_links(errors))
+            self.assertTrue(any("missing link team/member.md" in error for error in errors))
+            (docs / "team").mkdir()
+            (docs / "team/member.md").write_text("# Portfolio\n", encoding="utf-8")
+            errors = []
+            self.assertEqual(1, verify.check_links(errors))
+            self.assertEqual([], errors)
 
     @unittest.skipUnless(shutil.which("pandoc"), "Pandoc is required for the export regression")
     def test_real_pandoc_export_detects_missing_blank_line_and_accepts_fix(self):

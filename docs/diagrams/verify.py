@@ -86,7 +86,10 @@ def check_links(errors):
     for document in documents:
         text = document.read_text(encoding="utf-8")
         text = re.sub(r"^```.*?^```[^\n]*", "", text, flags=re.MULTILINE | re.DOTALL)
-        for link in re.findall(r"\]\(([^)\s]+)\)", text):
+        html = ExportedHtml()
+        html.feed(text)
+        html.close()
+        for link in re.findall(r"\]\(([^)\s]+)\)", text) + html.links:
             url = urlsplit(link)
             if url.scheme or url.netloc:
                 continue
