@@ -1,21 +1,51 @@
-# MishMash User Guide
+# MishMash The Meal Prep Planner User Guide
 
 MishMash is a command-line meal prep planner for people who prepare meals in advance and prefer typing commands. Add your recipes, use them to plan meals, and check the ingredients you need to buy.
 
 **Start Here:** [Set up and launch](#quick-start) · [Find a command](#command-summary) · [View meals](#viewing-a-meal-plan) · [Check nutrition](#checking-nutrition-shortfalls) · [View groceries](#viewing-a-grocery-list) · [Record meals](#recording-a-meal) · [Fix a problem](#troubleshooting)
 
-**Version covered:** This guide describes the current source on the [team repository's `master` branch](https://github.com/AY2627S1-CS2113-W13-4/tp). Build that version to use all features below, including interactive command entry, automatic data retention, meal replacement, and dated meal records with corrections. An older downloaded JAR may have fewer features.
+**Version covered:** MishMash **v2.1**. All features described below are implemented, including interactive command entry, automatic data retention, meal replacement, and dated meal records with corrections. Use the matching v2.1 JAR, or build it using the instructions below.
 
 
 ## Contents
 
 - [Quick Start](#quick-start)
-- [Interactive Command Entry](#interactive-command-entry)
+  - [Set Up and Launch](#set-up-and-launch)
+  - [Interactive Command Entry](#interactive-command-entry)
+  - [Try Your First Command](#try-your-first-command)
+  - [The Meal Prep Workflow](#the-meal-prep-workflow)
 - [Features](#features)
-- [Data Retention](#data-retention)
+  - [Reading Command Formats](#reading-command-formats)
+  - [Viewing available commands: `help`](#viewing-available-commands-help)
+  - [Adding a Recipe: `add-recipe`](#adding-a-recipe)
+  - [Deleting a Recipe: `delete-recipe`](#deleting-a-recipe)
+  - [Listing Recipes: `list-recipes`](#listing-recipes)
+  - [Generating a Meal Plan: `generate-plan`](#generating-a-meal-plan)
+  - [Generating a Grocery List: `generate-list`](#generating-a-grocery-list)
+  - [Viewing a Grocery List: `view-list`](#viewing-a-grocery-list)
+  - [Viewing a Meal Plan: `view-plan`](#viewing-a-meal-plan)
+    - [Nutrition Target Warnings](#nutrition-target-warnings)
+  - [Adjusting Planned Portions: `adjust-portion`](#adjusting-a-planned-meals-portions)
+  - [Customising Planned Ingredients: `customize-meal`](#customising-a-planned-meals-ingredients)
+  - [Replacing a Planned Meal: `replace-meal`](#replacing-a-planned-meal)
+  - [Setting Dietary Preferences: `set-diet`](#setting-dietary-preferences)
+  - [Clearing Dietary Preferences: `clear-diet`](#clearing-dietary-preferences-and-restrictions)
+  - [Viewing Dietary Preferences: `view-diet`](#viewing-dietary-preferences)
+  - [Setting Daily Targets: `set-targets`](#setting-daily-targets)
+  - [Viewing Daily Targets: `view-targets`](#viewing-daily-targets)
+  - [Recording a Meal: `record-meal`](#recording-a-meal)
+  - [Viewing Recorded Meals: `view-meals`](#viewing-recorded-meals)
+  - [Correcting a Recorded Meal: `edit-meal`](#correcting-a-recorded-meal)
+  - [Deleting a Recorded Meal: `delete-meal`](#deleting-a-recorded-meal)
+  - [Checking Nutrition Shortfalls: `check-shortfall`](#checking-nutrition-shortfalls)
+  - [Editing a Recipe: `edit-recipe`](#editing-a-recipe)
+  - [Confirming Plan Changes](#confirming-plan-changes)
+  - [Resetting a Meal Plan: `reset-plan`](#resetting-a-meal-plan)
+  - [Data Retention](#data-retention)
+  - [Exiting MishMash: `bye`](#exiting-mishmash)
 - [Frequently Asked Questions](#frequently-asked-questions)
 - [Known Issues](#known-issues)
-- [Troubleshooting](#troubleshooting)
+  - [Troubleshooting](#troubleshooting)
 - [Command Summary](#command-summary)
 
 ## Quick Start
@@ -24,7 +54,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 ### Set Up and Launch
 
 1. **Install Java 25.** Use Java 25 for this project.
-2. **Obtain `MishMash.jar`.** A JAR is the file used to run the application. Downloads are available on the team's [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases). To use the current source described in this guide, download or check out the latest team `master` source, open a terminal in its folder, and build with Java 25:
+2. **Obtain the v2.1 `MishMash.jar`.** A JAR is the file used to run the application. Use the v2.1 JAR supplied for the final product; published downloads are on the team's [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases). Alternatively, build the implementation covered by this guide from the [team repository's `master` branch](https://github.com/AY2627S1-CS2113-W13-4/tp): open a terminal in the downloaded or checked-out source folder and build with Java 25:
 
    - Windows: `.\gradlew.bat shadowJar`
    - macOS or Linux: `./gradlew shadowJar`
@@ -50,7 +80,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 
      Check that the version starts with `25`.
 
-   - Launch the JAR using `java -jar "{file_name}"`, replacing `{file_name}` with its actual filename. For the current build:
+   - Launch the JAR using `java -jar "{file_name}"`, replacing `{file_name}` with its actual filename. For the v2.1 JAR named `MishMash.jar`:
 
      ```text
      java -jar "MishMash.jar"
@@ -66,22 +96,22 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 ### Interactive Command Entry
 
 MishMash provides editing shortcuts when launched in a supported terminal with
-`java -jar "MishMash.jar"`. Use a build of the current source as described above.
+`java -jar "MishMash.jar"` using the JAR obtained in [Set Up and Launch](#set-up-and-launch).
 
 | Key | Action |
 | --- | --- |
 | **Tab** | Complete a command name or suggest argument prefixes for that command. |
 | **Up / Down** | Recall commands entered during the current session. |
 | **Left / Right**, **Home / End**, **Backspace / Delete** | Edit the current line before submitting it. |
-| **Ctrl+C** | Discard the current command line. At a confirmation prompt, cancel the pending action. |
-| **Ctrl+D** on an empty line | At the command prompt, exit. At a confirmation prompt, cancel the pending action and return to the command prompt. |
+| **Ctrl+C** | Discard the current command line. At a confirmation prompt, cancel the action being confirmed. |
+| **Ctrl+D** on an empty line | At the command prompt, exit. At a confirmation prompt, cancel the action and return to the command prompt. |
 
 For example, type `check-sh` and press **Tab** to complete `check-shortfall`.
 Then type `ca` and press **Tab** to insert `cal/`; enter the target immediately after the slash.
 For `generate-plan `, **Tab** suggests prefixes such as `d/`, `cal/`, and `p/`.
 Completion does not run a command: press **Enter** to submit it.
 
-History is kept in memory for one session. Names and confirmation answers are not added to it.
+History is kept in memory for one session. Your greeting name and confirmation answers are not added to it.
 Tab completion is disabled when entering your name or answering a confirmation question. Completion suggests
 command names and prefixes, rather than recipe names, indexes, dates, or values. Already entered scalar
 prefixes are omitted from later suggestions; repeatable `i/` fields remain available.
@@ -156,6 +186,12 @@ entry with `delete-meal`. Meal numbers come from `view-meals`; recipe numbers co
 - Separate arguments with spaces. Names may contain spaces without quotation marks, for example `n/Chicken and Rice`.
 - For recipe ingredients, use `NAME:QUANTITY_UNIT`, such as `Chicken Breast:200g` or `Olive Oil:2.5ml`. Repeat `i/` for each ingredient.
 - `/` is reserved for argument prefixes and is not accepted inside recipe field values.
+- An ellipsis (`...`) after an ingredient means that you can repeat that field. Do not type the ellipsis.
+- A vertical bar means an alternative: `[cal/CALORIES|none]` accepts, for example, `cal/2000` or `cal/none`.
+- Put a recipe index or recorded-meal number first when the format shows one. Prefixed fields can then appear in any order unless the command states otherwise.
+- Commands that take no arguments reject extra text. For example, use `help`, not `help now`, and enter `bye` on its own.
+- Examples show terminal text without its colour codes. Some blocks show only the relevant result; a block containing `mishmash >` also includes commands you type.
+- When copying a visually wrapped command from a PDF, check that spaces between its arguments are retained and submit it as one line.
 <!-- @@author -->
 
 Printable Unicode, including accented letters, non-Latin names, and emoji, is preserved in names.
@@ -192,6 +228,8 @@ java -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -jar MishMash.jar
 
 <!-- @@author peilingggg -->
 ### Viewing available commands: `help`
+
+**Format:** `help`
 
 Type `help` to see every supported command, its purpose, and its syntax. This includes
 `add-recipe`, `list-recipes`, `edit-recipe`, `delete-recipe`, `generate-plan`, `view-plan`, `adjust-portion`,
@@ -292,7 +330,7 @@ delete-recipe INDEX
 
 **Example:**
 
-In a fresh session, after entering your name, enter these commands one line at a time:
+Start MishMash in a new empty working directory. After entering your name, enter these commands one line at a time:
 
 ```text
 add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken Breast:200g i/White Rice:150g i/Olive Oil:10ml
@@ -378,7 +416,7 @@ list-recipes [INDEX]
 
 **Example:**
 
-In a fresh session, after entering your name, enter these commands one line at a time:
+Start MishMash in a new empty working directory. After entering your name, enter these commands one line at a time:
 
 ```text
 add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken Breast:200g i/White Rice:150g i/Olive Oil:10ml food/poultry
@@ -581,7 +619,7 @@ Retry without arguments. Invalid syntax does not change an existing grocery list
 
 #### Ingredient Combining Example
 
-In a fresh session, enter the following commands after supplying your name:
+Start MishMash in a new empty working directory, then enter the following commands after supplying your name:
 
 ```text
 add-recipe n/A cal/500 p/20 c/50 f/10 i/Rice:0.1g
@@ -792,7 +830,8 @@ in the recipe book remains unchanged. Nutrition shown by `view-plan`, nutrition 
 adjust-portion d/DAY m/MEAL portions/COUNT
 ```
 
-**Example:**
+**Example:** Start with the unmodified plan from the [two-day example](#checking-nutrition-shortfalls),
+which has one portion per meal. Run `generate-list` first, then enter:
 
 ```text
 adjust-portion d/1 m/2 portions/2
@@ -804,6 +843,9 @@ adjust-portion d/1 m/2 portions/2
 [DONE] Meal 2 on Day 1 updated to 2 portions.
 The previous grocery list was cleared. Run 'generate-list' to update it.
 ```
+
+If no grocery list existed, the second line instead reads
+`Run 'generate-list' to create groceries for the updated plan.`
 
 The next `view-plan d/1` marks that occurrence as `[2 portions]` and displays doubled nutrition for it.
 The same recipe on another day or at another meal number keeps its own portion count.
@@ -847,7 +889,8 @@ customize-meal d/DAY m/MEAL i/INGREDIENT:QUANTITYUNIT [i/INGREDIENT:QUANTITYUNIT
 Every `i/` entry becomes part of the complete replacement list. Omitted source ingredients are removed from
 that occurrence.
 
-**Example:**
+**Example:** Independently start with the unmodified plan from the [two-day example](#checking-nutrition-shortfalls),
+with no dietary restrictions. Run `generate-list` first, then enter:
 
 ```text
 customize-meal d/1 m/2 i/Brown Rice:125.5g i/Tofu:200g
@@ -860,6 +903,9 @@ customize-meal d/1 m/2 i/Brown Rice:125.5g i/Tofu:200g
 Its source recipe and nutrition values are unchanged.
 The previous grocery list was cleared. Run 'generate-list' to update it.
 ```
+
+If no grocery list existed, the last line instead reads
+`Run 'generate-list' to create groceries for the updated plan.`
 
 The next `view-plan` marks the occurrence as `[custom ingredients]`. `generate-list` uses the replacement;
 `list-recipes` still shows the unchanged source recipe.
@@ -885,10 +931,11 @@ This meal keeps its source recipe's food categories; verify the replacement your
   unclassified customisation remains. Current complete-name ingredient exclusions are checked before a change
   is accepted.
 - Supplying ingredients exactly equal to the source recipe restores that occurrence to the source list.
-  Ingredient order, name capitalization, and unit capitalization are significant because grocery aggregation
+  Ingredient order, name capitalisation, and unit capitalisation are significant because grocery aggregation
   also treats those values as distinct. Reordering or recasing therefore creates a customisation and clears
   stale groceries. Decimal quantities that differ only in scale, such as `100` and `100.0`, remain equal.
 - A successful change clears generated groceries because their quantities are stale. Run `generate-list` again.
+- Supplying the occurrence's current ingredients again reports `[NOTE]` and preserves the plan and groceries; no change is made.
 
 **Errors and Recovery:**
 
@@ -917,11 +964,20 @@ to find the number of the recipe you want.
 replace-meal d/DAY m/MEAL r/RECIPE_INDEX
 ```
 
-**Example:**
+**Example:** Start MishMash in a new empty working directory and enter these setup commands after your name:
 
 ```text
+add-recipe n/Rice cal/200 p/4 c/45 f/1 i/Rice:150g food/none
+add-recipe n/Pasta cal/400 p/12 c/80 f/3 i/Pasta:100g food/wheat,gluten
+add-recipe n/Beans cal/300 p/20 c/40 f/5 i/Beans:150g food/legume
+generate-plan d/1
+adjust-portion d/1 m/2 portions/2
+generate-list
 replace-meal d/1 m/2 r/3
 ```
+
+The portion adjustment ensures the replacement makes a change even if Meal 2 was already Beans.
+The output below is for the final `replace-meal` command.
 
 **Example Output:**
 
@@ -948,10 +1004,9 @@ The next `view-plan d/1` shows the new recipe at that position, and daily totals
   submitting it; any portion or ingredient customisation on that occurrence is replaced.
 - A successful change clears any generated grocery list because its quantities are stale. Run
   `generate-list` again before shopping.
-- Choosing the unedited recipe that is already there, at one portion and with its original ingredients, changes
-  nothing, preserves the grocery list, and reports `[NOTE]` instead of `[DONE]`. If that meal has extra portions
-  or customised ingredients, or the recipe was changed with `edit-recipe` after the plan was generated, the
-  command replaces the meal with the current recipe at one portion.
+- An unchanged replacement reports `[NOTE]` and preserves groceries. Extra portions, customised ingredients,
+  or an edited source recipe cause a replacement at one portion. A restored plan can also treat the same
+  recipe as a replacement; after restarting, check the response and regenerate groceries if they were cleared.
 
 **Errors and Recovery:**
 
@@ -1091,7 +1146,7 @@ Your grocery list has also been updated.
 
 **Example: Generate a Restricted Plan**
 
-In a fresh session, enter these commands one line at a time after entering your name:
+Start MishMash in a new empty working directory, then enter these commands one line at a time after entering your name:
 
 ```text
 add-recipe n/Rice cal/600 p/10 c/20 f/5 i/Rice:200g food/none
@@ -1219,7 +1274,7 @@ Supply at least one parameter, in any order. A nutrient you do not mention keeps
 
 **Example:**
 
-In a fresh session, after entering your name, enter these commands one line at a time:
+Start MishMash in a new empty working directory. After entering your name, enter these commands one line at a time:
 
 ```text
 set-targets cal/1500 p/80
@@ -1265,7 +1320,8 @@ They apply to the next 'generate-plan'; your current meal plan is unchanged.
 | `set-targets` with nothing after it | `[ERROR] Error: Supply at least one daily target to set or clear.` | Add at least one target, for example `set-targets cal/2000`. |
 | `set-targets cal/0`, `cal/-5`, `cal/abc`, or `cal/1.5` | `[ERROR] Error: Calories target (cal/) must be a positive whole number from 1 to 2147483647, or 'none'.` | Enter a positive whole number, or `none` to remove the target. The message names the nutrient you mistyped. |
 | `set-targets cal/` | `[ERROR] Error: Missing value after cal/` | Add a number or `none` after the slash. |
-| `set-targets x/5` or `set-targets 2000` | `[ERROR] Error: Unrecognised parameter: x/5` | Use only `cal/`, `p/`, `c/`, and `f/`. |
+| `set-targets x/5` | `[ERROR] Error: Unrecognised parameter: x/5` | Use only `cal/`, `p/`, `c/`, and `f/`. |
+| `set-targets 2000` | `[ERROR] Error: Unrecognised parameter: 2000` | Supply a prefix, for example `set-targets cal/2000`. |
 | `set-targets cal/1 cal/2` | `[ERROR] Error: Parameter cal/ was given more than once.` | Give each nutrient once. |
 
 Every error is followed by `Format: set-targets ...` and leaves your saved targets unchanged, because MishMash checks the whole command before saving anything. Enter the corrected command at the next prompt.
@@ -1310,7 +1366,7 @@ With no targets saved, `view-targets` replies:
 <!-- @@author GauthamNandi -->
 ### Recording a Meal
 
-Records a recipe as a meal you have eaten, so you can keep track of your actual food intake. Each time you record a meal, MishMash shows its calories and macronutrients for the servings you ate, its date, and the totals of everything you have recorded so far. Recording a meal does not change your recipes, meal plan, or grocery list.
+Records a recipe as a meal you have eaten, so you can keep track of your actual food intake. Each time you record a meal, MishMash shows its calories and macronutrients for the servings you ate, its date, and the totals of meals recorded on that date. Use `view-meals` for totals across every recorded date. Recording a meal does not change your recipes, meal plan, or grocery list.
 
 **Before You Start:** Add at least one recipe, then use `list-recipes` to see each recipe's number.
 
@@ -1323,12 +1379,12 @@ record-meal INDEX [date/YYYY-MM-DD] [s/SERVINGS]
 | Parameter | Meaning |
 | --- | --- |
 | `INDEX` | The number of the recipe you ate, as shown by `list-recipes`. The first recipe is number 1. |
-| `date/YYYY-MM-DD` | Optional. The date you ate the meal. It defaults to today and cannot be in the future. |
+| `date/YYYY-MM-DD` | Optional. The date you ate the meal, from `1900-01-01` through today. It defaults to today. |
 | `s/SERVINGS` | Optional. The number of whole servings you ate, from 1 to 100. It defaults to 1. |
 
 **Example:**
 
-In a fresh session, after entering your name, enter these commands one line at a time:
+Start MishMash in a new empty working directory. After entering your name, enter these commands one line at a time:
 
 ```text
 add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken Breast:200g i/White Rice:150g i/Olive Oil:10ml
@@ -1442,8 +1498,8 @@ Total for 2026-03-03: 900 kcal | Protein: 70g | Carbs: 120g | Fats: 16g
 
 | Situation or Input | Response | What to Do |
 | --- | --- | --- |
-| No meals recorded yet | `[NOTE] No meals recorded yet.` | Enter `record-meal 1` (or another recipe number), then try `view-meals` again. |
-| No meals on the chosen date | `[NOTE] No meals recorded on 2026-03-09.` | Check the date, or enter `view-meals` to see every meal. |
+| The entire log is empty, even when `date/` is supplied | `[NOTE] No meals recorded yet.` | Enter `record-meal 1` (or another recipe number), then try `view-meals` again. |
+| The log contains meals, but none on the chosen date | For `date/2026-03-09`: `[NOTE] No meals recorded on 2026-03-09.` | Check the date, or enter `view-meals` to see every meal. |
 | Other arguments, such as `view-meals 1` | `[ERROR] Error: view-meals accepts only an optional date/YYYY-MM-DD.` followed by `[TRY] Format: view-meals [date/YYYY-MM-DD]`. | Enter `view-meals`, or add one date. |
 
 
@@ -1520,7 +1576,18 @@ Total for 2026-03-03: 0 kcal | Protein: 0g | Carbs: 0g | Fats: 0g
 - Meals after the deleted one move up by one number, so check `view-meals` before deleting another.
 - Any answer other than `y` or `yes` cancels the deletion.
 
-**Errors and Recovery:** The errors match [`edit-meal`](#correcting-a-recorded-meal), and a number that does not exist is reported before you are asked to confirm.
+**Errors and Recovery:**
+
+| Situation or Input | Response | What to Do |
+| --- | --- | --- |
+| No meals recorded | `[ERROR] Error: No meals recorded yet. Use 'record-meal' to add one.` | Record a meal first. |
+| `delete-meal 5` with two recorded meals | `[ERROR] Error: Meal number must be between 1 and 2.` | Run `view-meals` and choose a displayed number. |
+| `delete-meal` | `[ERROR] Error: Meal number is required.` | Supply one number, for example `delete-meal 1`. |
+| `delete-meal 0` | `[ERROR] Error: Meal number must be at least 1.` | Meal numbering starts at 1. |
+| `delete-meal two` or `delete-meal 1 2` | `[ERROR] Error: Meal number must be a single positive whole number.` | Supply exactly one positive whole number. |
+
+Errors show `Format: delete-meal MEAL_NUMBER` and appear before any confirmation question.
+The log is unchanged when input is rejected or deletion is cancelled.
 
 
 <!-- @@author -->
@@ -1550,7 +1617,7 @@ check-shortfall [cal/DAILY_CALORIES] [p/DAILY_PROTEIN] [c/DAILY_CARBS] [f/DAILY_
 
 **Example: Check a Two-Day Plan**
 
-In a fresh session, enter these commands one line at a time, after entering your name:
+Start MishMash in a new empty working directory, then enter these commands one line at a time after entering your name:
 
 ```text
 add-recipe n/Chicken and Rice cal/650 p/50 c/70 f/15 i/Chicken Breast:200g i/White Rice:150g i/Olive Oil:10ml
@@ -1635,7 +1702,7 @@ edit-recipe INDEX [n/NAME] [cal/CALORIES] [p/PROTEIN] [c/CARBS] [f/FATS] [i/INGR
 
 Supply at least one field. Omitted fields keep their current values. Fields can appear in any order, separated by spaces. Repeat only `i/`; each other prefix can appear once.
 
-**Example:** In a fresh session, enter these commands after your name:
+**Example:** Start MishMash in a new empty working directory, then enter these commands after your name:
 
 ```text
 add-recipe n/Chicken Rice cal/650 p/50 c/70 f/15 i/Chicken:200g i/Rice:150g food/poultry
@@ -1663,7 +1730,7 @@ For a smaller correction, `edit-recipe 1 p/60` changes only the protein value.
 - If you supply any `i/` fields, they replace the **entire ingredient list**. Include every ingredient you want to keep. To remove an ingredient, omit it from the replacement list. Every ingredient needs a name, a positive whole or decimal quantity, and a unit containing letters, such as `g` or `ml`.
 - Names can contain spaces and must not be blank. `/` is reserved for prefixes.
 - `food/` replaces the complete food-category declaration. Use the supported tags listed by `help`, such as `poultry`, `milk`, `egg`, or `soy`, separated by commas. Use `food/none` when none apply. Omitted `food/` preserves the old declaration, including an unclassified declaration. When changing ingredients, supply updated tags if the applicable categories change; tags are not inferred from ingredient names.
-- Editing preserves recipe indexes and the number of recipes. Existing plans, nutrition shortfall results, and groceries continue to use the recipes chosen when the plan was generated. To use edited recipes, run `generate-plan` again, followed by `generate-list`. Running only `generate-list` still uses the existing plan.
+- Editing preserves recipe indexes and the number of recipes. Existing plans, nutrition shortfall results, groceries and recorded meals keep their earlier snapshots. To use an edited recipe throughout a new plan, run `generate-plan` again, followed by `generate-list`. Running only `generate-list` still uses the existing plan. To update just one planned occurrence, use [`replace-meal`](#replacing-a-planned-meal) with the edited recipe's index; other occurrences keep their snapshots.
 - Edits are saved automatically for later sessions.
 
 **Errors and recovery:** Invalid edits leave the recipe unchanged; correct the command and try again.
@@ -1687,14 +1754,15 @@ MishMash asks before these commands can remove meals you already planned:
 
 | Command | When it asks | What agreement permits |
 | --- | --- | --- |
-| `reset-plan` | A plan or generated groceries exist | Clear the plan, its targets, and groceries. |
+| `reset-plan` | A plan or generated groceries exist | Clear the plan, its plan-specific targets, and groceries; keep saved personal targets. |
 | `generate-plan d/DAYS ...` | A plan already exists | Replace it and clear its groceries after successful generation. |
 | `set-diet ...` | The current plan conflicts with the new preferences | Replace conflicting days and refresh groceries, or clear the plan and groceries if repair fails. |
 
 Only `y` or `yes` confirms, ignoring letter case and surrounding spaces. Any other answer, a blank line,
 or the end of input cancels with `Cancelled. Nothing was changed.` Cancellation preserves recipes,
-saved targets, dietary preferences, recorded meals, the plan, and groceries. Enter your next command
-after the cancellation message. A command typed at the confirmation question counts as the answer;
+saved targets, dietary preferences, recorded meals, the plan, and groceries. If input remains available,
+enter your next command after the cancellation message. When redirected input ends, cancellation is
+followed by a normal exit and a retry of any unsaved changes; see [Exiting MishMash](#exiting-mishmash). A command typed at the confirmation question counts as the answer;
 it will not run, so type it again at the next command prompt.
 
 The first plan, a reset with nothing to clear, and dietary changes compatible with the existing meals
@@ -1732,7 +1800,9 @@ Your recipes, dietary preferences (including avoided food categories and exclude
 daily targets from `set-targets`, and recorded meals stay available. MishMash asks before clearing an
 existing plan or groceries. Answer `y` or `yes` to proceed; a confirmed reset cannot be undone.
 
-**Example:**
+**Example:** Start in a new empty working directory with only the three `add-recipe` commands
+from the [two-day example](#checking-nutrition-shortfalls). Do not run that example's generation commands yet.
+With no saved targets or dietary restrictions, enter:
 
 ```text
 mishmash > generate-plan d/2 cal/1650
@@ -1769,8 +1839,9 @@ Repeating the reset is safe. The command accepts no arguments: `reset-plan d/1` 
 MishMash saves recipes, dietary preferences and exclusions, daily targets, the active plan and
 its original targets, portion counts, custom ingredients, generated groceries, and recorded meal snapshots
 including dates and servings. Meal corrections and confirmed deletions are saved too.
-The greeting name and interactive command history are not retained. These instructions apply to a build of
-the current team source; an older downloaded release may still use session-only data.
+The greeting name and interactive command history are not retained.
+
+#### Saving and Locating Your Data
 
 Data is saved automatically after a completed change. Start `java -jar "MishMash.jar"` from the same terminal
 working directory next time. The file is `data/mishmash.json` under that directory, even if the JAR itself is
@@ -1780,8 +1851,10 @@ The data folder also contains `mishmash.backup.json` (the previous valid snapsho
 MishMash instance can use a data folder at a time. Close the first instance before launching another. A leftover
 lock file is harmless: the operating system releases the actual lock when the process ends.
 
-Older version 1 save files are upgraded automatically. Their undated meal records are assigned the upgrade
-day and one serving, with a warning; the original file is kept as the backup. Version 2 saves retain actual
+#### Restoring Data and Recovery
+
+Older schema version 1 save files are upgraded automatically. Their undated meal records are assigned the upgrade
+day and one serving, with a warning; the original file is kept as the backup. Schema version 2 saves retain actual
 meal dates and servings, including subsequent corrections.
 
 If the primary file is damaged or unsupported, MishMash tries the backup and displays `[WARN]`. Invalid files
@@ -1789,11 +1862,15 @@ are preserved under unique names containing `corrupt`, a timestamp, and a random
 is valid, MishMash preserves both and starts empty with a warning. If files cannot be read or preserved safely,
 startup stops with `[ERROR]`. Keep the entire data folder when reporting a recovery problem.
 
+#### Unsaved-Change Warnings
+
 If a save fails, `[WARN]` explicitly says that changes remain in memory and are unsaved. Check available disk
 space and folder permissions. MishMash retries after the next successful change and on `bye` or end-of-input.
 An exit warning means the latest changes may be lost; the last successfully saved snapshot remains available.
 Autosave reduces crash-related loss but cannot guarantee survival of hardware failure or forced termination
 during a write. The fallback on filesystems without atomic replacement uses the backup for recovery.
+
+#### Backing Up, Moving, or Starting Fresh
 
 To back up or move your data, close MishMash and copy the whole data folder. To start completely empty, close
 all instances and move the data folder to a safe backup location, then relaunch. Moving only the primary file
@@ -1802,7 +1879,7 @@ other personal files and avoid editing JSON by hand. Files larger than 10 MiB ar
 
 ### Exiting MishMash
 
-Enter:
+**Format:**
 
 ```text
 bye
@@ -1810,7 +1887,7 @@ bye
 
 MishMash retries unsaved changes, displays `Goodbye!`, and closes. Check any `[WARN]` messages before leaving.
 
-Ending input also retries unsaved changes and closes the session, cancelling any pending confirmation first.
+Ending input also retries unsaved changes and closes the session, cancelling any unanswered confirmation first.
 In interactive editing, **Ctrl+D** on an empty command line exits. At an empty confirmation prompt, **Ctrl+D**
 cancels the action and returns to the command prompt; press it again there to exit. Use `bye` or end-of-input
 for a normal exit so MishMash can finish saving.
@@ -1825,6 +1902,12 @@ No. Follow [Quick Start](#quick-start), then use [Command Summary](#command-summ
 **Will my recipes still be here next time?**
 
 Yes. Restart from the same working directory to restore your recipes and other saved data automatically.
+
+**How do I transfer my data to another computer?**
+
+Close MishMash on both computers. Back up any existing destination data, then copy the entire `data`
+folder to the working directory you will use on the other computer. Install Java 25 and use the same
+MishMash version. See [Backing Up, Moving, or Starting Fresh](#backing-up-moving-or-starting-fresh).
 
 **Does viewing generate new meals or ingredients?**
 
@@ -1845,7 +1928,7 @@ Yes. Use [`edit-meal`](#correcting-a-recorded-meal) to correct a meal's date or 
 ## Known Issues
 
 - **Local data:** Autosave uses the current working directory. Cloud synchronisation and import/export commands are unavailable.
-- **Meal-log limitations:** Servings must be whole numbers from 1 to 100, and recorded dates cannot be in the future. `edit-meal` changes the date or servings; to change the recipe, delete the entry and record the correct recipe.
+- **Meal-log limitations:** Servings must be whole numbers from 1 to 100, and recorded dates must be from `1900-01-01` through today. `edit-meal` changes the date or servings; to change the recipe, delete the entry and record the correct recipe.
 - **Planning limitations:** Use `replace-meal` to swap a whole planned meal, `adjust-portion` for whole-recipe portion counts, and `customize-meal` for occurrence-specific ingredients. Edit the source recipe and regenerate the plan and groceries for other changes; existing snapshots keep their earlier values.
 - **Grocery limitations:** Units are not converted and `[ ]` markers cannot be ticked off.
 
@@ -1859,7 +1942,7 @@ See [Troubleshooting](#troubleshooting) for recovery steps.
 | Java reports an incompatible class version | Run `java -version` in the same terminal used to launch the JAR, and select Java 25. |
 | `Unable to access jarfile` | Check the filename and the terminal's current folder. Put quotes around filenames or paths containing spaces. |
 | The application greets me instead of running my first command | Enter your name first. The next line is your first command. |
-| Tab or command history does not work | Use a terminal application and a build of the current source. IDE Run consoles, redirected input, `TERM=dumb`, and terminal initialisation failures use ordinary input. Completion is disabled at name and confirmation prompts. |
+| Tab or command history does not work | Use a terminal application and the JAR obtained in [Set Up and Launch](#set-up-and-launch). IDE Run consoles, redirected input, `TERM=dumb`, and terminal initialisation failures use ordinary input. Completion is disabled at name and confirmation prompts. |
 | My data is missing after restarting | Check the terminal's working directory. Data is read from its `data` folder, which may be different from the JAR's folder. Read any recovery warnings; see [Data Retention](#data-retention). |
 | Startup says another instance is using the data folder | Close that MishMash instance before retrying. A leftover lock filename alone does not mean an instance is running. |
 | A warning says changes could not be saved | Keep MishMash open, free disk space or restore write access to the data folder, then make the next intended change or enter `bye` to retry. If an exit warning remains, those changes may be lost. |
@@ -1868,7 +1951,7 @@ See [Troubleshooting](#troubleshooting) for recovery steps.
 | A plan or grocery list is missing | Run `generate-plan d/2` after adding at least three recipes. Run `generate-list` before `view-list`, including after replacing a plan. |
 | A generated plan still shows a nutrition shortfall | Generation accepts daily totals within +/-15% of supplied targets; `check-shortfall` reports any amount below its supplied targets. See [Checking Nutrition Shortfalls](#checking-nutrition-shortfalls). |
 | A generated plan shows an excess warning | A daily total is above an exact generation target, even if it is within the accepted 15% tolerance. See [Nutrition Target Warnings](#nutrition-target-warnings). |
-| Ingredients that look similar appear separately | `generate-list` combines exact ingredient names and units only. Check capitalization and units; see the [ingredient combining example](#ingredient-combining-example). |
+| Ingredients that look similar appear separately | `generate-list` combines exact ingredient names and units only. Check capitalisation and units; see the [ingredient combining example](#ingredient-combining-example). |
 | `record-meal` reports an index error | Run `list-recipes` and use a number shown there. Numbers change after `delete-recipe`. See [Recording a Meal](#recording-a-meal). |
 | `view-meals` shows `No meals recorded yet.` | Record a meal first with `record-meal INDEX`. Meals in a generated plan are not recorded automatically. |
 | A meal correction or deletion uses the wrong number | Run `view-meals` and use its meal number. A date filter preserves the full log's numbers; deletion shifts later numbers down. Recipe numbers from `list-recipes` are different. |
@@ -1904,11 +1987,13 @@ underlying validation cause for troubleshooting.
 
 ## Command Summary
 
-Click a task to jump directly to its instructions. The commands below are supported by the current team version.
+Click a task to see its complete format, rules and examples. The table mixes command formats with common
+examples; replace uppercase placeholders with your own values. Every command below is supported by the
+MishMash v2.1 release covered by this guide.
 
-| I Want To… | Enter | Before Using It |
+| I Want To… | Format or Example | Before Using It |
 | --- | --- | --- |
-| [Add a recipe](#adding-a-recipe) | `add-recipe n/NAME cal/CALORIES p/PROTEIN c/CARBS f/FATS i/INGREDIENT:QUANTITY_UNIT [food/TAG[,TAG...]]` | Include all fields and at least one ingredient. |
+| [Add a recipe](#adding-a-recipe) | `add-recipe n/NAME cal/CALORIES p/PROTEIN c/CARBS f/FATS i/INGREDIENT:QUANTITYUNIT [i/INGREDIENT:QUANTITYUNIT ...] [food/TAG[,TAG...]]` | Include all fields and at least one ingredient. |
 | [List recipes](#listing-recipes) | `list-recipes [INDEX]` | Omit the index to list all recipes; supply one to see its full details. |
 | [Edit a recipe](#editing-a-recipe) | `edit-recipe INDEX p/55` | Use an index from the latest recipe list and supply at least one field. |
 | [Delete a recipe](#deleting-a-recipe) | `delete-recipe INDEX` | Use an index from the latest recipe list, then confirm the deletion. |
@@ -1917,7 +2002,7 @@ Click a task to jump directly to its instructions. The commands below are suppor
 | [Clear dietary preferences](#clearing-dietary-preferences-and-restrictions) | `clear-diet` | Clears the complete profile while preserving other session data. |
 | [Set daily targets](#setting-daily-targets) | `set-targets cal/2000 p/150` | Supply at least one target; use `none` to remove one. |
 | [View daily targets](#viewing-daily-targets) | `view-targets` | No prerequisites. |
-| [Generate meals](#generating-a-meal-plan) | `generate-plan d/3` | Add at least three recipes; choose 1 to 7 days. |
+| [Generate meals](#generating-a-meal-plan) | `generate-plan d/3` | Add at least three eligible recipes; saved targets apply unless overridden. Choose 1 to 7 days. |
 | [Reset my meal plan](#resetting-a-meal-plan) | `reset-plan` | Clears the current plan and groceries; keeps your other session data. |
 | [View every day](#viewing-a-meal-plan) | `view-plan` | Generate a meal plan first. |
 | [View one day](#viewing-a-meal-plan) | `view-plan d/1` | Choose a day in the active plan. |
