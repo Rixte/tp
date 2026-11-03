@@ -119,16 +119,29 @@ class PlanFailureAdvisorTest {
 
         String advice = String.join("\n", advisor.explain(recipes, targets, NO_DIET));
 
-        assertTrue(advice.contains("no 3 recipes were found that meet them together"), advice);
+        assertTrue(advice.contains("no 3 recipes were found that meet all of your targets"), advice);
         assertTrue(advice.contains("Relax or remove one target"), advice);
         assertFalse(advice.contains("Try again"), advice);
     }
 
     @Test
+    void explain_targetBetweenTheExtremesButUnreachable_doesNotClaimItCanBeReached() {
+        // Day totals can only be 300, 1200, 2100 or 3000, and none is within 15% of 1500.
+        List<Recipe> recipes = List.of(meal("A", 100, 10), meal("B", 100, 10), meal("C", 100, 10),
+                meal("D", 1000, 10), meal("E", 1000, 10), meal("F", 1000, 10));
+        NutritionTargets targets = new NutritionTargets(1500, null, null, null);
+
+        String advice = String.join("\n", advisor.explain(recipes, targets, NO_DIET));
+
+        assertTrue(advice.contains("within the range your recipes can reach"), advice);
+        assertFalse(advice.contains("can be reached"), advice);
+    }
+
+    @Test
     void explain_largeBook_mentionsThatOnlyASampleWasChecked() {
         List<Recipe> recipes = new ArrayList<>();
-        for (int i = 0; i < 40; i++) {
-            recipes.add(meal("Recipe " + i, i < 20 ? 100 : 900, i < 20 ? 90 : 10));
+        for (int i = 0; i < 200; i++) {
+            recipes.add(meal("Recipe " + i, i < 100 ? 100 : 900, i < 100 ? 90 : 10));
         }
         NutritionTargets targets = new NutritionTargets(2700, 270, null, null);
 
@@ -194,7 +207,7 @@ class PlanFailureAdvisorTest {
         MealPlanGenerator failing = new MealPlanGenerator(new Random(42)) {
             @Override
             public MealPlan generate(List<Recipe> recipes, int days, NutritionTargets targets) {
-                throw new IllegalArgumentException("Generation failed.");
+                throw new PlanGenerationException("Generation failed.");
             }
         };
         GeneratePlanCommand command = new GeneratePlanCommand(new GeneratePlanRequest(1, NO_TARGETS), failing,

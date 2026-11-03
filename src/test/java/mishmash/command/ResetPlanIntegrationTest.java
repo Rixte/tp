@@ -27,6 +27,7 @@ import mishmash.model.MealPlan;
 import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
+import mishmash.testutil.TestRecipes;
 
 //@@author Rixte
 /**
@@ -45,7 +46,7 @@ class ResetPlanIntegrationTest {
         parser.parseCommand("generate-plan d/2 cal/1500 p/60 c/150 f/30").execute(book);
         parser.parseCommand("generate-list").execute(book);
         List<Recipe> recipes = book.getRecipes();
-        List<Recipe> recordedMeals = mealLog.getMeals();
+        List<Recipe> recordedMeals = TestRecipes.recordedRecipes(mealLog);
         String dietDisplay = parser.parseCommand("view-diet").execute(book);
         String recordedDisplay = parser.parseCommand("view-meals").execute(book);
 
@@ -55,8 +56,8 @@ class ResetPlanIntegrationTest {
         assertTrue(activePlan.getRequest().isEmpty());
         assertTrue(activePlan.getGroceryList().isEmpty());
         assertEquals(recipes, book.getRecipes());
-        assertEquals(recordedMeals, mealLog.getMeals());
-        assertSame(recipes.getFirst(), mealLog.getMeals().getFirst());
+        assertEquals(recordedMeals, TestRecipes.recordedRecipes(mealLog));
+        assertSame(recipes.getFirst(), TestRecipes.recordedRecipes(mealLog).getFirst());
         assertEquals(dietDisplay, parser.parseCommand("view-diet").execute(book));
         assertEquals(recordedDisplay, parser.parseCommand("view-meals").execute(book));
         assertEquals("No active meal plan. Use 'generate-plan' first.",
@@ -131,7 +132,7 @@ class ResetPlanIntegrationTest {
         GeneratePlanRequest savedRequest = activePlan.getRequest().orElseThrow();
         List<GroceryItem> savedGroceries = activePlan.getGroceryList().orElseThrow();
         List<Recipe> recipes = book.getRecipes();
-        List<Recipe> meals = mealLog.getMeals();
+        List<Recipe> meals = TestRecipes.recordedRecipes(mealLog);
 
         assertThrows(MishMashException.class, () -> parser.parseCommand("generate-plan d/2 cal/1").execute(book));
 
@@ -144,7 +145,7 @@ class ResetPlanIntegrationTest {
         assertTrue(activePlan.getRequest().isEmpty());
         assertTrue(activePlan.getGroceryList().isEmpty());
         assertEquals(recipes, book.getRecipes());
-        assertEquals(meals, mealLog.getMeals());
+        assertEquals(meals, TestRecipes.recordedRecipes(mealLog));
     }
 
     @Test
@@ -160,7 +161,7 @@ class ResetPlanIntegrationTest {
 
         assertEquals(diet, parser.parseCommand("view-diet").execute(book));
         assertEquals(foodRecords, parser.parseCommand("view-meals").execute(book));
-        assertEquals(2, mealLog.getMeals().size());
+        assertEquals(2, TestRecipes.recordedRecipes(mealLog).size());
         assertEquals(recipes, book.getRecipes());
     }
 
@@ -183,7 +184,7 @@ class ResetPlanIntegrationTest {
     @Test
     void execute_pendingReset_keepsEditedRecipesAndOriginalFoodRecordSnapshots() throws MishMashException {
         parser.parseCommand("record-meal 1").execute(book);
-        Recipe recorded = mealLog.getMeals().getFirst();
+        Recipe recorded = TestRecipes.recordedRecipes(mealLog).getFirst();
         Command reset = parser.parseCommand("reset-plan");
         parser.parseCommand("edit-recipe 1 n/Edited p/50").execute(book);
         parser.parseCommand("generate-plan d/1").execute(book);
@@ -194,7 +195,7 @@ class ResetPlanIntegrationTest {
         assertSame(edited, book.getRecipes().getFirst());
         assertEquals("Edited", edited.getName());
         assertEquals(50, edited.getProtein());
-        assertSame(recorded, mealLog.getMeals().getFirst());
+        assertSame(recorded, TestRecipes.recordedRecipes(mealLog).getFirst());
         assertEquals("A", recorded.getName());
         assertEquals(20, recorded.getProtein());
         assertTrue(activePlan.get().isEmpty());
@@ -205,7 +206,7 @@ class ResetPlanIntegrationTest {
         parser.parseCommand("set-diet diet/vegetarian").execute(book);
         parser.parseCommand("record-meal 1").execute(book);
         List<Recipe> recipes = book.getRecipes();
-        List<Recipe> meals = mealLog.getMeals();
+        List<Recipe> meals = TestRecipes.recordedRecipes(mealLog);
         String diet = parser.parseCommand("view-diet").execute(book);
         Command reset = parser.parseCommand("reset-plan");
         for (int days = 1; days <= 3; days++) {
@@ -218,7 +219,7 @@ class ResetPlanIntegrationTest {
             assertTrue(activePlan.getRequest().isEmpty());
             assertTrue(activePlan.getGroceryList().isEmpty());
             assertEquals(recipes, book.getRecipes());
-            assertEquals(meals, mealLog.getMeals());
+            assertEquals(meals, TestRecipes.recordedRecipes(mealLog));
             assertEquals(diet, parser.parseCommand("view-diet").execute(book));
         }
     }
@@ -273,7 +274,7 @@ class ResetPlanIntegrationTest {
         parser.parseCommand("record-meal 1").execute(book);
         parser.parseCommand("generate-plan d/1 cal/1500").execute(book);
         MealPlan oldPlan = activePlan.get().orElseThrow();
-        Recipe originalMeal = mealLog.getMeals().getFirst();
+        Recipe originalMeal = TestRecipes.recordedRecipes(mealLog).getFirst();
         String diet = parser.parseCommand("view-diet").execute(book);
         parser.parseCommand("reset-plan").execute(book);
 
@@ -283,7 +284,7 @@ class ResetPlanIntegrationTest {
         Recipe editedMeal = book.getRecipes().getFirst();
         List<Recipe> recordedMeals = List.of(originalMeal, editedMeal, book.getRecipes().get(1));
 
-        assertEquals(recordedMeals, mealLog.getMeals());
+        assertEquals(recordedMeals, TestRecipes.recordedRecipes(mealLog));
         assertEquals("A", originalMeal.getName());
         assertEquals(500, originalMeal.getCalories());
         assertEquals("Edited", editedMeal.getName());
@@ -304,7 +305,7 @@ class ResetPlanIntegrationTest {
         parser.parseCommand("reset-plan").execute(book);
 
         assertSame(editedMeal, book.getRecipes().getFirst());
-        assertEquals(recordedMeals, mealLog.getMeals());
+        assertEquals(recordedMeals, TestRecipes.recordedRecipes(mealLog));
         assertEquals(diet, parser.parseCommand("view-diet").execute(book));
         assertTrue(activePlan.get().isEmpty());
         assertTrue(activePlan.getRequest().isEmpty());

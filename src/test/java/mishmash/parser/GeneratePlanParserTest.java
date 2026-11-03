@@ -99,4 +99,29 @@ class GeneratePlanParserTest {
             assertTrue(e.getMessage().endsWith("must be a positive whole number from 1 to 2147483647."));
         }
     }
+
+    //@@author GauthamNandi
+    @Test
+    void parse_signsAndNonAsciiDigits_rejected() {
+        String arabicThree = "\u0663";
+        for (String days : new String[] {"+3", "-3", arabicThree}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> parser.parse("d/" + days));
+            assertTrue(e.getMessage().startsWith("DAYS must be a whole number"), e.getMessage());
+        }
+        for (String calories : new String[] {"+900", arabicThree}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> parser.parse("d/1 cal/" + calories));
+            assertEquals("Daily calories must be a positive whole number from 1 to 2147483647.", e.getMessage());
+        }
+    }
+
+    @Test
+    void parse_targetTooLargeForAnInt_saysSoRatherThanThatItIsNotANumber() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> parser.parse("d/1 cal/99999999999"));
+
+        assertEquals("Daily calories must not exceed 2147483647.", e.getMessage());
+    }
+    //@@author
 }

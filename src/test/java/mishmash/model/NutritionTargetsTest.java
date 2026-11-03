@@ -82,7 +82,8 @@ class NutritionTargetsTest {
 
     @Test
     void isSatisfiedBy_nullDay_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> NutritionTargets.none().isSatisfiedBy(null));
+        assertThrows(NullPointerException.class, () -> NutritionTargets.none().isSatisfiedBy((DayPlan) null));
+        assertThrows(NullPointerException.class, () -> NutritionTargets.none().isSatisfiedBy((NutritionTotals) null));
     }
 
     @Test
@@ -112,4 +113,23 @@ class NutritionTargetsTest {
     void request_nullTargets_throwsNullPointerException() {
         assertThrows(NullPointerException.class, () -> new GeneratePlanRequest(3, null));
     }
+
+    //@@author GauthamNandi
+    @Test
+    void isWithinTolerance_exactlyFifteenPercentAway_isTheLimit() {
+        assertTrue(NutritionTargets.isWithinTolerance(2000, 2300));
+        assertTrue(NutritionTargets.isWithinTolerance(2000, 1700));
+        assertFalse(NutritionTargets.isWithinTolerance(2000, 2301));
+        assertFalse(NutritionTargets.isWithinTolerance(2000, 1699));
+    }
+
+    @Test
+    void isSatisfiedBy_totalsAndDay_agree() {
+        NutritionTargets targets = new NutritionTargets(1000, 100, null, null);
+
+        assertTrue(targets.isSatisfiedBy(DAY.calculateDailyNutritionTotals()));
+        assertTrue(targets.isSatisfiedBy(DAY));
+        assertFalse(targets.isSatisfiedBy(new NutritionTotals(1000, 200, 0, 0)));
+    }
+    //@@author
 }

@@ -473,10 +473,12 @@ Use 'view-plan' to inspect your planned meals.
 
 **Rules:**
 
-- Request between 1 and 7 days. Each optional daily target must be a positive whole number up to 2147483647.
+- Request between 1 and 7 days. Each optional daily target must be a positive whole number up to 2147483647. Write numbers with plain digits, without a `+` sign.
 - Calories use kcal; protein, carbohydrates, and fats use grams. Omitted nutrients have no target unless a target for that nutrient was saved with `set-targets`.
 - Without targets, meals are selected randomly. With targets, every day's totals must be within ±15% of
-  every supplied target. For large recipe books, generation searches a bounded sample of combinations.
+  every supplied target. Up to about 180 recipes, generation checks every combination, so it only fails if none
+  fits. For larger recipe books it checks a bounded random sample, so retrying can succeed. Days in a plan differ
+  whenever enough combinations fit.
 - Targets you saved with [`set-targets`](#setting-daily-targets) apply to every nutrient you leave out of the
   command. A target typed here replaces the saved one for this plan only. When a saved target is used, the
   confirmation adds a `Daily targets used:` line listing every target that was applied.
@@ -1342,7 +1344,7 @@ After `record-meal 1 date/2026-03-02`:
 ```text
 [DONE] Meal recorded!
 Chicken and Rice (650 kcal | P: 50g, C: 70g, F: 15g) | 1 serving | 2026-03-02
-Total so far: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g
+Total for 2026-03-02: 650 kcal | Protein: 50g | Carbs: 70g | Fats: 15g
 ```
 
 After `record-meal 2 date/2026-03-03 s/2`:
@@ -1350,7 +1352,7 @@ After `record-meal 2 date/2026-03-03 s/2`:
 ```text
 [DONE] Meal recorded!
 Protein Oatmeal (900 kcal | P: 70g, C: 120g, F: 16g) | 2 servings | 2026-03-03
-Total so far: 1550 kcal | Protein: 120g | Carbs: 190g | Fats: 31g
+Total for 2026-03-03: 900 kcal | Protein: 70g | Carbs: 120g | Fats: 16g
 ```
 
 **Rules:**
@@ -1359,6 +1361,7 @@ Total so far: 1550 kcal | Protein: 120g | Carbs: 190g | Fats: 31g
 - The index must match a recipe in your current recipe list. If you delete a recipe, the numbers of the recipes after it change, so check `list-recipes` again.
 - The meal is recorded with the recipe's calories and macronutrients as stored when you record it. Deleting or editing that recipe later (for example with `edit-recipe`) does not change a meal you have already recorded.
 - You can record the same recipe more than once. Each entry counts separately toward the totals.
+- The total shown is for the meal's date. Use `view-meals` for the total of every recorded meal.
 - Recorded meals, including their dates, servings, and recipe snapshots, are saved automatically and restored on restart. They are separate from the meals in a generated plan.
 - MishMash does not ask for confirmation. To fix a mistake, use [`edit-meal`](#correcting-a-recorded-meal) or [`delete-meal`](#deleting-a-recorded-meal).
 
@@ -1374,6 +1377,8 @@ Total so far: 1550 kcal | Protein: 120g | Carbs: 190g | Fats: 31g
 | `record-meal 1 date/03-02-2026` | `[ERROR] Error: Date must use the format YYYY-MM-DD.` | Write the date as year-month-day, for example `date/2026-03-02`. |
 | `record-meal 1 date/2026-02-30` | `[ERROR] Error: Date 2026-02-30 does not exist.` | Enter a real calendar date. |
 | A date after today | `[ERROR] Error: Date must not be in the future.` | Record the meal after you have eaten it. |
+| A date before 1900 | `[ERROR] Error: Date must not be before 1900-01-01.` | Check the year for a typo. |
+| `record-meal 1 x/3` | `[ERROR] Error: Unknown field: x/` | Use only `date/` and `s/`, in lowercase. |
 | `record-meal 1 s/0` or `record-meal 1 s/101` | `[ERROR] Error: Servings must be at least 1.` or `[ERROR] Error: Servings must be between 1 and 100.` | Enter a whole number of servings from 1 to 100. |
 
 Errors in the index, date, or servings also display the `record-meal` format. The "no recipes" error and the "index too large" error display the list of all command formats instead. Enter the corrected command at the next prompt; errors leave your recorded meals unchanged.
@@ -1481,6 +1486,7 @@ Total for 2026-03-02: 1300 kcal | Protein: 100g | Carbs: 140g | Fats: 30g
 | `edit-meal 5 s/2` with two meals | `[ERROR] Error: Meal number must be between 1 and 2.` | Enter `view-meals` to check the numbers. |
 | `edit-meal` | `[ERROR] Error: Meal number is required.` | Add a number, for example `edit-meal 1 s/2`. |
 | `edit-meal 1` | `[ERROR] Error: Provide date/ or s/ to correct.` | Add the value to change. |
+| `edit-meal 1 s/1` when meal 1 already has one serving | `[NOTE] Meal 1 already has those details. Nothing was changed.` | No action is needed. |
 
 
 <!-- @@author -->

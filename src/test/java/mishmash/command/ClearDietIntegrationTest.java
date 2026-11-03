@@ -26,6 +26,7 @@ import mishmash.model.NutritionTargets;
 import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;
+import mishmash.testutil.TestRecipes;
 
 /**
  * Checks clear-diet through shared parser state while preserving every unrelated session domain.
@@ -40,7 +41,7 @@ class ClearDietIntegrationTest {
     void parsedCommand_executionClearsOnlyDietarySettings() throws MishMashException {
         Recipe recipe = recipe("Rice", "none");
         recipeBook.add(recipe);
-        mealLog.record(recipe);
+        TestRecipes.recordToday(mealLog, recipe);
         List<GroceryItem> customizedIngredients = List.of(
                 new GroceryItem("Lentils", BigDecimal.TEN, "g"));
         MealPlan plan = new MealPlan(List.of(new DayPlan(List.of(recipe))))
@@ -71,7 +72,7 @@ class ClearDietIntegrationTest {
         assertSame(storedGroceries, activePlan.getGroceryList().orElseThrow());
         assertEquals(targets, execute("view-targets"));
         assertEquals(List.of(recipe), recipeBook.getRecipes());
-        assertEquals(List.of(recipe), mealLog.getMeals());
+        assertEquals(List.of(recipe), TestRecipes.recordedRecipes(mealLog));
     }
 
     @Test

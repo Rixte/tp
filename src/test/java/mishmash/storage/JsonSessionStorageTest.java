@@ -57,7 +57,7 @@ class JsonSessionStorageTest {
             ApplicationState restored = storage.load().state();
             assertEquals(SessionData.fromState(original), SessionData.fromState(restored));
             assertEquals(2, restored.getRecipeBook().size());
-            assertEquals(2, restored.getMealLog().getMeals().size());
+            assertEquals(2, restored.getMealLog().getEntries().size());
             PlannedMeal meal = restored.getActiveMealPlan().get().orElseThrow().getDays().getFirst()
                     .getPlannedMeals().getFirst();
             assertEquals(3, meal.getPortionCount());

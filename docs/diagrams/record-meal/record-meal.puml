@@ -30,11 +30,11 @@ create Viewer
 Command -> Viewer : MealLogViewer()
 activate Viewer
 deactivate Viewer
-Command -> Log : getTotals()
+Command -> Log : getTotalsOn(date)
 activate Log
-Log --> Command : totals
+Log --> Command : dayTotals
 deactivate Log
-Command -> Viewer : viewRecorded(entry, totals)
+Command -> Viewer : viewRecorded(entry, dayTotals)
 activate Viewer
 Viewer --> Command : text
 deactivate Viewer

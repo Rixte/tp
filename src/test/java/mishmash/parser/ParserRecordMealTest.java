@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Random;
 
@@ -44,7 +48,7 @@ class ParserRecordMealTest {
     void parseCommand_recordMealWithIndex_createsCommandWithoutChangingLog() throws MishMashException {
         assertInstanceOf(RecordMealCommand.class, parser.parseCommand("record-meal 2"));
 
-        assertTrue(log.getMeals().isEmpty());
+        assertTrue(TestRecipes.recordedRecipes(log).isEmpty());
     }
 
     @Test
@@ -58,7 +62,7 @@ class ParserRecordMealTest {
 
         parser.parseCommand("record-meal 2").execute(book);
 
-        assertEquals(List.of(oatmeal), log.getMeals());
+        assertEquals(List.of(oatmeal), TestRecipes.recordedRecipes(log));
     }
 
     @Test
@@ -119,7 +123,9 @@ class ParserRecordMealTest {
             {"record-meal 1.5", "Recipe index must be a single positive whole number."},
             {"record-meal two", "Recipe index must be a single positive whole number."},
             {"record-meal 1 2", "Recipe index must be a single positive whole number."},
-            {"record-meal n/Rice", "Recipe index must be a single positive whole number."},
+            {"record-meal n/Rice", "Recipe index is required."},
+            {"record-meal 1 S/2", "Unknown field: S/"},
+            {"record-meal 1/2", "Recipe index must be a single positive whole number."},
             {"record-meal 2147483648", "Recipe index must not exceed 2147483647."},
         };
 
@@ -128,7 +134,7 @@ class ParserRecordMealTest {
                     () -> parser.parseCommand(testCase[0]), testCase[0]);
             assertEquals(testCase[1] + usage, error.getMessage(), testCase[0]);
         }
-        assertTrue(log.getMeals().isEmpty());
+        assertTrue(TestRecipes.recordedRecipes(log).isEmpty());
     }
 
     @Test
@@ -152,7 +158,7 @@ class ParserRecordMealTest {
         var command = parser.parseCommand("record-meal 2147483647");
 
         assertThrows(MishMashException.class, () -> command.execute(bookOf(chickenRice)));
-        assertTrue(log.getMeals().isEmpty());
+        assertTrue(TestRecipes.recordedRecipes(log).isEmpty());
     }
 
     @Test
@@ -179,7 +185,7 @@ class ParserRecordMealTest {
 
         assertThrows(MishMashException.class, () -> parser.parseCommand("view-meals now"));
 
-        assertEquals(List.of(chickenRice), log.getMeals());
+        assertEquals(List.of(chickenRice), TestRecipes.recordedRecipes(log));
     }
 
     @Test
@@ -190,7 +196,7 @@ class ParserRecordMealTest {
         sharedPlanParser.parseCommand("record-meal 1").execute(bookOf(chickenRice));
 
         assertTrue(activePlan.get().isEmpty());
-        assertEquals(List.of(chickenRice), log.getMeals());
+        assertEquals(List.of(chickenRice), TestRecipes.recordedRecipes(log));
     }
 
     @Test
@@ -248,7 +254,7 @@ class ParserRecordMealTest {
 
         assertEquals(planBefore, sharedPlanParser.parseCommand("view-plan").execute(recipes));
         assertEquals(shortfallBefore, sharedPlanParser.parseCommand("check-shortfall cal/5000").execute(recipes));
-        assertEquals(List.of(chickenRice), log.getMeals());
+        assertEquals(List.of(chickenRice), TestRecipes.recordedRecipes(log));
     }
 
     @Test
@@ -259,7 +265,7 @@ class ParserRecordMealTest {
 
         sharedPlanParser.parseCommand("generate-plan d/3").execute(recipes);
 
-        assertEquals(List.of(oatmeal), log.getMeals());
+        assertEquals(List.of(oatmeal), TestRecipes.recordedRecipes(log));
     }
 
     @Test
@@ -276,7 +282,7 @@ class ParserRecordMealTest {
 
         // A meal recorded after the edit uses the edited nutrition, and totals add both entries.
         String second = parser.parseCommand("record-meal 1").execute(recipes);
-        assertTrue(second.contains("Total so far: 750 kcal"), second);
+        assertTrue(second.contains("Total for " + LocalDate.now() + ": 750 kcal"), second);
     }
 
     @Test
@@ -288,7 +294,24 @@ class ParserRecordMealTest {
 
         assertTrue(parser.parseCommand("view-meals").execute(recipes).contains("Meal 1: Chicken and Rice"));
         assertThrows(MishMashException.class, () -> parser.parseCommand("record-meal 1").execute(recipes));
-        assertEquals(List.of(chickenRice), log.getMeals());
+        assertEquals(List.of(chickenRice), TestRecipes.recordedRecipes(log));
     }
+
+    //@@author GauthamNandi
+    @Test
+    void parseCommand_fixedClock_decidesTodayAndWhatCountsAsTheFuture() throws MishMashException {
+        Clock clock = Clock.fixed(Instant.parse("2026-03-15T12:00:00Z"), ZoneOffset.UTC);
+        Parser fixedParser = new Parser(log, clock);
+        RecipeBook recipes = new RecipeBook();
+        recipes.add(oatmeal);
+
+        fixedParser.parseCommand("record-meal 1").execute(recipes);
+
+        assertEquals(LocalDate.of(2026, 3, 15), log.getEntries().getFirst().date());
+        MishMashException e = assertThrows(MishMashException.class,
+                () -> fixedParser.parseCommand("record-meal 1 date/2026-03-16"));
+        assertEquals("Date must not be in the future.", e.getExplanation());
+    }
+    //@@author
 }
 //@@author
