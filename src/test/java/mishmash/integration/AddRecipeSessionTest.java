@@ -1,4 +1,4 @@
-package mishmash;
+package mishmash.integration;
 
 import static mishmash.testutil.CliAssertions.assertInOrder;
 import static mishmash.testutil.CliAssertions.stripAnsi;
@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
+import mishmash.MishMash;
 import mishmash.model.Recipe;
 import mishmash.model.RecipeBook;
 import mishmash.parser.Parser;

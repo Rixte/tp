@@ -13,7 +13,7 @@ These sources document the `record-meal`, `view-meals`, `edit-meal` and `delete-
 | `flow.puml` | Activity diagram of `record-meal`, including every rejection |
 
 `style.iuml` contains shared visual settings. Generated SVGs are stored under
-`docs/images/record-meal` and embedded directly in the guide, as for the other features.
+`docs/images/gauthamnandi` and embedded directly in the guide, as for the other features.
 
 ## Regenerating
 
@@ -22,8 +22,8 @@ PlantUML Integration plugin in IntelliJ (save each preview as SVG with the same 
 source). From the repository root, with `PLANTUML_JAR` set to the renderer path:
 
 ```powershell
-java -jar $env:PLANTUML_JAR -checkonly "docs/diagrams/record-meal/*.puml"
-java -Djava.awt.headless=true -jar $env:PLANTUML_JAR -tsvg -o ../../images/record-meal "docs/diagrams/record-meal/*.puml"
+java -jar $env:PLANTUML_JAR -checkonly "docs/diagrams/gauthamnandi/*.puml"
+java -Djava.awt.headless=true -jar $env:PLANTUML_JAR -tsvg -o ../../images/gauthamnandi "docs/diagrams/gauthamnandi/*.puml"
 ```
 
 The class diagram selects the built-in Java Smetana layout engine, so no separate Graphviz

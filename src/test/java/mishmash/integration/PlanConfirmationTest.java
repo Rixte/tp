@@ -1,4 +1,4 @@
-package mishmash;
+package mishmash.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import mishmash.MishMash;
 import mishmash.command.Command;
 import mishmash.exception.MishMashException;
 import mishmash.logic.MealPlanGenerator;

@@ -1,5 +1,6 @@
-package mishmash;
+package mishmash.integration;
 
+import static mishmash.TestLauncher.runMain;
 import static mishmash.testutil.CliAssertions.assertInOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -135,7 +136,7 @@ class MishMashGeneratePlanTest {
         try (PrintStream capturedOutput = new PrintStream(output, true, StandardCharsets.UTF_8)) {
             System.setIn(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
             System.setOut(capturedOutput);
-            MishMash.runMain("mishmash.%g.log");
+            runMain("mishmash.%g.log");
         } finally {
             System.setIn(originalInput);
             System.setOut(originalOutput);

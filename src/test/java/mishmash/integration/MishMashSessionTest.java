@@ -1,5 +1,6 @@
-package mishmash;
+package mishmash.integration;
 
+import static mishmash.TestLauncher.runMain;
 import static mishmash.testutil.CliAssertions.assertInOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.io.TempDir;
 
+import mishmash.MishMash;
 import mishmash.command.Command;
 import mishmash.exception.MishMashException;
 import mishmash.logic.MealPlanGenerator;
@@ -80,7 +82,7 @@ class MishMashSessionTest {
             try (PrintStream output = new PrintStream(bytes)) {
                 System.setIn(new ByteArrayInputStream("Tester\nbye\n".getBytes(StandardCharsets.UTF_8)));
                 System.setOut(output);
-                MishMash.runMain(directory.resolve("missing/app.%g.log").toString());
+                runMain(directory.resolve("missing/app.%g.log").toString());
             } finally {
                 System.setIn(originalInput);
                 System.setOut(originalOutput);
