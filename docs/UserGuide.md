@@ -1,10 +1,10 @@
-# MishMash User Guide
+# MishMash The Meal Prep Planner User Guide
 
 MishMash is a command-line meal prep planner for people who prepare meals in advance and prefer typing commands. Add your recipes, use them to plan meals, and check the ingredients you need to buy.
 
 **Start Here:** [Set up and launch](#quick-start) · [Find a command](#command-summary) · [View meals](#viewing-a-meal-plan) · [Check nutrition](#checking-nutrition-shortfalls) · [View groceries](#viewing-a-grocery-list) · [Record meals](#recording-a-meal) · [Fix a problem](#troubleshooting)
 
-**Version covered:** This guide describes the current source on the [team repository's `master` branch](https://github.com/AY2627S1-CS2113-W13-4/tp). Build that version to use all features below, including interactive command entry, automatic data retention, meal replacement, and dated meal records with corrections. An older downloaded JAR may have fewer features.
+**Version covered:** MishMash **v2.1**. All features described below are implemented, including interactive command entry, automatic data retention, meal replacement, and dated meal records with corrections. Use the matching v2.1 JAR, or build it using the instructions below.
 
 
 ## Contents
@@ -54,7 +54,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 ### Set Up and Launch
 
 1. **Install Java 25.** Use Java 25 for this project.
-2. **Obtain `MishMash.jar`.** A JAR is the file used to run the application. Downloads are available on the team's [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases). To use the current source described in this guide, download or check out the latest team `master` source, open a terminal in its folder, and build with Java 25:
+2. **Obtain the v2.1 `MishMash.jar`.** A JAR is the file used to run the application. Use the v2.1 JAR supplied for the final product; published downloads are on the team's [Releases page](https://github.com/AY2627S1-CS2113-W13-4/tp/releases). Alternatively, build the implementation covered by this guide from the [team repository's `master` branch](https://github.com/AY2627S1-CS2113-W13-4/tp): open a terminal in the downloaded or checked-out source folder and build with Java 25:
 
    - Windows: `.\gradlew.bat shadowJar`
    - macOS or Linux: `./gradlew shadowJar`
@@ -80,7 +80,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 
      Check that the version starts with `25`.
 
-   - Launch the JAR using `java -jar "{file_name}"`, replacing `{file_name}` with its actual filename. For the current build:
+   - Launch the JAR using `java -jar "{file_name}"`, replacing `{file_name}` with its actual filename. For the v2.1 JAR named `MishMash.jar`:
 
      ```text
      java -jar "MishMash.jar"
@@ -96,7 +96,7 @@ MishMash is a command-line meal prep planner for people who prepare meals in adv
 ### Interactive Command Entry
 
 MishMash provides editing shortcuts when launched in a supported terminal with
-`java -jar "MishMash.jar"`. Use a build of the current source as described above.
+`java -jar "MishMash.jar"` using the JAR obtained in [Set Up and Launch](#set-up-and-launch).
 
 | Key | Action |
 | --- | --- |
@@ -1929,7 +1929,7 @@ See [Troubleshooting](#troubleshooting) for recovery steps.
 | Java reports an incompatible class version | Run `java -version` in the same terminal used to launch the JAR, and select Java 25. |
 | `Unable to access jarfile` | Check the filename and the terminal's current folder. Put quotes around filenames or paths containing spaces. |
 | The application greets me instead of running my first command | Enter your name first. The next line is your first command. |
-| Tab or command history does not work | Use a terminal application and a build of the current source. IDE Run consoles, redirected input, `TERM=dumb`, and terminal initialisation failures use ordinary input. Completion is disabled at name and confirmation prompts. |
+| Tab or command history does not work | Use a terminal application and the JAR obtained in [Set Up and Launch](#set-up-and-launch). IDE Run consoles, redirected input, `TERM=dumb`, and terminal initialisation failures use ordinary input. Completion is disabled at name and confirmation prompts. |
 | My data is missing after restarting | Check the terminal's working directory. Data is read from its `data` folder, which may be different from the JAR's folder. Read any recovery warnings; see [Data Retention](#data-retention). |
 | Startup says another instance is using the data folder | Close that MishMash instance before retrying. A leftover lock filename alone does not mean an instance is running. |
 | A warning says changes could not be saved | Keep MishMash open, free disk space or restore write access to the data folder, then make the next intended change or enter `bye` to retry. If an exit warning remains, those changes may be lost. |
@@ -1974,7 +1974,9 @@ underlying validation cause for troubleshooting.
 
 ## Command Summary
 
-Click a task to jump directly to its instructions. The commands below are supported by the current team version.
+Click a task to see its complete format, rules and examples. The table mixes command formats with common
+examples; replace uppercase placeholders with your own values. Every command below is supported by the
+MishMash v2.1 release covered by this guide.
 
 | I Want To… | Format or Example | Before Using It |
 | --- | --- | --- |
