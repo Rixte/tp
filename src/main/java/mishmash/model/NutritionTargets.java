@@ -60,11 +60,43 @@ public class NutritionTargets {
      */
     public boolean isSatisfiedBy(DayPlan day) {
         Objects.requireNonNull(day, "day");
-        return deviation(calories, day.getTotalCalories()) <= TOLERANCE
-                && deviation(protein, day.getTotalProtein()) <= TOLERANCE
-                && deviation(carbs, day.getTotalCarbs()) <= TOLERANCE
-                && deviation(fats, day.getTotalFats()) <= TOLERANCE;
+        return isSatisfiedBy(day.calculateDailyNutritionTotals());
     }
+
+    //@@author GauthamNandi
+    /**
+     * Returns true if the given totals are within tolerance of every supplied target.
+     * Taking totals lets the generator test a combination without building a {@link DayPlan} for it.
+     *
+     * @param totals The nutrition totals to check.
+     * @return Whether every supplied target is matched within {@link #TOLERANCE}.
+     * @throws NullPointerException If the totals are null.
+     */
+    public boolean isSatisfiedBy(NutritionTotals totals) {
+        Objects.requireNonNull(totals, "totals");
+        return meets(calories, totals.calories()) && meets(protein, totals.protein())
+                && meets(carbs, totals.carbs()) && meets(fats, totals.fats());
+    }
+
+    /**
+     * Returns whether a total is within {@link #TOLERANCE} of a target. This is the one definition of
+     * the rule, so generation and the failure advice cannot disagree about what counts as a match.
+     *
+     * @param target The positive target.
+     * @param actual The total to compare with it.
+     * @return True if the relative distance from the target is at most {@link #TOLERANCE}.
+     */
+    public static boolean isWithinTolerance(int target, long actual) {
+        return Math.abs(actual - target) / (double) target <= TOLERANCE;
+    }
+
+    /**
+     * Returns whether a total meets a target, which is always true when no target was supplied.
+     */
+    private static boolean meets(Integer target, long actual) {
+        return target == null || isWithinTolerance(target, actual);
+    }
+    //@@author
 
     /**
      * Calculates how far each daily total exceeds its exact target, without applying generation tolerance.
@@ -182,16 +214,5 @@ public class NutritionTargets {
      */
     private static boolean isNotPositive(Integer target) {
         return target != null && target <= 0;
-    }
-
-    /**
-     * Returns the relative distance of {@code actual} from {@code target}
-     * (e.g. 0.10 means 10% off), or 0 when there is no target.
-     */
-    private static double deviation(Integer target, long actual) {
-        if (target == null) {
-            return 0;
-        }
-        return Math.abs(actual - target) / (double) target;
     }
 }

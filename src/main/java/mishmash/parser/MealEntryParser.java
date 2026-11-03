@@ -21,11 +21,14 @@ public final class MealEntryParser {
     /** The date format shown to users; it sorts naturally and has no day/month ambiguity. */
     public static final String DATE_FORMAT = "YYYY-MM-DD";
 
+    /** The earliest meal date accepted, which catches typos such as 1026 for 2026. */
+    public static final LocalDate EARLIEST_DATE = LocalDate.of(1900, 1, 1);
+
     private static final String DATE_PREFIX = "date";
     private static final String SERVINGS_PREFIX = "s";
 
-    // Only supported prefixes end the position, so mistakes such as "1/2" or "n/Rice" are rejected as positions.
-    private static final Pattern FIRST_FIELD_PATTERN = Pattern.compile("(?<!\\S)(?:date|s)/");
+    // A prefix starts with a letter, so "1/2" stays a bad position while "x/3" is reported as an unknown field.
+    private static final Pattern FIRST_FIELD_PATTERN = Pattern.compile("(?<!\\S)[A-Za-z][^\\s/]*/");
     private static final Pattern FIELD_PATTERN = Pattern.compile("(?<!\\S)([^\\s/]+)/");
     private static final Pattern DATE_PATTERN = Pattern.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}");
 
@@ -99,12 +102,16 @@ public final class MealEntryParser {
     }
 
     /**
-     * Parses a date for a meal that has been eaten, which cannot be later than today.
+     * Parses a date for a meal that has been eaten, which cannot be later than today
+     * or earlier than {@link #EARLIEST_DATE}.
      */
     private LocalDate parsePastDate(String value) {
         LocalDate date = parseDate(value);
         if (date.isAfter(today)) {
             throw new IllegalArgumentException("Date must not be in the future.");
+        }
+        if (date.isBefore(EARLIEST_DATE)) {
+            throw new IllegalArgumentException("Date must not be before " + EARLIEST_DATE + ".");
         }
         return date;
     }

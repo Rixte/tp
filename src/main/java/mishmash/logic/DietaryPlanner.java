@@ -49,7 +49,7 @@ public final class DietaryPlanner {
         Objects.requireNonNull(preferences, "preferences");
         List<Recipe> eligibleRecipes = recipes.stream().filter(preferences::isAllowed).toList();
         if (preferences.isRestricted() && eligibleRecipes.size() < MealPlanGenerator.MEALS_PER_DAY) {
-            throw new IllegalArgumentException("At least " + MealPlanGenerator.MEALS_PER_DAY
+            throw new PlanGenerationException("At least " + MealPlanGenerator.MEALS_PER_DAY
                     + " compatible, classified recipes are required; found " + eligibleRecipes.size()
                     + ". Add or classify more suitable recipes.");
         }

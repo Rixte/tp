@@ -71,7 +71,8 @@ public final class PlanFailureAdvisor {
     }
 
     /**
-     * Reports each target that no three recipes can reach, or says the targets conflict when each is reachable.
+     * Reports each target that no three recipes can reach. Otherwise each target lies between the lowest
+     * and highest totals, which does not prove any combination meets it, so the wording claims only that.
      */
     private void addTargetAdvice(List<Recipe> eligible, NutritionTargets targets,
             List<String> reasons, List<String> nextSteps) {
@@ -82,7 +83,8 @@ public final class PlanFailureAdvisor {
             }
         }
         if (nextSteps.isEmpty()) {
-            reasons.add("Each target can be reached on its own, but no 3 recipes were found that meet them together.");
+            reasons.add("Each target is within the range your recipes can reach, but no "
+                    + MealPlanGenerator.MEALS_PER_DAY + " recipes were found that meet all of your targets.");
             nextSteps.add("Relax or remove one target, or add recipes that fit all of them.");
             if (!MealPlanGenerator.checksEveryCombination(eligible.size())) {
                 nextSteps.add("Try again: with this many recipes only a random sample of combinations is checked.");
@@ -92,7 +94,7 @@ public final class PlanFailureAdvisor {
 
     /**
      * Adds a reason and a next step if the three most extreme recipes still miss the target.
-     * The tolerance check uses the same formula as {@link NutritionTargets#isSatisfiedBy}.
+     * The tolerance check is the same one generation uses, {@link NutritionTargets#isWithinTolerance}.
      */
     private void addUnreachableTarget(List<Recipe> eligible, Nutrient nutrient, int target,
             List<String> reasons, List<String> nextSteps) {
@@ -105,19 +107,15 @@ public final class PlanFailureAdvisor {
         String prefix = nutrient.getPrefix() + "/";
         String unit = " " + nutrient.getUnit();
 
-        if (highest < target && isOutsideTolerance(highest, target)) {
+        if (highest < target && !NutritionTargets.isWithinTolerance(target, highest)) {
             reasons.add(nutrient.getLabel() + ": your target is " + target + unit + ", but your " + meals
                     + " highest recipes total only " + highest + unit + ".");
             nextSteps.add("Lower " + prefix + " or add recipes higher in " + nutrient.getLabel() + ".");
-        } else if (lowest > target && isOutsideTolerance(lowest, target)) {
+        } else if (lowest > target && !NutritionTargets.isWithinTolerance(target, lowest)) {
             reasons.add(nutrient.getLabel() + ": your target is " + target + unit + ", but your " + meals
                     + " lowest recipes total " + lowest + unit + ".");
             nextSteps.add("Raise " + prefix + " or add recipes lower in " + nutrient.getLabel() + ".");
         }
-    }
-
-    private static boolean isOutsideTolerance(long total, int target) {
-        return Math.abs(total - target) / (double) target > NutritionTargets.TOLERANCE;
     }
 
     /**

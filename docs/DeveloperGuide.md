@@ -905,7 +905,7 @@ For manual verification, follow [Set and View Daily Targets](#set-and-view-daily
 
 *Section author: GauthamNandi*
 
-`GeneratePlanCommand` combines command-specific targets with saved `TargetSettings`, filters recipes through the current dietary profile, and delegates selection to `MealPlanGenerator`. Each day contains three distinct recipes; recipes can recur on other days. With no targets, selection is random. With targets, the generator checks combinations against a 15% tolerance for every supplied nutrient. It examines all combinations when there are at most 5,000, otherwise a bounded random sample. Sampling bounds runtime but can miss a valid combination in a large recipe book.
+`GeneratePlanCommand` combines command-specific targets with saved `TargetSettings`, filters recipes through the current dietary profile, and delegates selection to `MealPlanGenerator`. Each day contains three distinct recipes; recipes can recur on other days. With no targets, selection is random. With targets, the generator checks combinations against a 15% tolerance for every supplied nutrient. It checks every combination when there are at most 1,000,000 (about 180 recipes), otherwise up to 1,000,000 random combinations, and keeps at most 5,000 matches. Sampling bounds runtime but can miss a valid combination in a large recipe book.
 
 `ActiveMealPlan` stores the successful plan and its generation request. Replacement generation requires confirmation when a plan exists. Success invalidates previous groceries; failure preserves the prior plan.
 
@@ -1568,7 +1568,7 @@ reuses it; its values are `long` so that adding many recipes cannot overflow.*
   servings, and `MealEntryParser` parses them for `record-meal` and `edit-meal`. It receives today's
   date as an argument, so tests can check future dates without depending on the system clock.
 * `MealLog` stores the entries in the order they were recorded. It offers `record(...)`, `replace(...)`,
-  `remove(...)`, read-only `getEntries()` and `getMeals()`, `getTotalsOn(date)` for one date, and
+  `remove(...)`, read-only `getEntries()`, `getTotalsOn(date)` for one date, and
   `getTotals()`, which sums calories, protein, carbs and fats into a
   `NutritionTotals`, the same record `DayPlan` returns for a day's meals. The commands never add up nutrition values themselves.
 * `RecordMealCommand`, `ViewMealsCommand`, `EditMealCommand` and `DeleteMealCommand` implement `Command`.
@@ -1607,8 +1607,8 @@ changed. The command is created only after validation succeeds.
 During execution the command converts the index to a zero-based position, as `DeleteRecipeCommand`
 does, and looks the recipe up in the `RecipeBook` passed to `execute`. If the book is empty or the index
 exceeds the number of recipes, it throws a `MishMashException` and nothing is recorded. Otherwise it calls
-`MealLog.record(entry)` with a new `MealEntry`, creates a `MealLogViewer`, reads `MealLog.getTotals()`, and asks
-`MealLogViewer.viewRecorded` to format the recorded meal's calories and macros with the running totals,
+`MealLog.record(entry)` with a new `MealEntry`, creates a `MealLogViewer`, reads `MealLog.getTotalsOn(date)`, and asks
+`MealLogViewer.viewRecorded` to format the recorded meal's calories and macros with that date's totals,
 so the user sees the effect immediately. The viewer is created before the totals are read because Java
 evaluates the object a method is called on before that method's arguments.
 Recording a meal needs no confirmation: it is quick to repeat, and it changes only the log.
@@ -2337,7 +2337,7 @@ Other occurrences, source recipes, recorded meals, and settings remain unchanged
 - Snapshot loading must reject files larger than 10 MiB without partially publishing application state.
 - Concurrent production instances using the same data directory must be prevented by an exclusive process lock.
 
-These are compatibility, integrity, and resource constraints. No measured recipe-capacity or response-time guarantee is specified; the 5,000-candidate generation bound is an algorithm limit, not a performance benchmark.
+These are compatibility, integrity, and resource constraints. No measured recipe-capacity or response-time guarantee is specified; the generator's limits of 1,000,000 checked combinations and 5,000 kept matches are algorithm limits, not a performance benchmark.
 
 ## Appendix D: Glossary
 

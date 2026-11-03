@@ -60,20 +60,25 @@ public class EditMealCommand implements Command {
      * The change is easy to redo, so no confirmation is needed.
      *
      * @param recipeBook The shared command context; correcting a meal does not read or modify recipes.
-     * @return The corrected meal and the totals for its date.
+     * @return The corrected meal and the totals for its date, or a note if nothing would change.
      * @throws MishMashException If the log is empty or the number is larger than the number of meals.
      */
     @Override
     public String execute(RecipeBook recipeBook) throws MishMashException {
-        MealEntry updated = MealLookup.find(mealLog, mealNumber, USAGE).with(changes);
-        mealLog.replace(mealNumber - 1, updated);
-        LOGGER.fine(() -> "edit-meal updated meal " + mealNumber);
-        return new MealLogViewer().viewEdited(updated, mealLog.getTotalsOn(updated.date()));
+        return executeWithResult(recipeBook).feedback();
     }
 
     @Override
     public CommandResult executeWithResult(RecipeBook recipeBook) throws MishMashException {
-        return CommandResult.done(execute(recipeBook));
+        MealEntry current = MealLookup.find(mealLog, mealNumber, USAGE);
+        MealEntry updated = current.with(changes);
+        if (updated.equals(current)) {
+            LOGGER.fine(() -> "edit-meal left meal " + mealNumber + " unchanged");
+            return CommandResult.note("Meal " + mealNumber + " already has those details. Nothing was changed.");
+        }
+        mealLog.replace(mealNumber - 1, updated);
+        LOGGER.fine(() -> "edit-meal updated meal " + mealNumber);
+        return CommandResult.done(new MealLogViewer().viewEdited(updated, mealLog.getTotalsOn(updated.date())));
     }
 }
 //@@author

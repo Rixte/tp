@@ -1,15 +1,19 @@
 package mishmash.logic;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import mishmash.model.DayPlan;
 import mishmash.model.MealPlan;
 import mishmash.model.NutritionTargets;
+import mishmash.model.NutritionTotals;
 import mishmash.model.Recipe;
 
 /**
@@ -18,14 +22,15 @@ import mishmash.model.Recipe;
  * <p>Randomness comes from an injected {@link Random}, so tests can pass a seeded
  * {@code new Random(42)} and get the same plan every run.</p>
  *
- * <p><b>Target-based generation.</b> When nutrition targets are given, the generator
- * builds a bounded pool of candidate 3-recipe combinations, keeps the ones within ±15% of
- * every target, and picks one at random for each day. If the recipe book is small enough
- * (at most {@value #MAX_CANDIDATES} combinations, i.e. about 32 recipes) every combination is
- * checked, so a valid one is never missed. For larger books it checks
- * {@value #MAX_CANDIDATES} random combinations instead, which keeps the work fixed no matter
- * how many recipes there are. A more advanced alternative would be a local search that
- * swaps meals to move towards the targets, but sampling is simpler and good enough here.</p>
+ * <p><b>Target-based generation.</b> When nutrition targets are given, the generator keeps
+ * combinations of three recipes within ±15% of every target, then deals them out to the days.
+ * If the recipe book is small enough (at most {@value #MAX_CANDIDATES} combinations, i.e. about
+ * 180 recipes) every combination is checked, so a valid one is never missed. For larger books it
+ * checks up to {@value #MAX_CANDIDATES} random combinations instead, which keeps the work fixed no
+ * matter how many recipes there are. Each check only adds up nutrition, and a {@link DayPlan} is built
+ * only for a combination that is kept, which is what makes this many checks cheap. A more advanced
+ * alternative would be a local search that swaps meals to move towards the targets, but checking
+ * combinations directly is simpler and good enough here.</p>
  */
 public class MealPlanGenerator {
     /** Fewest days a plan can cover. */
@@ -38,12 +43,18 @@ public class MealPlanGenerator {
     public static final int MEALS_PER_DAY = 3;
 
     /** Upper bound on how many recipe combinations are checked for target-based plans. */
-    public static final int MAX_CANDIDATES = 5000;
+    public static final int MAX_CANDIDATES = 1_000_000;
+
+    /** Upper bound on how many matching combinations are kept, which limits memory use. */
+    public static final int MAX_MATCHES = 5000;
 
     /**
      * Counts the orderings of three distinct recipes so each unordered combination is counted once.
      */
     private static final int TRIPLE_PERMUTATION_COUNT = 6;
+
+    /** The tolerance as shown to users, derived so the message cannot disagree with the rule. */
+    private static final long TOLERANCE_PERCENT = Math.round(NutritionTargets.TOLERANCE * 100);
 
     private static final Logger LOGGER = Logger.getLogger(MealPlanGenerator.class.getName());
 
@@ -70,8 +81,8 @@ public class MealPlanGenerator {
      * @param targets Daily nutrition targets; use {@link NutritionTargets#none()} for a random plan.
      * @return The generated plan.
      * @throws NullPointerException If the recipes, any recipe, or the targets are null.
-     * @throws IllegalArgumentException If the number of days is out of range, there are too few
-     *         recipes, or no combination meets the targets.
+     * @throws IllegalArgumentException If the number of days is out of range.
+     * @throws PlanGenerationException If there are too few recipes or no combination meets the targets.
      */
     public MealPlan generate(List<Recipe> recipes, int days, NutritionTargets targets) {
         Objects.requireNonNull(recipes, "recipes");
@@ -100,15 +111,15 @@ public class MealPlanGenerator {
      * Rejects recipe books that cannot supply distinct meals for one day.
      *
      * @param recipes The recipes available for generation.
-     * @throws IllegalArgumentException If there are fewer than {@value #MEALS_PER_DAY} recipes.
+     * @throws PlanGenerationException If there are fewer than {@value #MEALS_PER_DAY} recipes.
      */
     private static void checkEnoughRecipes(List<Recipe> recipes) {
         if (recipes.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new PlanGenerationException(
                     "Your recipe book is empty. Add some recipes before generating a meal plan.");
         }
         if (recipes.size() < MEALS_PER_DAY) {
-            throw new IllegalArgumentException("You need at least " + MEALS_PER_DAY
+            throw new PlanGenerationException("You need at least " + MEALS_PER_DAY
                     + " recipes to generate a meal plan, but you only have " + recipes.size() + ".");
         }
     }
@@ -132,46 +143,33 @@ public class MealPlanGenerator {
     }
 
     /**
-     * Selects each day from candidate meals that meet every supplied nutrition target.
+     * Selects each day from the combinations that meet every supplied nutrition target.
+     * Days only repeat once every kept combination has been used.
      *
      * @param recipes The validated recipe list.
      * @param days The supported number of days to generate.
      * @param targets The daily nutrition constraints.
      * @return A plan whose days all meet the supplied targets.
-     * @throws IllegalArgumentException If no candidate day satisfies the targets.
+     * @throws PlanGenerationException If no combination that was checked satisfies the targets.
      */
     private MealPlan generateTargetedPlan(List<Recipe> recipes, int days, NutritionTargets targets) {
-        List<DayPlan> matching = new ArrayList<>();
-        for (DayPlan candidate : buildCandidates(recipes)) {
-            if (targets.isSatisfiedBy(candidate)) {
-                matching.add(candidate);
-            }
-        }
-        LOGGER.fine(() -> "Found " + matching.size() + " candidate combinations matching nutrition targets");
+        assert recipes.size() >= MEALS_PER_DAY : "Recipe count should have been validated before matching";
+        List<DayPlan> matching = checksEveryCombination(recipes.size())
+                ? findAmongAllCombinations(recipes, targets)
+                : findAmongRandomCombinations(recipes, targets);
+        LOGGER.fine(() -> "Kept " + matching.size() + " combinations matching nutrition targets");
         if (matching.isEmpty()) {
-            throw new IllegalArgumentException("Could not find " + MEALS_PER_DAY
-                    + " recipes that meet your daily targets within 15%."
+            throw new PlanGenerationException("Could not find " + MEALS_PER_DAY
+                    + " recipes that meet your daily targets within " + TOLERANCE_PERCENT + "%."
                     + " Try different targets or add more recipes.");
         }
 
+        Collections.shuffle(matching, random);
         List<DayPlan> dayPlans = new ArrayList<>();
         for (int i = 0; i < days; i++) {
-            dayPlans.add(matching.get(random.nextInt(matching.size())));
+            dayPlans.add(matching.get(i % matching.size()));
         }
         return new MealPlan(dayPlans);
-    }
-
-    /**
-     * Returns every 3-recipe combination if there are at most {@link #MAX_CANDIDATES},
-     * otherwise {@link #MAX_CANDIDATES} randomly chosen combinations.
-     */
-    private List<DayPlan> buildCandidates(List<Recipe> recipes) {
-        assert recipes.size() >= MEALS_PER_DAY
-                : "Recipe count should have been validated before building candidates";
-        if (checksEveryCombination(recipes.size())) {
-            return enumerateCandidates(recipes);
-        }
-        return sampleCandidates(recipes);
     }
 
     /**
@@ -189,37 +187,82 @@ public class MealPlanGenerator {
 
     //@@author GauthamNandi
     /**
-     * Returns every combination of three recipes in their original index order, without duplicates.
+     * Checks every combination of three recipes, so a valid one is never missed.
+     * Every match has the same chance of being kept, however many there are (reservoir sampling).
      *
      * @param recipes The recipes from which to choose meals.
-     * @return All candidate days, each containing three distinct recipes.
+     * @param targets The daily nutrition constraints.
+     * @return At most {@value #MAX_MATCHES} distinct matching days.
      */
-    private List<DayPlan> enumerateCandidates(List<Recipe> recipes) {
-        List<DayPlan> candidates = new ArrayList<>();
+    private List<DayPlan> findAmongAllCombinations(List<Recipe> recipes, NutritionTargets targets) {
+        List<DayPlan> kept = new ArrayList<>();
+        int found = 0;
         for (int i = 0; i < recipes.size(); i++) {
             for (int j = i + 1; j < recipes.size(); j++) {
                 for (int k = j + 1; k < recipes.size(); k++) {
-                    candidates.add(new DayPlan(List.of(recipes.get(i), recipes.get(j), recipes.get(k))));
+                    List<Recipe> meals = List.of(recipes.get(i), recipes.get(j), recipes.get(k));
+                    if (targets.isSatisfiedBy(totalOf(meals))) {
+                        found++;
+                        keepFairly(kept, found, meals);
+                    }
                 }
             }
         }
-        return candidates;
+        return kept;
     }
 
     /**
-     * Samples a bounded number of candidate days when checking every recipe combination is too expensive.
-     *
-     * @param recipes The recipes to sample without changing the original list.
-     * @return {@value #MAX_CANDIDATES} candidate days, which may repeat combinations.
+     * Keeps a match if there is room, and otherwise swaps it in with probability
+     * {@value #MAX_MATCHES} out of {@code found}, so all matches are equally likely to be kept.
      */
-    private List<DayPlan> sampleCandidates(List<Recipe> recipes) {
-        List<DayPlan> candidates = new ArrayList<>();
-        List<Recipe> shuffled = new ArrayList<>(recipes);
-        for (int i = 0; i < MAX_CANDIDATES; i++) {
-            Collections.shuffle(shuffled, random);
-            candidates.add(new DayPlan(shuffled.subList(0, MEALS_PER_DAY)));
+    private void keepFairly(List<DayPlan> kept, int found, List<Recipe> meals) {
+        if (kept.size() < MAX_MATCHES) {
+            kept.add(new DayPlan(meals));
+            return;
         }
-        return candidates;
+        int slot = random.nextInt(found);
+        if (slot < MAX_MATCHES) {
+            kept.set(slot, new DayPlan(meals));
+        }
+    }
+
+    /**
+     * Checks random combinations when there are too many to check them all. Stops early once enough
+     * matches are found; the draws are random, so stopping does not favour any recipe.
+     *
+     * @param recipes The recipes to draw from, which are left unchanged.
+     * @param targets The daily nutrition constraints.
+     * @return At most {@value #MAX_MATCHES} distinct matching days.
+     */
+    private List<DayPlan> findAmongRandomCombinations(List<Recipe> recipes, NutritionTargets targets) {
+        List<DayPlan> matches = new ArrayList<>();
+        // A combination can be drawn twice, so remember the matches to keep the days distinct.
+        Set<List<Integer>> seen = new HashSet<>();
+        for (int i = 0; i < MAX_CANDIDATES && matches.size() < MAX_MATCHES; i++) {
+            int[] picks = random.ints(0, recipes.size()).distinct().limit(MEALS_PER_DAY).sorted().toArray();
+            List<Recipe> meals = List.of(recipes.get(picks[0]), recipes.get(picks[1]), recipes.get(picks[2]));
+            if (targets.isSatisfiedBy(totalOf(meals)) && seen.add(Arrays.stream(picks).boxed().toList())) {
+                matches.add(new DayPlan(meals));
+            }
+        }
+        return matches;
+    }
+
+    /**
+     * Adds up the nutrition of one portion of each meal.
+     */
+    private static NutritionTotals totalOf(List<Recipe> meals) {
+        long calories = 0;
+        long protein = 0;
+        long carbs = 0;
+        long fats = 0;
+        for (Recipe meal : meals) {
+            calories += meal.getCalories();
+            protein += meal.getProtein();
+            carbs += meal.getCarbs();
+            fats += meal.getFats();
+        }
+        return new NutritionTotals(calories, protein, carbs, fats);
     }
     //@@author
 }

@@ -23,7 +23,7 @@ class MealLogTest {
     void newLog_hasNoMealsAndZeroTotals() {
         MealLog log = new MealLog();
 
-        assertTrue(log.getMeals().isEmpty());
+        assertTrue(TestRecipes.recordedRecipes(log).isEmpty());
         assertEquals(new NutritionTotals(0, 0, 0, 0), log.getTotals());
     }
 
@@ -31,38 +31,38 @@ class MealLogTest {
     void record_severalMeals_keepsThemInRecordedOrder() {
         MealLog log = new MealLog();
 
-        log.record(oatmeal);
-        log.record(chickenRice);
+        TestRecipes.recordToday(log, oatmeal);
+        TestRecipes.recordToday(log, chickenRice);
 
-        assertEquals(List.of(oatmeal, chickenRice), log.getMeals());
+        assertEquals(List.of(oatmeal, chickenRice), TestRecipes.recordedRecipes(log));
     }
 
     @Test
     void record_sameRecipeTwice_keepsBothEntries() {
         MealLog log = new MealLog();
 
-        log.record(chickenRice);
-        log.record(chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
 
-        assertEquals(2, log.getMeals().size());
-        assertSame(chickenRice, log.getMeals().get(0));
-        assertSame(chickenRice, log.getMeals().get(1));
+        assertEquals(2, TestRecipes.recordedRecipes(log).size());
+        assertSame(chickenRice, TestRecipes.recordedRecipes(log).get(0));
+        assertSame(chickenRice, TestRecipes.recordedRecipes(log).get(1));
     }
 
     @Test
     void record_nullRecipe_throwsNullPointerExceptionAndLeavesLogUnchanged() {
         MealLog log = new MealLog();
-        log.record(oatmeal);
+        TestRecipes.recordToday(log, oatmeal);
 
-        assertThrows(NullPointerException.class, () -> log.record((Recipe) null));
-        assertEquals(List.of(oatmeal), log.getMeals());
+        assertThrows(NullPointerException.class, () -> log.record(null));
+        assertEquals(List.of(oatmeal), TestRecipes.recordedRecipes(log));
     }
 
     @Test
     void getTotals_severalMeals_sumsEachNutrient() {
         MealLog log = new MealLog();
-        log.record(chickenRice);
-        log.record(oatmeal);
+        TestRecipes.recordToday(log, chickenRice);
+        TestRecipes.recordToday(log, oatmeal);
 
         assertEquals(new NutritionTotals(1100, 85, 130, 23), log.getTotals());
     }
@@ -70,9 +70,9 @@ class MealLogTest {
     @Test
     void getTotals_repeatedRecipe_countsEveryEntry() {
         MealLog log = new MealLog();
-        log.record(chickenRice);
-        log.record(chickenRice);
-        log.record(chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
 
         assertEquals(new NutritionTotals(1950, 150, 210, 45), log.getTotals());
     }
@@ -80,8 +80,8 @@ class MealLogTest {
     @Test
     void getTotals_recipeWithZeroNutrition_addsNothing() {
         MealLog log = new MealLog();
-        log.record(TestRecipes.recipe("Water", 0, 0, 0, 0));
-        log.record(oatmeal);
+        TestRecipes.recordToday(log, TestRecipes.recipe("Water", 0, 0, 0, 0));
+        TestRecipes.recordToday(log, oatmeal);
 
         assertEquals(new NutritionTotals(450, 35, 60, 8), log.getTotals());
     }
@@ -91,8 +91,8 @@ class MealLogTest {
         MealLog log = new MealLog();
         Recipe huge = TestRecipes.recipe("Huge", Integer.MAX_VALUE, Integer.MAX_VALUE,
                 Integer.MAX_VALUE, Integer.MAX_VALUE);
-        log.record(huge);
-        log.record(huge);
+        TestRecipes.recordToday(log, huge);
+        TestRecipes.recordToday(log, huge);
 
         long expected = 2L * Integer.MAX_VALUE;
         assertEquals(new NutritionTotals(expected, expected, expected, expected), log.getTotals());
@@ -101,36 +101,36 @@ class MealLogTest {
     @Test
     void getTotals_calledRepeatedly_doesNotChangeLog() {
         MealLog log = new MealLog();
-        log.record(chickenRice);
+        TestRecipes.recordToday(log, chickenRice);
 
         NutritionTotals first = log.getTotals();
         NutritionTotals second = log.getTotals();
 
         assertEquals(first, second);
-        assertEquals(List.of(chickenRice), log.getMeals());
+        assertEquals(List.of(chickenRice), TestRecipes.recordedRecipes(log));
     }
 
     @Test
     void getMeals_returnedSnapshot_cannotBeModified() {
         MealLog log = new MealLog();
-        log.record(chickenRice);
-        List<Recipe> snapshot = log.getMeals();
+        TestRecipes.recordToday(log, chickenRice);
+        List<Recipe> snapshot = TestRecipes.recordedRecipes(log);
 
         assertThrows(UnsupportedOperationException.class, () -> snapshot.add(oatmeal));
         assertThrows(UnsupportedOperationException.class, () -> snapshot.remove(0));
-        assertEquals(1, log.getMeals().size());
+        assertEquals(1, TestRecipes.recordedRecipes(log).size());
     }
 
     @Test
     void getMeals_earlierSnapshot_doesNotSeeLaterRecordings() {
         MealLog log = new MealLog();
-        log.record(chickenRice);
-        List<Recipe> snapshot = log.getMeals();
+        TestRecipes.recordToday(log, chickenRice);
+        List<Recipe> snapshot = TestRecipes.recordedRecipes(log);
 
-        log.record(oatmeal);
+        TestRecipes.recordToday(log, oatmeal);
 
         assertEquals(List.of(chickenRice), snapshot);
-        assertEquals(List.of(chickenRice, oatmeal), log.getMeals());
+        assertEquals(List.of(chickenRice, oatmeal), TestRecipes.recordedRecipes(log));
     }
 }
 //@@author
