@@ -2,13 +2,13 @@
 
 Editable PlantUML sources live here; matching generated SVGs live under
 [`docs/images`](../images). Contributor folders contain feature subfolders where useful.
-Shared meal-recording and storage diagrams retain their established feature folders.
+Meal-recording diagrams live under `gauthamnandi`; shared storage diagrams use `storage`.
 The [Developer Guide](../DeveloperGuide.md) embeds the checked-in SVGs directly.
 
 | Contributor or feature | Sources and rendering instructions | Matching SVG folder | Pairs |
 | --- | --- | --- | --- |
 | oilybikechain: groceries, nutrition, warnings, diagnostics | [oilybikechain](oilybikechain/README.md) | [images/oilybikechain](../images/oilybikechain) | 14 |
-| GauthamNandi: dated meal recording, viewing, corrections and deletion | [gauthamnandi](gauthamnandi/README.md) | [images/record-meal](../images/gauthamnandi) | 6 |
+| GauthamNandi: dated meal recording, viewing, corrections and deletion | [gauthamnandi](gauthamnandi/README.md) | [images/gauthamnandi](../images/gauthamnandi) | 6 |
 | neil0618: listing recipes | [list-recipes](neil0618/list-recipes/README.md) | [images/neil0618/list-recipes](../images/neil0618/list-recipes) | 3 |
 | neil0618: deleting recipes | [delete-recipe](neil0618/delete-recipe/README.md) | [images/neil0618/delete-recipe](../images/neil0618/delete-recipe) | 3 |
 | neil0618: nutrition targets | [targets](neil0618/targets/README.md) | [images/neil0618/targets](../images/neil0618/targets) | 6 |
@@ -59,9 +59,10 @@ fixes remain present and have not been repeated. Retired target-value diagrams a
 
 ### Grocery readability decisions
 
-Both decisions are based on the refreshed [Developer Guide PDF](../DeveloperGuide.pdf)
-at normal A4 page size, using 11-point body text. Locate figures by their titles, not
-page numbers, which change when the guide is edited.
+Both decisions are based on a locally exported Developer Guide PDF at normal A4 page
+size, using 11-point body text. Follow the [PDF export instructions](#pdf-export) to
+recreate it. Locate figures by their titles, not page numbers, which change when the
+guide is edited.
 
 - **generate-list: aggregate and publish a completed snapshot — improved.** Removed the
   unused plan lifeline, shortened participant labels, wrapped the title and kept ingredient
