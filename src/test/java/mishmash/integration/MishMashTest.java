@@ -1,5 +1,6 @@
-package mishmash;
+package mishmash.integration;
 
+import static mishmash.TestLauncher.runMain;
 import static mishmash.testutil.CliAssertions.assertInOrder;
 import static mishmash.testutil.CliAssertions.stripAnsi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import mishmash.MishMash;
 import mishmash.exception.MishMashException;
 import mishmash.parser.Parser;
 import mishmash.testutil.AddRecipeTestData;
@@ -513,7 +515,7 @@ class MishMashTest {
             // A missing output stream makes session construction fail before run() can log anything.
             System.setOut(null);
             NullPointerException error = assertThrows(NullPointerException.class,
-                    () -> MishMash.runMain("mishmash.%g.log"));
+                    () -> runMain("mishmash.%g.log"));
 
             assertEquals("output", error.getMessage());
             List<LogRecord> failures = recordingHandler.records.stream()
@@ -580,7 +582,7 @@ class MishMashTest {
         try (PrintStream capturedOutput = new PrintStream(output, true, StandardCharsets.UTF_8)) {
             System.setIn(input);
             System.setOut(capturedOutput);
-            MishMash.runMain("mishmash.%g.log");
+            runMain("mishmash.%g.log");
         } finally {
             System.setIn(originalInput);
             System.setOut(originalOutput);
@@ -863,4 +865,3 @@ class MishMashTest {
                 + String.join(System.lineSeparator(), lines) + System.lineSeparator();
     }
 }
-

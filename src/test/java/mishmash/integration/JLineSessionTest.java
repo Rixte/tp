@@ -1,4 +1,4 @@
-package mishmash;
+package mishmash.integration;
 
 import static mishmash.testutil.CliAssertions.assertInOrder;
 import static mishmash.testutil.CliAssertions.stripAnsi;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import mishmash.MishMash;
 import mishmash.logic.MealPlanGenerator;
 import mishmash.model.ActiveMealPlan;
 import mishmash.model.MealLog;
